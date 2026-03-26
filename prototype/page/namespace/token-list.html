@@ -39,19 +39,20 @@
     </nav>
     <div class="page-title-row">
       <h2 class="page-title">Token 管理 <span class="perm-badge">🔐 Master 及以上</span></h2>
+      <div class="page-actions">
+        <button class="btn btn-primary" onclick="openCreateModal()">+ 新建 Token</button>
+      </div>
     </div>
   </div>
 
   <div class="content-body">
     <div class="alert alert-info" style="margin-bottom:0">
-      <div style="flex:1">
-        <div style="margin-bottom:10px">ℹ️ <strong>关于 Token：</strong>Token 是 Consul ACL Token 的业务抽象，由系统自动生成，无需手动填写。一个 Token 可关联同一命名空间下的多个真实服务（虚拟服务不支持关联）。</div>
-        <div style="font-weight:500;margin-bottom:6px;color:rgba(0,0,0,0.85)">如何在 DomeOS 中使用 Token：</div>
-        <div style="color:rgba(0,0,0,0.65);border-left:3px solid #91d5ff;padding-left:10px">
-          <div style="margin-bottom:4px">① 在本页面创建 Token，并在详情中复制完整 Token 值。</div>
-          <div style="margin-bottom:4px">② 在 DomeOS 平台进入目标部署的配置页面，找到「服务注册」相关设置。（<span style="color:rgba(0,0,0,0.35)">待完善：具体操作路径补充中…</span>）</div>
-          <div>③ 将 Token 值填入 DomeOS 对应字段并保存，服务实例将自动使用该 Token 完成 Consul 注册鉴权。（<span style="color:rgba(0,0,0,0.35)">待完善：字段名称及截图补充中…</span>）</div>
-        </div>
+      <div style="margin-bottom:8px">ℹ️ Token 是 Consul ACL Token 的业务抽象，由系统自动生成，无需手动填写。一个 Token 可关联同一命名空间下的多个真实服务（虚拟服务不支持关联）。</div>
+      <div style="font-weight:500;margin-bottom:6px">如何在 DomeOS 中使用 Token：</div>
+      <div style="color:rgba(0,0,0,0.65);padding-left:12px">
+        <div style="margin-bottom:4px">步骤一：在本页面创建 Token，并在详情中复制完整 Token 值。</div>
+        <div style="margin-bottom:4px">步骤二：在 DomeOS 平台进入目标部署的配置页面，找到「服务注册」相关设置。（<span style="color:rgba(0,0,0,0.35)">待完善：具体操作路径补充中…</span>）</div>
+        <div style="margin-bottom:4px">步骤三：将 Token 值填入 DomeOS 对应字段，并保存配置，服务实例将自动使用该 Token 完成 Consul 注册鉴权。（<span style="color:rgba(0,0,0,0.35)">待完善：字段名称及截图补充中…</span>）</div>
       </div>
     </div>
 
@@ -84,9 +85,6 @@
     </div>
 
     <div class="ant-card">
-      <div style="display:flex;align-items:center;margin-bottom:12px">
-        <button class="btn btn-primary" onclick="openCreateModal()">+ 新建 Token</button>
-      </div>
       <table class="ant-table" style="width:100%">
         <thead>
           <tr>

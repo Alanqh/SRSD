@@ -101,7 +101,6 @@
             ℹ️ 通过代理地址访问服务时，流量将按负载均衡策略分配到各健康实例
           </div>
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
-            <button class="btn btn-primary" onclick="openAddInstModal()">+ 新增实例</button>
             <div style="display:flex;gap:8px">
               <select id="inst-search-status" class="ant-select" style="width:160px">
                 <option value="">全部健康状态</option>
@@ -111,6 +110,7 @@
               <input id="inst-search-kw" class="ant-input" style="width:220px" placeholder="搜索实例地址、实例ID" onkeyup="if(event.key==='Enter')renderInstTable()" />
               <button class="btn btn-default" onclick="renderInstTable()">查询</button>
             </div>
+            <button class="btn btn-primary" onclick="openAddInstModal()">+ 新增实例</button>
           </div>
           <table class="ant-table" style="width:100%">
             <thead><tr><th>实例ID</th><th>实例地址</th><th>端口</th><th>所在机房</th><th>健康状态</th><th>操作</th></tr></thead>
@@ -212,31 +212,30 @@
                 <div class="setting-row">
                   <div class="setting-label">转发请求头</div>
                   <div class="setting-value">
-                    <div class="form-hint" style="margin-bottom:8px">转发鉴权请求时携带的原始请求头字段，填写字段名与字段说明，可添加多组</div>
-                    <table style="width:100%;max-width:560px;border-collapse:collapse;margin-bottom:8px" id="sec-fwd-req-table">
-                      <thead><tr>
-                        <th style="font-size:12px;font-weight:normal;color:rgba(0,0,0,0.45);padding:0 8px 6px 0;text-align:left;width:200px">字段名</th>
-                        <th style="font-size:12px;font-weight:normal;color:rgba(0,0,0,0.45);padding:0 8px 6px 0;text-align:left">字段说明</th>
-                        <th style="width:40px"></th>
-                      </tr></thead>
-                      <tbody id="sec-fwd-req-tbody"></tbody>
-                    </table>
-                    <button class="btn btn-default btn-sm" onclick="addFwdReqRow()">+ 添加字段</button>
+                    <div id="sec-forward-req-headers" style="margin-bottom:8px"></div>
+                    <div style="display:flex;gap:8px">
+                      <input id="sec-fwd-req-input" class="ant-input" style="width:220px" placeholder="Header 名称，如 Cookie" />
+                      <button class="btn btn-default btn-sm" onclick="addFwdReqHeader()">+ 添加</button>
+                    </div>
+                    <div class="form-hint">转发鉴权请求时携带的原始请求头（默认已含 Authorization）</div>
                   </div>
                 </div>
                 <div class="setting-row">
                   <div class="setting-label">响应头回写</div>
                   <div class="setting-value">
-                    <div class="form-hint" style="margin-bottom:8px">鉴权响应中需回写到原始请求的 Header 字段，填写字段名与字段说明，可添加多组</div>
-                    <table style="width:100%;max-width:560px;border-collapse:collapse;margin-bottom:8px" id="sec-fwd-res-table">
-                      <thead><tr>
-                        <th style="font-size:12px;font-weight:normal;color:rgba(0,0,0,0.45);padding:0 8px 6px 0;text-align:left;width:200px">字段名</th>
-                        <th style="font-size:12px;font-weight:normal;color:rgba(0,0,0,0.45);padding:0 8px 6px 0;text-align:left">字段说明</th>
-                        <th style="width:40px"></th>
-                      </tr></thead>
-                      <tbody id="sec-fwd-res-tbody"></tbody>
-                    </table>
-                    <button class="btn btn-default btn-sm" onclick="addFwdResRow()">+ 添加字段</button>
+                    <div id="sec-forward-res-headers" style="margin-bottom:8px"></div>
+                    <div style="display:flex;gap:8px">
+                      <input id="sec-fwd-res-input" class="ant-input" style="width:220px" placeholder="Header 名称，如 X-Auth-User" />
+                      <button class="btn btn-default btn-sm" onclick="addFwdResHeader()">+ 添加</button>
+                    </div>
+                    <div class="form-hint">鉴权响应中需回写到原始请求的 Header（如用户ID、角色）</div>
+                  </div>
+                </div>
+                <div class="setting-row">
+                  <div class="setting-label">鉴权超时</div>
+                  <div class="setting-value" style="display:flex;align-items:center;gap:8px">
+                    <input id="sec-forward-timeout" class="ant-input" style="width:100px" type="number" value="3" />
+                    <span style="color:rgba(0,0,0,0.45)">秒</span>
                   </div>
                 </div>
               </div>
@@ -398,69 +397,11 @@
                   </div>
                 </div>
               </div>
-            <div class="protection-block">
-              <div class="sub-section-title">User-Agent 访问控制（对应 APISIX ua-restriction 插件）</div>
-              <div class="setting-row" style="border:none;padding:4px 0">
-                <div class="setting-label">启用</div>
-                <div class="setting-value">
-                  <div class="switch-wrap">
-                    <label class="switch"><input type="checkbox" id="sec-ua-enable" onchange="handleUaToggle()" /><span class="switch-slider"></span></label>
-                  </div>
-                </div>
-              </div>
-              <div id="sec-ua-config" style="display:none">
-                <div class="setting-row" style="border:none;padding:4px 0">
-                  <div class="setting-label">允许的 User-Agent</div>
-                  <div class="setting-value">
-                    <textarea id="sec-ua-allowlist" class="ant-input" rows="3" style="max-width:400px;font-family:monospace;font-size:12px" placeholder="每行一个，支持正则，如：&#10;curl.*&#10;Mozilla/5.0.*"></textarea>
-                    <div class="form-hint">仅允许匹配列表的 UA 访问，留空则不启用白名单</div>
-                  </div>
-                </div>
-                <div class="setting-row" style="border:none;padding:4px 0">
-                  <div class="setting-label">拒绝的 User-Agent</div>
-                  <div class="setting-value">
-                    <textarea id="sec-ua-denylist" class="ant-input" rows="3" style="max-width:400px;font-family:monospace;font-size:12px" placeholder="每行一个，支持正则，如：&#10;python-requests.*&#10;Go-http-client.*"></textarea>
-                    <div class="form-hint">拒绝匹配列表的 UA，留空则不启用黑名单</div>
-                  </div>
-                </div>
-                <div class="setting-row" style="border:none;padding:4px 0">
-                  <div class="setting-label">拒绝提示语</div>
-                  <div class="setting-value">
-                    <input id="sec-ua-message" class="ant-input" style="max-width:360px" placeholder="留空则使用默认提示：Not allowed" />
-                  </div>
-                </div>
-              </div>
-            </div>
-            <div class="protection-block">
-              <div class="sub-section-title">URI 访问拦截（对应 APISIX uri-blocker 插件）</div>
-              <div class="setting-row" style="border:none;padding:4px 0">
-                <div class="setting-label">启用</div>
-                <div class="setting-value">
-                  <div class="switch-wrap">
-                    <label class="switch"><input type="checkbox" id="sec-uriblock-enable" onchange="handleUriBlockToggle()" /><span class="switch-slider"></span></label>
-                  </div>
-                </div>
-              </div>
-              <div id="sec-uriblock-config" style="display:none">
-                <div class="setting-row" style="border:none;padding:4px 0">
-                  <div class="setting-label">拦截规则</div>
-                  <div class="setting-value">
-                    <textarea id="sec-uriblock-rules" class="ant-input" rows="4" style="max-width:400px;font-family:monospace;font-size:12px" placeholder="每行一个正则，匹配 URI 路径则拦截，如：&#10;^/admin&#10;\.php$&#10;^/\.git"></textarea>
-                    <div class="form-hint">对应 block_rules，匹配任意规则时返回 403</div>
-                  </div>
-                </div>
-                <div class="setting-row" style="border:none;padding:4px 0">
-                  <div class="setting-label">拦截状态码</div>
-                  <div class="setting-value" style="display:flex;align-items:center;gap:8px">
-                    <input id="sec-uriblock-status" class="ant-input" style="width:100px" type="number" value="403" placeholder="403" />
-                    <span style="color:rgba(0,0,0,0.45)">（对应 rejected_code）</span>
-                  </div>
-                </div>
-              </div>
             </div>
           </div>
 
           <div class="config-section">
+            <div class="config-section-title">服务别名</div>
             <div class="setting-row">
               <div class="setting-label">当前别名</div>
               <div class="setting-value">
@@ -469,7 +410,7 @@
                   <input id="alias-input" class="ant-input" style="max-width:320px" placeholder="输入自定义域名，如 myservice.example.com" />
                   <button class="btn btn-default" onclick="addSecAlias()">添加</button>
                 </div>
-                <div class="form-hint">添加服务别名后，您需要在自己的 DNS 中配置 CNAME 记录，将该别名指向此服务的代理地址。每个服务最多配置 5 个</div>
+                <div class="form-hint">别名将通过 DNS 解析到当前代理地址，每个服务最多配置 5 个</div>
               </div>
             </div>
           </div>
@@ -606,39 +547,16 @@
             <div class="setting-row">
               <div class="setting-label">检查类型</div>
               <div class="setting-value">
-                <select id="health-type" class="ant-select" style="width:180px" onchange="handleHealthTypeChange()">
+                <select id="health-type" class="ant-select" style="width:180px">
                   <option value="http">HTTP</option>
                   <option value="tcp">TCP</option>
                   <option value="grpc">gRPC</option>
                 </select>
               </div>
             </div>
-            <div class="setting-row" id="health-path-row">
+            <div class="setting-row">
               <div class="setting-label">检查路径</div>
               <div class="setting-value"><input id="health-path" class="ant-input" style="max-width:360px" value="/health" placeholder="/health" /></div>
-            </div>
-            <div class="setting-row" id="health-method-row">
-              <div class="setting-label">检查方法</div>
-              <div class="setting-value">
-                <select id="health-method" class="ant-select" style="width:120px">
-                  <option value="GET">GET</option>
-                  <option value="HEAD">HEAD</option>
-                </select>
-              </div>
-            </div>
-            <div class="setting-row" id="health-status-row">
-              <div class="setting-label">预期状态码</div>
-              <div class="setting-value">
-                <input id="health-expected-status" class="ant-input" style="max-width:200px" value="200" placeholder="200,204（逗号分隔）" />
-                <div class="form-hint">检查响应状态码与此匹配时判定为健康（对应 http_statuses）</div>
-              </div>
-            </div>
-            <div class="setting-row">
-              <div class="setting-label">检查端口</div>
-              <div class="setting-value">
-                <input id="health-port" class="ant-input" style="width:120px" type="number" placeholder="默认与服务端口一致" />
-                <div class="form-hint">留空时使用实例注册端口，可指定独立健康检查端口</div>
-              </div>
             </div>
             <div class="setting-row">
               <div class="setting-label">检查间隔</div>
@@ -685,23 +603,6 @@
                 <div class="setting-value">
                   <div class="switch-wrap">
                     <label class="switch"><input type="checkbox" id="health-passive-5xx" checked /><span class="switch-slider"></span></label>
-                  </div>
-                </div>
-              </div>
-              <div class="setting-row">
-                <div class="setting-label">HTTP 4xx 触发</div>
-                <div class="setting-value">
-                  <div class="switch-wrap">
-                    <label class="switch"><input type="checkbox" id="health-passive-4xx" /><span class="switch-slider"></span></label>
-                    <span style="font-size:12px;color:rgba(0,0,0,0.45)">（谨慎开启，业务 4xx 可能频繁触发）</span>
-                  </div>
-                </div>
-              </div>
-              <div class="setting-row">
-                <div class="setting-label">TCP 连接失败触发</div>
-                <div class="setting-value">
-                  <div class="switch-wrap">
-                    <label class="switch"><input type="checkbox" id="health-passive-tcp" checked /><span class="switch-slider"></span></label>
                   </div>
                 </div>
               </div>
@@ -931,22 +832,9 @@
   </div>
 </div>
 
-<!-- 代理地址弹窗 Modal -->
-<div id="proxy-modal" class="modal-overlay" style="display:none" onclick="if(event.target===this)closeProxyModal()">
-  <div class="ant-modal" style="width:520px">
-    <div class="modal-header">
-      <span class="modal-title">代理地址</span>
-      <button class="modal-close" onclick="closeProxyModal()">×</button>
-    </div>
-    <div class="modal-body" id="proxy-modal-body"></div>
-    <div class="modal-footer">
-      <button class="btn btn-default" onclick="closeProxyModal()">关闭</button>
-    </div>
-  </div>
-</div>
-
 <!-- 凭证/配置查看 Modal -->
-<div id="cred-modal" class="modal-overlay" style="display:none" onclick="if(event.target===this)closeCredModal()">  <div class="ant-modal" style="width:480px">
+<div id="cred-modal" class="modal-overlay" style="display:none" onclick="if(event.target===this)closeCredModal()">
+  <div class="ant-modal" style="width:480px">
     <div class="modal-header">
       <span class="modal-title" id="cred-modal-title">访问凭证</span>
       <button class="modal-close" onclick="closeCredModal()">×</button>
@@ -1315,8 +1203,8 @@ function copyText(text) {
 
 /* ── 安全配置 ── */
 let secAliases = [];
-let fwdReqHeaders = []; // [{ name, desc }]
-let fwdResHeaders = []; // [{ name, desc }]
+let fwdReqHeaders = ['Authorization'];
+let fwdResHeaders = [];
 
 function initSecurityTab() {
   const enabled = svc.auth === 'basic' || svc.auth === 'forward';
@@ -1331,12 +1219,8 @@ function initSecurityTab() {
     if (svc.auth === 'forward' && svc.authConfig) {
       document.getElementById('sec-forward-url').value = svc.authConfig.forwardUrl || '';
       if (svc.authConfig.method) document.getElementById('sec-forward-method').value = svc.authConfig.method;
-      if (svc.authConfig.reqHeaders) {
-        fwdReqHeaders = svc.authConfig.reqHeaders.map(h => typeof h === 'string' ? { name: h, desc: '' } : h);
-      }
-      if (svc.authConfig.resHeaders) {
-        fwdResHeaders = svc.authConfig.resHeaders.map(h => typeof h === 'string' ? { name: h, desc: '' } : h);
-      }
+      if (svc.authConfig.reqHeaders) { fwdReqHeaders = [...svc.authConfig.reqHeaders]; }
+      if (svc.authConfig.resHeaders) { fwdResHeaders = [...svc.authConfig.resHeaders]; }
     }
   }
   renderFwdHeaders();
@@ -1369,19 +1253,6 @@ function initSecurityTab() {
   document.getElementById('sec-referer-whitelist').value = (referer.whitelist || []).join('\n');
   document.getElementById('sec-referer-blacklist').value = (referer.blacklist || []).join('\n');
   document.getElementById('sec-referer-bypass-missing').checked = referer.bypassMissing !== false;
-  // UA restriction
-  const ua = svc.uaConfig || {};
-  document.getElementById('sec-ua-enable').checked = !!ua.enabled;
-  document.getElementById('sec-ua-config').style.display = ua.enabled ? '' : 'none';
-  document.getElementById('sec-ua-allowlist').value = (ua.allowlist || []).join('\n');
-  document.getElementById('sec-ua-denylist').value  = (ua.denylist  || []).join('\n');
-  document.getElementById('sec-ua-message').value   = ua.message || '';
-  // URI blocker
-  const urib = svc.uriBlockConfig || {};
-  document.getElementById('sec-uriblock-enable').checked = !!urib.enabled;
-  document.getElementById('sec-uriblock-config').style.display = urib.enabled ? '' : 'none';
-  document.getElementById('sec-uriblock-rules').value  = (urib.rules || []).join('\n');
-  if (urib.statusCode) document.getElementById('sec-uriblock-status').value = urib.statusCode;
   secAliases = [...(svc.aliases || [])];
   renderSecAliasTags();
 }
@@ -1396,38 +1267,27 @@ function handleAuthTypeChange() {
   const type = document.querySelector('input[name="sec-auth-type"]:checked')?.value;
   document.getElementById('sec-forward-fields').style.display = type === 'forward' ? '' : 'none';
 }
-
-/* Forward header table */
-function renderFwdHeaders() {
-  const reqTbody = document.getElementById('sec-fwd-req-tbody');
-  const resTbody = document.getElementById('sec-fwd-res-tbody');
-  if (!reqTbody || !resTbody) return;
-  const renderRow = (arr, type, i) => `
-    <tr>
-      <td style="padding:0 8px 6px 0"><input class="ant-input fwd-name-${type}" style="width:100%" placeholder="字段名，如 Authorization" value="${escHtml(arr[i].name||'')}" oninput="syncFwdRows()" /></td>
-      <td style="padding:0 8px 6px 0"><input class="ant-input fwd-desc-${type}" style="width:100%" placeholder="字段说明（可选）" value="${escHtml(arr[i].desc||'')}" oninput="syncFwdRows()" /></td>
-      <td style="padding:0 0 6px 0"><button class="btn btn-link danger btn-sm" onclick="removeFwdRow('${type}',${i})">×</button></td>
-    </tr>`;
-  reqTbody.innerHTML = fwdReqHeaders.map((_,i) => renderRow(fwdReqHeaders,'req',i)).join('') ||
-    '<tr><td colspan="3" style="color:rgba(0,0,0,0.25);font-size:12px;padding:4px 0">暂未配置</td></tr>';
-  resTbody.innerHTML = fwdResHeaders.map((_,i) => renderRow(fwdResHeaders,'res',i)).join('') ||
-    '<tr><td colspan="3" style="color:rgba(0,0,0,0.25);font-size:12px;padding:4px 0">暂未配置</td></tr>';
-}
-function syncFwdRows() {
-  const reqInputs = document.querySelectorAll('.fwd-name-req');
-  const reqDescs  = document.querySelectorAll('.fwd-desc-req');
-  fwdReqHeaders = Array.from(reqInputs).map((inp,i) => ({ name: inp.value, desc: reqDescs[i]?.value||'' }));
-  const resInputs = document.querySelectorAll('.fwd-name-res');
-  const resDescs  = document.querySelectorAll('.fwd-desc-res');
-  fwdResHeaders = Array.from(resInputs).map((inp,i) => ({ name: inp.value, desc: resDescs[i]?.value||'' }));
-}
-function addFwdReqRow() { syncFwdRows(); fwdReqHeaders.push({ name:'', desc:'' }); renderFwdHeaders(); }
-function addFwdResRow() { syncFwdRows(); fwdResHeaders.push({ name:'', desc:'' }); renderFwdHeaders(); }
-function removeFwdRow(type, i) {
-  syncFwdRows();
-  if (type === 'req') fwdReqHeaders.splice(i,1);
-  else fwdResHeaders.splice(i,1);
+function addFwdReqHeader() {
+  const v = document.getElementById('sec-fwd-req-input').value.trim();
+  if (!v || fwdReqHeaders.includes(v)) return;
+  fwdReqHeaders.push(v);
+  document.getElementById('sec-fwd-req-input').value = '';
   renderFwdHeaders();
+}
+function addFwdResHeader() {
+  const v = document.getElementById('sec-fwd-res-input').value.trim();
+  if (!v || fwdResHeaders.includes(v)) return;
+  fwdResHeaders.push(v);
+  document.getElementById('sec-fwd-res-input').value = '';
+  renderFwdHeaders();
+}
+function removeFwdReqHeader(i) { fwdReqHeaders.splice(i,1); renderFwdHeaders(); }
+function removeFwdResHeader(i) { fwdResHeaders.splice(i,1); renderFwdHeaders(); }
+function renderFwdHeaders() {
+  document.getElementById('sec-forward-req-headers').innerHTML = fwdReqHeaders.map((h,i) =>
+    `<span class="alias-tag">${escHtml(h)}<span class="del" onclick="removeFwdReqHeader(${i})">×</span></span>`).join('');
+  document.getElementById('sec-forward-res-headers').innerHTML = fwdResHeaders.map((h,i) =>
+    `<span class="alias-tag">${escHtml(h)}<span class="del" onclick="removeFwdResHeader(${i})">×</span></span>`).join('');
 }
 function handleIpCtrlToggle() {
   document.getElementById('sec-ip-ctrl-config').style.display =
@@ -1445,14 +1305,6 @@ function handleRefererToggle() {
   document.getElementById('sec-referer-config').style.display =
     document.getElementById('sec-referer-enable').checked ? '' : 'none';
 }
-function handleUaToggle() {
-  document.getElementById('sec-ua-config').style.display =
-    document.getElementById('sec-ua-enable').checked ? '' : 'none';
-}
-function handleUriBlockToggle() {
-  document.getElementById('sec-uriblock-config').style.display =
-    document.getElementById('sec-uriblock-enable').checked ? '' : 'none';
-}
 function addSecAlias() {
   const v = document.getElementById('alias-input').value.trim();
   if (!v) return;
@@ -1468,7 +1320,6 @@ function renderSecAliasTags() {
     : secAliases.map((a,i) => `<span class="alias-tag">${escHtml(a)}<span class="del" onclick="removeSecAlias(${i})">×</span></span>`).join('');
 }
 function saveSecurityConfig() {
-  syncFwdRows();
   const enabled = document.getElementById('sec-auth-enable').checked;
   const type    = document.querySelector('input[name="sec-auth-type"]:checked')?.value || 'basic';
   svc.auth = enabled ? type : 'disabled';
@@ -1479,6 +1330,7 @@ function saveSecurityConfig() {
       method:     document.getElementById('sec-forward-method').value,
       reqHeaders: [...fwdReqHeaders],
       resHeaders: [...fwdResHeaders],
+      timeout:    +document.getElementById('sec-forward-timeout').value,
     };
   } else if (enabled) {
     svc.authConfig = { type: 'basic' };
@@ -1509,17 +1361,6 @@ function saveSecurityConfig() {
     whitelist:     document.getElementById('sec-referer-whitelist').value.split('\n').map(s => s.trim()).filter(Boolean),
     blacklist:     document.getElementById('sec-referer-blacklist').value.split('\n').map(s => s.trim()).filter(Boolean),
     bypassMissing: document.getElementById('sec-referer-bypass-missing').checked,
-  };
-  svc.uaConfig = {
-    enabled:   document.getElementById('sec-ua-enable').checked,
-    allowlist: document.getElementById('sec-ua-allowlist').value.split('\n').map(s => s.trim()).filter(Boolean),
-    denylist:  document.getElementById('sec-ua-denylist').value.split('\n').map(s => s.trim()).filter(Boolean),
-    message:   document.getElementById('sec-ua-message').value.trim(),
-  };
-  svc.uriBlockConfig = {
-    enabled:    document.getElementById('sec-uriblock-enable').checked,
-    rules:      document.getElementById('sec-uriblock-rules').value.split('\n').map(s => s.trim()).filter(Boolean),
-    statusCode: +document.getElementById('sec-uriblock-status').value || 403,
   };
   svc.aliases = [...secAliases];
   allSvcs = allSvcs.map(s => s.id === svc.id ? svc : s);

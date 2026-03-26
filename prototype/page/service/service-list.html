@@ -28,6 +28,9 @@
         </nav>
         <div class="page-title-row">
           <h2 class="page-title">服务列表</h2>
+          <div class="page-actions">
+            <button class="btn btn-primary" onclick="openCreateModal()">+ 新建</button>
+          </div>
         </div>
       </div>
 
@@ -64,9 +67,6 @@
         </div>
 
         <div class="ant-card">
-          <div style="display:flex;align-items:center;margin-bottom:12px">
-            <button class="btn btn-primary" onclick="openCreateModal()">+ 新建</button>
-          </div>
           <table class="ant-table" style="width:100%">
             <thead>
               <tr>
@@ -175,7 +175,7 @@ const NS_BIZLINE = {
 const { load, save } = useStorage('srsd_services', SEED_SERVICES);
 let list = load();
 
-const AUTH_LABEL = { none: '未开启', disabled: '未开启', basic: 'Basic', forward: 'Forward' };
+const AUTH_LABEL = { none: '--', disabled: '已关闭', basic: 'Basic', forward: 'Forward' };
 const AUTH_CLASS = { none: 'tag-default', disabled: 'tag-default', basic: 'tag-processing', forward: 'tag-success' };
 
 function getFilteredList() {
