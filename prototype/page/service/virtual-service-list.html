@@ -114,7 +114,7 @@
       <div class="form-item">
         <label class="form-label required">命名空间</label>
         <div class="form-control">
-          <select id="form-ns" class="ant-select" onchange="handleNsChange()">
+          <select id="form-ns" class="ant-select">
             <option value="">请选择</option>
             <option value="cloud-native">cloud-native</option>
             <option value="panther-backend">panther-backend</option>
@@ -124,24 +124,13 @@
         </div>
       </div>
 
-      <div class="form-item" style="align-items:flex-start">
-        <label class="form-label required" style="padding-top:2px">默认后端</label>
+      <div class="form-item">
+        <label class="form-label required">协议类型</label>
         <div class="form-control">
-          <div class="form-hint" style="margin-top:0;margin-bottom:8px">所有条件路由均不匹配时，流量转发到此服务。</div>
-          <select id="form-default-backend" class="ant-select" style="width:280px">
-            <option value="">请先选择命名空间</option>
+          <select id="form-protocol" class="ant-select">
+            <option value="http">http</option>
+            <option value="https">https</option>
           </select>
-          <div id="error-default-backend" class="form-error-msg" style="display:none"></div>
-        </div>
-      </div>
-
-      <div class="form-item" style="align-items:flex-start">
-        <label class="form-label" style="padding-top:2px">条件路由</label>
-        <div class="form-control">
-          <div class="form-hint" style="margin-top:0;margin-bottom:8px">按优先级匹配，第一条满足的规则生效；所有规则均不满足时，流量转发到默认后端。每条规则可配置多个后端服务及权重，权重之和须为 100。</div>
-          <div id="route-list"></div>
-          <button class="btn btn-default btn-sm" onclick="addRoute()">+ 添加路由规则</button>
-          <div id="error-routes" class="form-error-msg" style="display:none;margin-top:4px"></div>
         </div>
       </div>
 
@@ -159,6 +148,27 @@
   </div>
 </div>
 
+<!-- 代理地址 Modal -->
+<div id="proxy-modal" class="modal-overlay" style="display:none" onclick="if(event.target===this)closeProxyModal()">
+  <div class="ant-modal" style="width:560px">
+    <div class="modal-header">
+      <span class="modal-title" id="proxy-modal-title">代理地址</span>
+      <button class="modal-close" onclick="closeProxyModal()">×</button>
+    </div>
+    <div class="modal-body">
+      <div style="display:flex;border-bottom:1px solid #f0f0f0;margin-bottom:16px">
+        <div id="proxy-tab-http"  class="tab-item active" style="padding:6px 16px;cursor:pointer" onclick="switchProxyTab('http')">HTTP</div>
+        <div id="proxy-tab-https" class="tab-item"        style="padding:6px 16px;cursor:pointer" onclick="switchProxyTab('https')">HTTPS</div>
+      </div>
+      <div id="proxy-panel-http"></div>
+      <div id="proxy-panel-https" style="display:none"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-default" onclick="closeProxyModal()">关闭</button>
+    </div>
+  </div>
+</div>
+
 <script src="../../data/virtual-services.js"></script>
 <script src="../../data/services.js"></script>
 <script src="../../js/common.js"></script>
@@ -167,10 +177,6 @@ const PAGE_SIZE = 10;
 let currentPage = 1;
 let editingId = null;
 let activeFilter = { ns: '', kw: '' };
-
-// Form state
-let formRoutes           = []; // [{ id, conditions:[{type,field,matchType,value}], upstreams:[{serviceId,serviceName,weight}] }]
-let formDefaultBackendId = ''; // serviceId
 
 const { load, save } = useStorage('srsd_virtual_services', SEED_VIRTUAL_SERVICES);
 let list = load();
@@ -215,7 +221,9 @@ function renderTable() {
   tbody.innerHTML = paged.map(row => `<tr>
     <td><a href="virtual-service-detail.html?id=${escHtml(row.id)}">${escHtml(row.name)}</a></td>
     <td>${escHtml(row.ns)}</td>
-    <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${escHtml(row.proxy)}">${escHtml(row.proxy)}</td>
+    <td>
+      <button class="btn btn-default btn-sm" onclick="openProxyModal('${escHtml(row.id)}')">查看</button>
+    </td>
     <td class="route-summary">${escHtml(routeSummary(row))}</td>
     <td>${escHtml(row.createdBy)}</td>
     <td>${escHtml(formatTime(row.createdAt))}</td>
@@ -254,180 +262,57 @@ function handleReset() {
   currentPage = 1; renderTable();
 }
 
-/* ───── Form helpers ───── */
-
-function currentNsSvcs() {
-  const ns = document.getElementById('form-ns').value;
-  return ns ? allSvcs.filter(s => s.ns === ns) : [];
-}
-
-function refreshDefaultBackendSelect() {
-  const svcs = currentNsSvcs();
-  const sel = document.getElementById('form-default-backend');
-  sel.innerHTML = svcs.length === 0
-    ? '<option value="">请先选择命名空间</option>'
-    : '<option value="">请选择服务</option>' +
-      svcs.map(s => `<option value="${escHtml(s.id)}" ${formDefaultBackendId === s.id ? 'selected' : ''}>${escHtml(s.name)}</option>`).join('');
-}
-
-/* ── Route UI ── */
-
-function renderUpstreamRow(ri, ui, u, svcs) {
-  const canRemove = formRoutes[ri].upstreams.length > 1;
-  return `<div class="upstream-row" data-upstream-idx="${ui}">
-    <select class="ant-select" style="flex:1">
-      <option value="">请选择服务</option>
-      ${svcs.map(s => `<option value="${escHtml(s.id)}" ${u.serviceId === s.id ? 'selected' : ''}>${escHtml(s.name)}</option>`).join('')}
-    </select>
-    <span style="color:rgba(0,0,0,0.45);white-space:nowrap;font-size:13px">权重</span>
-    <input type="number" class="ant-input" style="width:70px" min="0" max="100" value="${u.weight}" />
-    <span style="color:rgba(0,0,0,0.45)">%</span>
-    ${canRemove ? `<button class="btn btn-link danger btn-sm" onclick="syncAndRemoveUpstream(${ri},${ui})">移除</button>` : '<span style="width:42px"></span>'}
-  </div>`;
-}
-
-function renderRouteList() {
-  const svcs = currentNsSvcs();
-  document.getElementById('route-list').innerHTML = formRoutes.length === 0
-    ? '<div style="color:rgba(0,0,0,0.25);font-size:13px;margin-bottom:8px">暂无条件路由，流量将全部转发到默认后端。</div>'
-    : formRoutes.map((r, ri) => `
-      <div class="route-card" data-route-idx="${ri}">
-        <div class="route-card-header">
-          <span>规则 #${ri + 1}</span>
-          <button class="btn btn-link danger btn-sm" onclick="removeRoute(${ri})">删除规则</button>
-        </div>
-        <div class="route-card-body">
-          <table class="cond-table">
-            <thead>
-              <tr>
-                <th style="width:112px">匹配类型</th>
-                <th style="width:88px">字段名</th>
-                <th style="width:72px">匹配方式</th>
-                <th>匹配值</th>
-                <th></th>
-              </tr>
-            </thead>
-            <tbody>${r.conditions.map((c, ci) => renderCondRow(ri, ci, c)).join('')}</tbody>
-          </table>
-          <button class="btn btn-link btn-sm" onclick="syncAndAddCondition(${ri})">+ 添加条件</button>
-          <div class="route-upstream-section">
-            <div class="route-upstream-label">命中时按权重转发至（权重之和须为 100）</div>
-            <div id="route-upstreams-${ri}">
-              ${r.upstreams.map((u, ui) => renderUpstreamRow(ri, ui, u, svcs)).join('')}
-            </div>
-            <button class="btn btn-link btn-sm" onclick="syncAndAddUpstream(${ri})">+ 添加后端</button>
-            <div class="form-error-msg" id="route-upstream-error-${ri}" style="display:none"></div>
-          </div>
-        </div>
-      </div>`).join('');
-}
-
-function renderCondRow(ri, ci, c) {
-  const isPath = c.type === 'path';
-  return `<tr data-cond-idx="${ci}">
-    <td>
-      <select class="ant-select cond-type" style="width:100%" onchange="handleCondTypeChange(${ri},${ci},this.value)">
-        <option value="header" ${c.type==='header'?'selected':''}>HTTP 请求头</option>
-        <option value="cookie" ${c.type==='cookie'?'selected':''}>Cookie</option>
-        <option value="query"  ${c.type==='query' ?'selected':''}>查询参数</option>
-        <option value="path"   ${c.type==='path'  ?'selected':''}>路径前缀</option>
-      </select>
-    </td>
-    <td>${isPath
-      ? '<span class="cond-dash">—</span>'
-      : `<input class="ant-input cond-field" style="width:100%" placeholder="字段名" value="${escHtml(c.field||'')}" oninput="syncRoutesFromDOM()" />`}
-    </td>
-    <td>${isPath
-      ? '<span class="cond-dash" style="font-size:11px">前缀</span>'
-      : `<select class="ant-select cond-match" style="width:100%" onchange="syncRoutesFromDOM()">
-          <option value="exact"  ${c.matchType==='exact' ?'selected':''}>精确</option>
-          <option value="prefix" ${c.matchType==='prefix'?'selected':''}>前缀</option>
-          <option value="regex"  ${c.matchType==='regex' ?'selected':''}>正则</option>
-        </select>`}
-    </td>
-    <td>
-      <input class="ant-input cond-value" style="width:100%" placeholder="${isPath ? '如 /api/v2/' : '匹配值'}" value="${escHtml(c.value||'')}" oninput="syncRoutesFromDOM()" />
-    </td>
-    <td>
-      <button class="btn btn-link danger btn-sm" onclick="syncAndRemoveCondition(${ri},${ci})">×</button>
-    </td>
-  </tr>`;
-}
-
-function syncRoutesFromDOM() {
-  const routeCards = document.getElementById('route-list').querySelectorAll('[data-route-idx]');
-  routeCards.forEach((card, ri) => {
-    if (!formRoutes[ri]) return;
-    const condRows = card.querySelectorAll('tbody tr[data-cond-idx]');
-    condRows.forEach((row, ci) => {
-      if (!formRoutes[ri].conditions[ci]) return;
-      const typeSel  = row.querySelector('.cond-type');
-      const fieldIn  = row.querySelector('.cond-field');
-      const matchSel = row.querySelector('.cond-match');
-      const valueIn  = row.querySelector('.cond-value');
-      if (typeSel)  formRoutes[ri].conditions[ci].type      = typeSel.value;
-      if (fieldIn)  formRoutes[ri].conditions[ci].field     = fieldIn.value;
-      if (matchSel) formRoutes[ri].conditions[ci].matchType = matchSel.value;
-      if (valueIn)  formRoutes[ri].conditions[ci].value     = valueIn.value;
+/* ── Proxy Modal ── */
+function buildProxyPanel(proto, domain, aliases) {
+  const defaultAddr = `${proto}://${domain}`;
+  let html = `
+    <div style="margin-bottom:16px">
+      <div style="font-size:12px;color:rgba(0,0,0,0.45);margin-bottom:6px">默认代理地址</div>
+      <div style="display:flex;align-items:center;gap:8px;background:#fafafa;border:1px solid #f0f0f0;padding:8px 12px">
+        <span style="font-family:monospace;font-size:13px;flex:1;word-break:break-all">${escHtml(defaultAddr)}</span>
+        <button class="btn btn-default btn-sm" onclick="copyProxyAddr('${escHtml(defaultAddr)}')">复制</button>
+      </div>
+    </div>`;
+  const aliasArr = aliases || [];
+  if (aliasArr.length > 0) {
+    html += `<div><div style="font-size:12px;color:rgba(0,0,0,0.45);margin-bottom:6px">别名代理地址</div>`;
+    aliasArr.forEach(alias => {
+      const aliasUrl = `${proto}://${alias}`;
+      html += `<div style="display:flex;align-items:center;gap:8px;background:#fafafa;border:1px solid #f0f0f0;padding:8px 12px;margin-bottom:4px">
+        <span style="font-family:monospace;font-size:13px;flex:1;word-break:break-all">${escHtml(aliasUrl)}</span>
+        <button class="btn btn-default btn-sm" onclick="copyProxyAddr('${escHtml(aliasUrl)}')">复制</button>
+      </div>`;
     });
-    const upstreamRows = card.querySelectorAll(`#route-upstreams-${ri} [data-upstream-idx]`);
-    upstreamRows.forEach((row, ui) => {
-      if (!formRoutes[ri].upstreams[ui]) return;
-      const sel = row.querySelector('select');
-      const inp = row.querySelector('input[type=number]');
-      if (sel) { formRoutes[ri].upstreams[ui].serviceId = sel.value; formRoutes[ri].upstreams[ui].serviceName = sel.selectedOptions[0]?.text || ''; }
-      if (inp) formRoutes[ri].upstreams[ui].weight = +inp.value;
-    });
-  });
-}
-
-function addRoute() {
-  syncRoutesFromDOM();
-  formRoutes.push({ id: genId(), conditions: [{ type: 'header', field: '', matchType: 'exact', value: '' }], upstreams: [{ serviceId: '', serviceName: '', weight: 100 }] });
-  renderRouteList();
-}
-
-function removeRoute(ri) {
-  syncRoutesFromDOM();
-  formRoutes.splice(ri, 1);
-  renderRouteList();
-}
-
-function syncAndAddCondition(ri) {
-  syncRoutesFromDOM();
-  formRoutes[ri].conditions.push({ type: 'header', field: '', matchType: 'exact', value: '' });
-  renderRouteList();
-}
-
-function syncAndRemoveCondition(ri, ci) {
-  syncRoutesFromDOM();
-  formRoutes[ri].conditions.splice(ci, 1);
-  if (formRoutes[ri].conditions.length === 0) {
-    formRoutes[ri].conditions.push({ type: 'header', field: '', matchType: 'exact', value: '' });
+    html += `</div>`;
+  } else {
+    html += `<div style="color:rgba(0,0,0,0.25);font-size:13px">暂无别名代理地址</div>`;
   }
-  renderRouteList();
+  return html;
 }
 
-function syncAndAddUpstream(ri) {
-  syncRoutesFromDOM();
-  formRoutes[ri].upstreams.push({ serviceId: '', serviceName: '', weight: 0 });
-  renderRouteList();
+function switchProxyTab(proto) {
+  document.getElementById('proxy-tab-http').classList.toggle('active', proto === 'http');
+  document.getElementById('proxy-tab-https').classList.toggle('active', proto === 'https');
+  document.getElementById('proxy-panel-http').style.display  = proto === 'http'  ? '' : 'none';
+  document.getElementById('proxy-panel-https').style.display = proto === 'https' ? '' : 'none';
 }
 
-function syncAndRemoveUpstream(ri, ui) {
-  syncRoutesFromDOM();
-  formRoutes[ri].upstreams.splice(ui, 1);
-  renderRouteList();
+function openProxyModal(id) {
+  const row = list.find(r => r.id === id);
+  if (!row) return;
+  document.getElementById('proxy-modal-title').textContent = `代理地址 — ${row.name}`;
+  document.getElementById('proxy-panel-http').innerHTML  = buildProxyPanel('http',  row.proxy, row.aliases);
+  document.getElementById('proxy-panel-https').innerHTML = buildProxyPanel('https', row.proxy, row.aliases);
+  const activeProto = (row.protocol === 'https') ? 'https' : 'http';
+  switchProxyTab(activeProto);
+  openModal(document.getElementById('proxy-modal'));
 }
 
-function handleCondTypeChange(ri, ci, type) {
-  syncRoutesFromDOM();
-  formRoutes[ri].conditions[ci].type = type;
-  if (type === 'path') {
-    formRoutes[ri].conditions[ci].matchType = 'prefix';
-    formRoutes[ri].conditions[ci].field = '';
-  }
-  renderRouteList();
+function closeProxyModal() { closeModal(document.getElementById('proxy-modal')); }
+
+function copyProxyAddr(addr) {
+  navigator.clipboard?.writeText(addr).then(() => showToast('已复制到剪贴板'))
+    .catch(() => showToast('复制失败', '❌'));
 }
 
 /* ── Open / Close Modals ── */
@@ -438,12 +323,9 @@ function openCreateModal() {
   document.getElementById('form-name').value    = '';
   document.getElementById('form-name').disabled = false;
   document.getElementById('form-ns').value      = '';
+  document.getElementById('form-protocol').value = 'http';
   document.getElementById('form-desc').value    = '';
-  formRoutes           = [];
-  formDefaultBackendId = '';
-  ['error-name','error-ns','error-routes','error-default-backend'].forEach(id => { document.getElementById(id).style.display = 'none'; });
-  refreshDefaultBackendSelect();
-  renderRouteList();
+  ['error-name','error-ns'].forEach(id => { document.getElementById(id).style.display = 'none'; });
   openModal(document.getElementById('vs-modal'));
 }
 
@@ -455,41 +337,20 @@ function openEditModal(id) {
   document.getElementById('form-name').value    = row.name;
   document.getElementById('form-name').disabled = true;
   document.getElementById('form-ns').value      = row.ns;
+  document.getElementById('form-protocol').value = row.protocol || 'http';
   document.getElementById('form-desc').value    = row.desc || '';
-  // Handle legacy data: if row has backends[] instead of defaultBackend
-  const db = row.defaultBackend || (row.backends && row.backends[0]) || null;
-  formDefaultBackendId = db ? db.serviceId : '';
-  // Migrate legacy routes (targetServiceId → upstreams)
-  formRoutes = JSON.parse(JSON.stringify(row.routes || [])).map(r => ({
-    ...r,
-    upstreams: r.upstreams
-      || (r.targetServiceId ? [{ serviceId: r.targetServiceId, serviceName: r.targetServiceName || '', weight: 100 }] : [{ serviceId: '', serviceName: '', weight: 100 }]),
-  }));
-  ['error-name','error-ns','error-routes','error-default-backend'].forEach(id => { document.getElementById(id).style.display = 'none'; });
-  refreshDefaultBackendSelect();
-  renderRouteList();
+  ['error-name','error-ns'].forEach(id => { document.getElementById(id).style.display = 'none'; });
   openModal(document.getElementById('vs-modal'));
 }
 
 function closeVsModal() { closeModal(document.getElementById('vs-modal')); }
 
-function handleNsChange() {
-  syncRoutesFromDOM();
-  formDefaultBackendId = '';
-  formRoutes.forEach(r => { r.upstreams.forEach(u => { u.serviceId = ''; u.serviceName = ''; }); });
-  refreshDefaultBackendSelect();
-  renderRouteList();
-}
-
 /* ── Submit ── */
 
 function submitVsModal() {
-  syncRoutesFromDOM();
-  const sel = document.getElementById('form-default-backend');
-  formDefaultBackendId = sel.value;
-
-  const name = document.getElementById('form-name').value.trim();
-  const ns   = document.getElementById('form-ns').value;
+  const name     = document.getElementById('form-name').value.trim();
+  const ns       = document.getElementById('form-ns').value;
+  const protocol = document.getElementById('form-protocol').value;
   let ok = true;
 
   if (!name || !/^[a-z][a-z0-9-]*$/.test(name)) {
@@ -502,45 +363,22 @@ function submitVsModal() {
     document.getElementById('error-ns').style.display = ''; ok = false;
   } else document.getElementById('error-ns').style.display = 'none';
 
-  if (!formDefaultBackendId) {
-    document.getElementById('error-default-backend').textContent = '请选择默认后端服务';
-    document.getElementById('error-default-backend').style.display = ''; ok = false;
-  } else document.getElementById('error-default-backend').style.display = 'none';
-
-  const routeErr = formRoutes.reduce((err, r, i) => {
-    if (err) return err;
-    const condErr = r.conditions.some(c => !c.value.trim() || (c.type !== 'path' && !c.field.trim()));
-    if (condErr) return `规则 #${i+1} 有未填写完整的匹配条件`;
-    const unset = r.upstreams.some(u => !u.serviceId);
-    if (unset) return `规则 #${i+1} 有未选择的后端服务`;
-    const totalW = r.upstreams.reduce((s, u) => s + (u.weight || 0), 0);
-    if (totalW !== 100) return `规则 #${i+1} 后端权重之和须为 100（当前：${totalW}）`;
-    return '';
-  }, '');
-  if (routeErr) {
-    document.getElementById('error-routes').textContent = routeErr;
-    document.getElementById('error-routes').style.display = ''; ok = false;
-  } else document.getElementById('error-routes').style.display = 'none';
-
   if (!ok) return;
 
-  const defaultBackend = { serviceId: sel.value, serviceName: sel.selectedOptions[0]?.text || '' };
   const bizline = NS_BIZLINE[ns] || '';
   const desc    = document.getElementById('form-desc').value.trim();
   const proxy   = `${name}-${ns}.domeos.sohucs.com`;
 
   if (editingId) {
-    list = list.map(r => r.id === editingId
-      ? { ...r, bizline, desc, defaultBackend, routes: JSON.parse(JSON.stringify(formRoutes)) }
-      : r);
+    list = list.map(r => r.id === editingId ? { ...r, ns, bizline, protocol, desc } : r);
     showToast('虚拟服务已更新');
   } else {
     if (list.find(r => r.name === name && r.ns === ns)) {
       document.getElementById('error-name').textContent = '该命名空间下服务名已存在';
       document.getElementById('error-name').style.display = ''; return;
     }
-    list.unshift({ id: genId(), name, ns, bizline, proxy, desc, defaultBackend,
-      routes: JSON.parse(JSON.stringify(formRoutes)),
+    list.unshift({ id: genId(), name, ns, bizline, proxy, protocol, desc,
+      defaultBackend: null, routes: [],
       auth: 'disabled', createdBy: '吕青华', createdAt: now() });
     showToast('虚拟服务已创建');
   }

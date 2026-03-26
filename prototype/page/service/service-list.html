@@ -136,7 +136,6 @@
               <option value="">请选择</option>
               <option value="http">http</option>
               <option value="https">https</option>
-              <option value="grpc">grpc</option>
             </select>
             <div id="error-protocol" class="form-error-msg" style="display:none"></div>
           </div>
@@ -156,12 +155,19 @@
 
 <!-- 代理地址 Modal -->
 <div id="proxy-modal" class="modal-overlay" style="display:none" onclick="if(event.target===this)closeProxyModal()">
-  <div class="ant-modal" style="width:520px">
+  <div class="ant-modal" style="width:560px">
     <div class="modal-header">
       <span class="modal-title" id="proxy-modal-title">代理地址</span>
       <button class="modal-close" onclick="closeProxyModal()">×</button>
     </div>
-    <div class="modal-body" id="proxy-modal-body"></div>
+    <div class="modal-body">
+      <div style="display:flex;border-bottom:1px solid #f0f0f0;margin-bottom:16px">
+        <div id="proxy-tab-http"  class="tab-item active" style="padding:6px 16px;cursor:pointer" onclick="switchProxyTab('http')">HTTP</div>
+        <div id="proxy-tab-https" class="tab-item"        style="padding:6px 16px;cursor:pointer" onclick="switchProxyTab('https')">HTTPS</div>
+      </div>
+      <div id="proxy-panel-http"></div>
+      <div id="proxy-panel-https" style="display:none"></div>
+    </div>
     <div class="modal-footer">
       <button class="btn btn-default" onclick="closeProxyModal()">关闭</button>
     </div>
@@ -219,9 +225,7 @@ function renderTable() {
       <td>${escHtml(row.ns)}</td>
       <td>${escHtml(row.bizline || '--')}</td>
       <td>
-        <a href="#" onclick="openProxyModal('${escHtml(row.id)}');return false" style="font-family:monospace;font-size:12px;color:var(--color-primary)">
-          ${escHtml(row.protocol || 'http')}://${escHtml(row.proxy)}
-        </a>
+        <button class="btn btn-default btn-sm" onclick="openProxyModal('${escHtml(row.id)}')">查看</button>
       </td>
       <td><span class="tag ${AUTH_CLASS[row.auth]}">${AUTH_LABEL[row.auth]}</span></td>
       <td>${escHtml(row.desc || '--')}</td>
@@ -366,13 +370,8 @@ function handleConfirmDelete(id) {
   });
 }
 
-function openProxyModal(id) {
-  const row = list.find(r => r.id === id);
-  if (!row) return;
-  const proto = row.protocol || 'http';
-  const defaultAddr = `${proto}://${row.proxy}`;
-  const aliases = row.aliases || [];
-  document.getElementById('proxy-modal-title').textContent = `代理地址 — ${row.name}`;
+function buildProxyPanel(proto, domain, aliases) {
+  const defaultAddr = `${proto}://${domain}`;
   let html = `
     <div style="margin-bottom:16px">
       <div style="font-size:12px;color:rgba(0,0,0,0.45);margin-bottom:6px">默认代理地址</div>
@@ -395,7 +394,25 @@ function openProxyModal(id) {
   } else {
     html += `<div style="color:rgba(0,0,0,0.25);font-size:13px">暂无别名代理地址</div>`;
   }
-  document.getElementById('proxy-modal-body').innerHTML = html;
+  return html;
+}
+
+function switchProxyTab(proto) {
+  document.getElementById('proxy-tab-http').classList.toggle('active', proto === 'http');
+  document.getElementById('proxy-tab-https').classList.toggle('active', proto === 'https');
+  document.getElementById('proxy-panel-http').style.display  = proto === 'http'  ? '' : 'none';
+  document.getElementById('proxy-panel-https').style.display = proto === 'https' ? '' : 'none';
+}
+
+function openProxyModal(id) {
+  const row = list.find(r => r.id === id);
+  if (!row) return;
+  const aliases = row.aliases || [];
+  document.getElementById('proxy-modal-title').textContent = `代理地址 — ${row.name}`;
+  document.getElementById('proxy-panel-http').innerHTML  = buildProxyPanel('http',  row.proxy, aliases);
+  document.getElementById('proxy-panel-https').innerHTML = buildProxyPanel('https', row.proxy, aliases);
+  const activeProto = (row.protocol === 'https') ? 'https' : 'http';
+  switchProxyTab(activeProto);
   openModal(document.getElementById('proxy-modal'));
 }
 
