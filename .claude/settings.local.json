@@ -1,0 +1,17 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(mkdir -p page)",
+      "Bash(mv namespace-list.html service-list.html service-detail.html apply-list.html review-list.html profile.html page/)",
+      "Bash(for f:*)",
+      "Bash(do sed:*)",
+      "Bash(done)",
+      "Bash(cd:*)",
+      "Bash(python:*)",
+      "Bash(del:*)",
+      "Bash(rm -f migrate.py)",
+      "Bash(rm -f page/namespace-list.html page/service-list.html page/service-detail.html page/apply-list.html page/review-list.html page/profile.html)",
+      "Skill(update-config)"
+    ]
+  }
+}

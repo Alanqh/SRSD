@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>申请管理 - 服务注册与发现</title>
+  <link rel="stylesheet" href="../../css/base.css" />
+</head>
+<body>
+  <div class="toast-list"></div>
+  <div id="confirm-overlay" class="confirm-overlay" style="display:none" onclick="if(event.target===this)closeConfirm()">
+    <div class="confirm-box">
+      <div class="confirm-title"><span>⚠️</span><span id="confirm-title">操作确认</span></div>
+      <div class="confirm-content" id="confirm-content"></div>
+      <div class="confirm-actions">
+        <button class="btn btn-default" onclick="closeConfirm()">取消</button>
+        <button class="btn btn-danger" onclick="confirmOk()">确定</button>
+      </div>
+    </div>
+  </div>
+<main class="main-content">
+      <div class="page-header">
+        <nav class="breadcrumb">
+          <span>服务注册与发现</span><span class="sep">/</span><span class="current">申请列表</span>
+        </nav>
+        <div class="page-title-row">
+          <h2 class="page-title">申请列表</h2>
+          <div class="page-actions">
+            <button class="btn btn-primary" onclick="openApplyModal()">+ 新建申请</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="content-body">
+        <div class="search-bar">
+          <div class="search-item">
+            <label>状态</label>
+            <select id="search-status" class="ant-select">
+              <option value="">全部状态</option>
+              <option value="approved">已通过</option>
+              <option value="rejected">未通过</option>
+              <option value="pending">审核中</option>
+            </select>
+          </div>
+          <div class="search-item">
+            <label>关键词</label>
+            <input id="search-kw" class="ant-input" placeholder="搜索目标服务、申请人、申请通道" onkeyup="if(event.key==='Enter')handleSearch()" />
+          </div>
+          <div class="search-actions">
+            <button class="btn btn-primary" onclick="handleSearch()">查询</button>
+            <button class="btn btn-default" onclick="handleReset()">重置</button>
+          </div>
+        </div>
+
+        <div class="ant-card">
+          <table class="ant-table" style="width:100%">
+            <thead>
+              <tr>
+                <th>申请 ID</th>
+                <th>目标服务</th>
+                <th>客户端</th>
+                <th>客户端类型</th>
+                <th>状态</th>
+                <th>申请人</th>
+                <th>申请时间</th>
+                <th>审核时间</th>
+                <th>操作</th>
+              </tr>
+            </thead>
+            <tbody id="table-body"></tbody>
+          </table>
+          <div class="table-footer">
+            <span id="page-total" class="pagination-total"></span>
+            <div id="pagination" class="ant-pagination"></div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- 新建申请 Modal -->
+  <div id="apply-modal" class="modal-overlay" style="display:none" onclick="if(event.target===this)closeApplyModal()">
+    <div class="ant-modal" style="width:560px">
+      <div class="modal-header">
+        <span id="apply-modal-title" class="modal-title">新建申请</span>
+        <button class="modal-close" onclick="closeApplyModal()">×</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-item">
+          <label class="form-label required">目标服务</label>
+          <div class="form-control">
+            <select id="form-target" class="ant-select">
+              <option value="">请选择目标服务</option>
+              <option value="lgh-service-test">lgh-service-test</option>
+              <option value="lgh-service-test2">lgh-service-test2</option>
+              <option value="test-health-checker">test-health-checker</option>
+              <option value="nightingale-prod">nightingale-prod</option>
+              <option value="argo">argo</option>
+            </select>
+            <div id="error-target" class="form-error-msg" style="display:none"></div>
+          </div>
+        </div>
+        <div class="form-item">
+          <label class="form-label required">客户端</label>
+          <div class="form-control">
+            <input id="form-client" class="ant-input" placeholder="请输入客户端名称" />
+            <div id="error-client" class="form-error-msg" style="display:none"></div>
+          </div>
+        </div>
+        <div class="form-item">
+          <label class="form-label required">客户端类型</label>
+          <div class="form-control">
+            <select id="form-client-type" class="ant-select">
+              <option value="">请选择</option>
+              <option value="service">服务</option>
+              <option value="user">用户</option>
+            </select>
+            <div id="error-client-type" class="form-error-msg" style="display:none"></div>
+          </div>
+        </div>
+        <div class="form-item">
+          <label class="form-label required">申请理由</label>
+          <div class="form-control">
+            <textarea id="form-reason" class="ant-input" rows="3" placeholder="请说明申请访问该服务的原因"></textarea>
+            <div id="error-reason" class="form-error-msg" style="display:none"></div>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-default" onclick="closeApplyModal()">取消</button>
+        <button class="btn btn-primary" onclick="submitApplyModal()">提交</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 查看详情 Modal -->
+  <div id="view-modal" class="modal-overlay" style="display:none" onclick="if(event.target===this)closeViewModal()">
+    <div class="ant-modal" style="width:560px">
+      <div class="modal-header">
+        <span class="modal-title">申请详情</span>
+        <button class="modal-close" onclick="closeViewModal()">×</button>
+      </div>
+      <div class="modal-body">
+        <div id="view-desc-list" class="desc-list"></div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-default" onclick="closeViewModal()">关闭</button>
+      </div>
+    </div>
+
+<script src="../../data/applies.js"></script>
+<script src="../../js/common.js"></script>
+<script>
+const PAGE_SIZE = 10;
+let currentPage = 1;
+let activeFilter = { status: '', kw: '' };
+
+
+const { load, save } = useStorage('srsd_applies', SEED_APPLIES);
+let list = load();
+let nextSeqId = list.length > 0 ? Math.max(...list.map(r => r.seqId)) + 1 : 50;
+
+const STATUS_MAP = {
+  approved: { label: '已通过', cls: 'tag-success' },
+  rejected: { label: '未通过', cls: 'tag-error' },
+  pending:  { label: '审核中', cls: 'tag-processing' },
+};
+const CLIENT_TYPE_MAP = { service: '服务', user: '用户' };
+
+function getFilteredList() {
+  return list.filter(item => {
+    const statusOk = !activeFilter.status || item.status === activeFilter.status;
+    const kwOk     = !activeFilter.kw     || item.target.includes(activeFilter.kw) || item.applicant.includes(activeFilter.kw) || item.client.includes(activeFilter.kw);
+    return statusOk && kwOk;
+  });
+}
+
+function renderTable() {
+  const filtered = getFilteredList();
+  const paged = filtered.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
+  const tbody = document.getElementById('table-body');
+  document.getElementById('page-total').textContent = `共 ${filtered.length} 条`;
+
+  if (paged.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="9"><div class="empty-table">暂无数据</div></td></tr>';
+    renderPagination(0);
+    return;
+  }
+  tbody.innerHTML = paged.map(row => `
+    <tr>
+      <td>${escHtml(String(row.seqId))}</td>
+      <td><a href="#">${escHtml(row.target)}</a></td>
+      <td>${escHtml(row.client)}</td>
+      <td>${escHtml(CLIENT_TYPE_MAP[row.clientType] || row.clientType)}</td>
+      <td><span class="tag ${STATUS_MAP[row.status]?.cls || 'tag-default'}">${STATUS_MAP[row.status]?.label || row.status}</span></td>
+      <td>${escHtml(row.applicant)}</td>
+      <td>${escHtml(formatTime(row.appliedAt))}</td>
+      <td>${row.reviewedAt ? escHtml(formatTime(row.reviewedAt)) : '--'}</td>
+      <td>
+        <button class="btn btn-link" data-action="view" data-id="${escHtml(row.id)}">查看</button>
+        ${row.status === 'rejected' ? `<button class="btn btn-link" data-action="reapply" data-id="${escHtml(row.id)}">重新申请</button>` : ''}
+      </td>
+    </tr>
+  `).join('');
+  renderPagination(filtered.length);
+}
+
+function renderPagination(total) {
+  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+  let html = `<button class="page-btn" ${currentPage === 1 ? 'disabled' : ''} data-page="${currentPage - 1}">‹</button>`;
+  for (let p = 1; p <= totalPages; p++) {
+    html += `<button class="page-btn ${p === currentPage ? 'active' : ''}" data-page="${p}">${p}</button>`;
+  }
+  html += `<button class="page-btn" ${currentPage >= totalPages ? 'disabled' : ''} data-page="${currentPage + 1}">›</button>`;
+  document.getElementById('pagination').innerHTML = html;
+}
+
+document.getElementById('table-body').addEventListener('click', e => {
+  const btn = e.target.closest('[data-action]');
+  if (!btn) return;
+  const id = btn.dataset.id;
+  if (btn.dataset.action === 'view')     openViewModal(id);
+  if (btn.dataset.action === 'reapply')  openReapplyModal(id);
+});
+
+document.getElementById('pagination').addEventListener('click', e => {
+  const btn = e.target.closest('[data-page]');
+  if (!btn || btn.disabled) return;
+  const totalPages = Math.max(1, Math.ceil(getFilteredList().length / PAGE_SIZE));
+  const p = Number(btn.dataset.page);
+  if (p >= 1 && p <= totalPages) { currentPage = p; renderTable(); }
+});
+
+function handleSearch() {
+  activeFilter.status = document.getElementById('search-status').value;
+  activeFilter.kw     = document.getElementById('search-kw').value.trim();
+  currentPage = 1;
+  renderTable();
+}
+
+function handleReset() {
+  document.getElementById('search-status').value = '';
+  document.getElementById('search-kw').value     = '';
+  activeFilter = { status: '', kw: '' };
+  currentPage  = 1;
+  renderTable();
+}
+
+function setFieldError(field, msg) {
+  const errEl   = document.getElementById(`error-${field}`);
+  const inputEl = document.getElementById(`form-${field}`);
+  if (errEl)   { errEl.textContent = msg; errEl.style.display = msg ? 'block' : 'none'; }
+  if (inputEl) inputEl.classList.toggle('error', !!msg);
+}
+
+function openApplyModal(prefill) {
+  document.getElementById('apply-modal-title').textContent = '新建申请';
+  document.getElementById('form-target').value      = prefill?.target || '';
+  document.getElementById('form-client').value      = prefill?.client || '';
+  document.getElementById('form-client-type').value = prefill?.clientType || '';
+  document.getElementById('form-reason').value      = '';
+  ['target', 'client', 'client-type', 'reason'].forEach(f => setFieldError(f, ''));
+  openModal(document.getElementById('apply-modal'));
+}
+
+function openReapplyModal(id) {
+  const row = list.find(r => r.id === id);
+  if (!row) return;
+  openApplyModal({ target: row.target, client: row.client, clientType: row.clientType });
+}
+
+function closeApplyModal() { closeModal(document.getElementById('apply-modal')); }
+
+function submitApplyModal() {
+  const target     = document.getElementById('form-target').value;
+  const client     = document.getElementById('form-client').value.trim();
+  const clientType = document.getElementById('form-client-type').value;
+  const reason     = document.getElementById('form-reason').value.trim();
+
+  let valid = true;
+  if (!target)     { setFieldError('target', '请选择目标服务'); valid = false; }      else { setFieldError('target', ''); }
+  if (!client)     { setFieldError('client', '客户端不能为空'); valid = false; }      else { setFieldError('client', ''); }
+  if (!clientType) { setFieldError('client-type', '请选择客户端类型'); valid = false; } else { setFieldError('client-type', ''); }
+  if (!reason)     { setFieldError('reason', '申请理由不能为空'); valid = false; }    else { setFieldError('reason', ''); }
+  if (!valid) return;
+
+  list.unshift({ id: genId(), seqId: nextSeqId++, target, client, clientType, status: 'pending', applicant: '吕青华', reason, appliedAt: now(), reviewedAt: null });
+  save(list);
+  currentPage = 1;
+  closeApplyModal();
+  renderTable();
+  showToast('申请已提交，等待审核');
+}
+
+function openViewModal(id) {
+  const row = list.find(r => r.id === id);
+  if (!row) return;
+  document.getElementById('view-desc-list').innerHTML = [
+    { label: '申请 ID',    value: String(row.seqId) },
+    { label: '目标服务',   value: row.target },
+    { label: '客户端',     value: row.client },
+    { label: '客户端类型', value: CLIENT_TYPE_MAP[row.clientType] || row.clientType },
+    { label: '状态',       value: STATUS_MAP[row.status]?.label || row.status },
+    { label: '申请人',     value: row.applicant },
+    { label: '申请理由',   value: row.reason },
+    { label: '申请时间',   value: formatTime(row.appliedAt) },
+    { label: '审核时间',   value: row.reviewedAt ? formatTime(row.reviewedAt) : '--' },
+  ].map(r => `
+    <div class="desc-item">
+      <div class="desc-label">${escHtml(r.label)}</div>
+      <div class="desc-value">${escHtml(r.value)}</div>
+    </div>
+  `).join('');
+  openModal(document.getElementById('view-modal'));
+}
+
+function closeViewModal() { closeModal(document.getElementById('view-modal')); }
+
+renderTable();
+</script>
+</body>
+</html>

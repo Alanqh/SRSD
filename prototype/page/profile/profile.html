@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>我的 - 服务注册与发现</title>
+  <link rel="stylesheet" href="../../css/base.css" />
+  <style>
+    .cred-row { display:flex; align-items:center; gap:8px; padding:10px 0; border-bottom:1px solid #f0f0f0; }
+    .cred-label { width:90px; color:rgba(0,0,0,0.45); font-size:13px; flex-shrink:0; }
+    .cred-val { font-family:monospace; font-size:13px; flex:1; word-break:break-all; }
+    .copy-btn { padding:0 8px; height:24px; font-size:12px; cursor:pointer; border:1px solid #d9d9d9; background:#fff; color:#1890ff; white-space:nowrap; }
+    .copy-btn:hover { border-color:#1890ff; }
+    .pwd-dots { letter-spacing:2px; }
+    .toggle-pwd { padding:0 8px; height:24px; font-size:12px; cursor:pointer; border:1px solid #d9d9d9; background:#fff; color:rgba(0,0,0,0.65); white-space:nowrap; }
+    .config-section { margin-bottom:24px; }
+    .config-section-title { font-size:14px; font-weight:500; margin-bottom:12px; padding-bottom:8px; border-bottom:1px solid #f0f0f0; }
+  </style>
+</head>
+<body>
+  <div class="toast-list"></div>
+  <div id="confirm-overlay" class="confirm-overlay" style="display:none" onclick="if(event.target===this)closeConfirm()">
+    <div class="confirm-box">
+      <div class="confirm-title"><span>⚠️</span><span id="confirm-title">操作确认</span></div>
+      <div class="confirm-content" id="confirm-content"></div>
+      <div class="confirm-actions">
+        <button class="btn btn-default" onclick="closeConfirm()">取消</button>
+        <button class="btn btn-danger" onclick="confirmOk()">确定</button>
+      </div>
+    </div>
+  </div>
+<main class="main-content">
+      <div class="page-header">
+        <nav class="breadcrumb">
+          <span>服务注册与发现</span><span class="sep">/</span><span class="current">我的</span>
+        </nav>
+        <div class="page-title-row">
+          <h2 class="page-title">我的</h2>
+        </div>
+      </div>
+
+      <div class="content-body">
+        <div class="ant-card">
+          <div class="tabs-nav" id="tabs-nav">
+            <div class="tab-item active" data-tab="info">个人信息</div>
+            <div class="tab-item" data-tab="credentials">可访问服务</div>
+          </div>
+          <div class="card-body">
+
+            <!-- Tab: 个人信息 -->
+            <div id="tab-info">
+              <div class="desc-list">
+                <div class="desc-item">
+                  <div class="desc-label">姓名</div>
+                  <div class="desc-value">吕青华</div>
+                </div>
+                <div class="desc-item">
+                  <div class="desc-label">邮箱</div>
+                  <div class="desc-value">qinghualv@sohu-inc.com</div>
+                </div>
+                <div class="desc-item">
+                  <div class="desc-label">部门</div>
+                  <div class="desc-value">大数据中心</div>
+                </div>
+                <div class="desc-item">
+                  <div class="desc-label">用户名</div>
+                  <div class="desc-value">qinghualv</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Tab: 可访问服务 -->
+            <div id="tab-credentials" style="display:none">
+
+              <div class="config-section">
+                <div class="config-section-title">公共空间 &amp; 同命名空间服务</div>
+                <p style="color:rgba(0,0,0,0.45);font-size:13px;margin-bottom:12px">以下服务可直接访问。根据各服务的鉴权类型，提供相应凭证或配置信息。</p>
+                <div style="display:flex;gap:8px;margin-bottom:12px">
+                  <input id="profile-access-kw" class="ant-input" style="width:320px" placeholder="输入服务名称或代理地址搜索" onkeyup="if(event.key==='Enter')renderProfileAccessTable()" />
+                  <button class="btn btn-default" onclick="renderProfileAccessTable()">查询</button>
+                </div>
+                <table class="ant-table" style="width:100%">
+                  <thead><tr><th>服务名称</th><th>命名空间</th><th>代理地址</th><th>鉴权类型</th><th>操作</th></tr></thead>
+                  <tbody id="profile-access-tbody"></tbody>
+                </table>
+              </div>
+
+              <div class="config-section">
+                <div class="config-section-title">其他私有空间服务（需申请审批）</div>
+                <div class="alert alert-info" style="margin-bottom:12px">
+                  ℹ️ 访问其他私有命名空间下开启了鉴权的服务，需先提交访问申请，审批通过后方可使用专用凭证。未开启鉴权的服务无需申请。
+                </div>
+                <div style="display:flex;justify-content:flex-end;margin-bottom:12px">
+                  <a class="btn btn-primary" href="../apply/apply-list.html">+ 申请访问其他服务</a>
+                </div>
+                <table class="ant-table" style="width:100%">
+                  <thead><tr><th>服务名称</th><th>所属空间</th><th>代理地址</th><th>鉴权类型</th><th>申请状态</th><th>操作</th></tr></thead>
+                  <tbody id="profile-private-tbody"></tbody>
+                </table>
+              </div>
+
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+
+<!-- 凭证/配置查看 Modal -->
+<div id="cred-modal" class="modal-overlay" style="display:none" onclick="if(event.target===this)closeCredModal()">
+  <div class="ant-modal" style="width:480px">
+    <div class="modal-header">
+      <span class="modal-title" id="cred-modal-title">访问凭证</span>
+      <button class="modal-close" onclick="closeCredModal()">×</button>
+    </div>
+    <div class="modal-body" id="cred-modal-body"></div>
+    <div class="modal-footer">
+      <button class="btn btn-default" onclick="closeCredModal()">关闭</button>
+    </div>
+  </div>
+</div>
+
+<script src="../../js/common.js"></script>
+<script>
+const GLOBAL_USER = 'qinghualv';
+const GLOBAL_PWD  = 'Qinghualv@2025!Srsd';
+
+/* 公共空间 & 同命名空间可访问服务（模拟数据） */
+const PUBLIC_ACCESS = [
+  { id:'pa-1', name:'vip',              ns:'domeos-pub',     proxy:'vip-domeos-pub.domeos.sohucs.com',                auth:'none'    },
+  { id:'pa-2', name:'schuro-cloud',     ns:'sohu-cs-public', proxy:'schuro-cloud-sohu-cs-public.domeos.sohucs.com',   auth:'none'    },
+  { id:'pa-3', name:'nightingale-test', ns:'cloud-native',   proxy:'nightingale-test-cloud-native.domeos.sohucs.com', auth:'basic'   },
+  { id:'pa-4', name:'argo',             ns:'cloud-native',   proxy:'argo-cloud-native.domeos.sohucs.com',             auth:'basic'   },
+  { id:'pa-5', name:'nightingale-prod', ns:'cloud-native',   proxy:'nightingale-prod-cloud-native.domeos.sohucs.com', auth:'forward', forwardUrl:'http://panther-auth/verify'  },
+  { id:'pa-6', name:'kubient',          ns:'cloud-native',   proxy:'kubient-cloud-native.domeos.sohucs.com',          auth:'forward', forwardUrl:'http://sso-service/auth'     },
+];
+
+/* 其他私有空间已申请服务（模拟数据） */
+const PRIVATE_APPROVED = [
+  { id:'pp-1', name:'apollo',      ns:'panther-backend', proxy:'apollo-panther-backend.domeos.sohucs.com',  auth:'forward', forwardUrl:'http://auth-service/verify', status:'已授权' },
+  { id:'pp-2', name:'azure-cloud', ns:'panther-web',     proxy:'azure-cloud-panther-web.domeos.sohucs.com', auth:'basic',   privatePwd:'pX7mNq2kL4n',               status:'已授权' },
+];
+
+const AUTH_LABEL = { none:'无需鉴权', disabled:'无需鉴权', basic:'Basic Auth', forward:'Forward Auth' };
+const AUTH_CLASS  = { none:'tag-default', disabled:'tag-default', basic:'tag-processing', forward:'tag-success' };
+
+const tabKeys = ['info', 'credentials'];
+let activeTab = 'info';
+
+document.getElementById('tabs-nav').addEventListener('click', e => {
+  const item = e.target.closest('[data-tab]');
+  if (!item) return;
+  activeTab = item.dataset.tab;
+  document.querySelectorAll('#tabs-nav .tab-item').forEach(el => {
+    el.classList.toggle('active', el.dataset.tab === activeTab);
+  });
+  tabKeys.forEach(k => {
+    document.getElementById(`tab-${k}`).style.display = k === activeTab ? 'block' : 'none';
+  });
+  if (activeTab === 'credentials') { renderProfileAccessTable(); renderProfilePrivateTable(); }
+});
+
+function renderProfileAccessTable() {
+  const kw = document.getElementById('profile-access-kw').value.trim().toLowerCase();
+  const rows = PUBLIC_ACCESS.filter(s => !kw || s.name.toLowerCase().includes(kw) || s.proxy.toLowerCase().includes(kw));
+  const tbody = document.getElementById('profile-access-tbody');
+  if (rows.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="5"><div class="empty-table">暂无可访问的服务</div></td></tr>';
+    return;
+  }
+  tbody.innerHTML = rows.map(s => {
+    const authLabel = AUTH_LABEL[s.auth] || s.auth;
+    const authClass = AUTH_CLASS[s.auth]  || 'tag-default';
+    let op = '<span style="color:rgba(0,0,0,0.25)">直接访问</span>';
+    if (s.auth === 'basic')   op = `<button class="btn btn-link" onclick="viewPublicCred()">查看通用凭证</button>`;
+    if (s.auth === 'forward') op = `<button class="btn btn-link" onclick="viewFwdConfig('${escHtml(s.name)}','${escHtml(s.forwardUrl||'')}')">查询鉴权配置</button>`;
+    return `<tr>
+      <td>${escHtml(s.name)}</td>
+      <td>${escHtml(s.ns)}</td>
+      <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${escHtml(s.proxy)}">${escHtml(s.proxy)}</td>
+      <td><span class="tag ${authClass}">${escHtml(authLabel)}</span></td>
+      <td>${op}</td>
+    </tr>`;
+  }).join('');
+}
+
+function renderProfilePrivateTable() {
+  const tbody = document.getElementById('profile-private-tbody');
+  if (PRIVATE_APPROVED.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="6"><div class="empty-table">暂无已申请的跨空间服务</div></td></tr>';
+    return;
+  }
+  tbody.innerHTML = PRIVATE_APPROVED.map(r => {
+    const authLabel = AUTH_LABEL[r.auth] || r.auth;
+    const authClass = AUTH_CLASS[r.auth]  || 'tag-default';
+    let op = '';
+    if (r.auth === 'basic')   op = `<button class="btn btn-link" onclick="viewPrivateCred('${escHtml(r.name)}','${escHtml(r.privatePwd||'')}')">查看专用凭证</button>`;
+    if (r.auth === 'forward') op = `<button class="btn btn-link" onclick="viewFwdConfig('${escHtml(r.name)}','${escHtml(r.forwardUrl||'')}')">查看鉴权配置</button>`;
+    return `<tr>
+      <td>${escHtml(r.name)}</td>
+      <td>${escHtml(r.ns)}</td>
+      <td style="max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escHtml(r.proxy)}</td>
+      <td><span class="tag ${authClass}">${escHtml(authLabel)}</span></td>
+      <td><span class="tag tag-success">${escHtml(r.status)}</span></td>
+      <td>${op}</td>
+    </tr>`;
+  }).join('');
+}
+
+let credPwdVisible = false;
+
+function viewPublicCred() {
+  credPwdVisible = false;
+  document.getElementById('cred-modal-title').textContent = '通用凭证';
+  document.getElementById('cred-modal-body').innerHTML = `
+    <div class="alert alert-info" style="margin-bottom:12px">此为您的全局通用凭证，可用于访问所有公共空间或同命名空间下开启 Basic Auth 鉴权的服务。使用时将 User:Password 进行 Base64 编码，以 <code>Authorization: Basic 编码值</code> 格式加入请求头。</div>
+    <div class="cred-row">
+      <div class="cred-label">User</div>
+      <div class="cred-val">${escHtml(GLOBAL_USER)}</div>
+      <button class="copy-btn" onclick="copyText('${escHtml(GLOBAL_USER)}')">复制</button>
+    </div>
+    <div class="cred-row">
+      <div class="cred-label">Password</div>
+      <div class="cred-val" id="cred-pwd-val"><span class="pwd-dots">••••••••••••</span></div>
+      <button class="toggle-pwd" id="cred-pwd-toggle" onclick="toggleCredPwd('${escHtml(GLOBAL_PWD)}')">显示</button>
+      <button class="copy-btn" onclick="copyText('${escHtml(GLOBAL_PWD)}')">复制</button>
+    </div>`;
+  openModal(document.getElementById('cred-modal'));
+}
+
+function viewPrivateCred(name, pwd) {
+  credPwdVisible = false;
+  document.getElementById('cred-modal-title').textContent = `专用凭证 — ${name}`;
+  document.getElementById('cred-modal-body').innerHTML = `
+    <div class="alert alert-info" style="margin-bottom:12px">此为跨空间访问的专用凭证，仅授权给您本人使用，请妥善保管</div>
+    <div class="cred-row">
+      <div class="cred-label">User</div>
+      <div class="cred-val">${escHtml(GLOBAL_USER)}</div>
+      <button class="copy-btn" onclick="copyText('${escHtml(GLOBAL_USER)}')">复制</button>
+    </div>
+    <div class="cred-row">
+      <div class="cred-label">Password</div>
+      <div class="cred-val" id="cred-pwd-val"><span class="pwd-dots">••••••••••••</span></div>
+      <button class="toggle-pwd" id="cred-pwd-toggle" onclick="toggleCredPwd('${escHtml(pwd)}')">显示</button>
+      <button class="copy-btn" onclick="copyText('${escHtml(pwd)}')">复制</button>
+    </div>`;
+  openModal(document.getElementById('cred-modal'));
+}
+
+function viewFwdConfig(name, forwardUrl) {
+  document.getElementById('cred-modal-title').textContent = `鉴权配置 — ${name}`;
+  document.getElementById('cred-modal-body').innerHTML = `
+    <div class="cred-row"><div class="cred-label">鉴权类型</div><div class="cred-val">Forward Auth</div></div>
+    <div class="cred-row">
+      <div class="cred-label">鉴权地址</div>
+      <div class="cred-val" style="font-family:monospace;font-size:12px">${escHtml(forwardUrl || '--')}</div>
+    </div>
+    <div class="cred-row">
+      <div class="cred-label">说明</div>
+      <div class="cred-val" style="color:rgba(0,0,0,0.65)">请求时须在 Header 中携带有效凭证，代理网关自动转发至鉴权服务验证</div>
+    </div>`;
+  openModal(document.getElementById('cred-modal'));
+}
+
+function toggleCredPwd(pwd) {
+  credPwdVisible = !credPwdVisible;
+  document.getElementById('cred-pwd-val').innerHTML = credPwdVisible
+    ? `<span style="font-family:monospace">${escHtml(pwd)}</span>`
+    : '<span class="pwd-dots">••••••••••••</span>';
+  document.getElementById('cred-pwd-toggle').textContent = credPwdVisible ? '隐藏' : '显示';
+}
+
+function closeCredModal() { closeModal(document.getElementById('cred-modal')); credPwdVisible = false; }
+
+function copyText(text) {
+  navigator.clipboard.writeText(text).then(() => showToast('已复制到剪贴板'));
+}
+</script>
+</body>
+</html>

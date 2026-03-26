@@ -1,0 +1,499 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Token 管理 - 服务注册与发现</title>
+  <link rel="stylesheet" href="../../css/base.css" />
+  <style>
+    .token-val { font-family:monospace; font-size:12px; background:#f5f5f5; padding:2px 6px; border-radius:2px; max-width:240px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; display:inline-block; vertical-align:middle; }
+    .svc-chip  { display:inline-block; padding:1px 8px; background:#e6f7ff; border:1px solid #91d5ff; color:#1890ff; font-size:12px; margin:2px; border-radius:2px; }
+    .perm-badge { display:inline-flex; align-items:center; gap:4px; background:#fff7e6; border:1px solid #ffd591; color:#d46b08; font-size:12px; padding:2px 10px; border-radius:10px; margin-left:8px; font-weight:normal; }
+    .link-table-wrap { max-height:280px; overflow-y:auto; border:1px solid #d9d9d9; border-radius:2px; }
+    .link-table-wrap table { width:100%; border-collapse:collapse; }
+    .link-table-wrap thead th { background:#fafafa; padding:6px 8px; font-size:12px; color:rgba(0,0,0,0.65); border-bottom:1px solid #f0f0f0; position:sticky; top:0; z-index:1; }
+    .link-table-wrap tbody td { padding:6px 8px; font-size:13px; border-bottom:1px solid #f5f5f5; }
+    .link-table-wrap tbody tr:last-child td { border-bottom:none; }
+    .link-table-wrap tbody tr:hover td { background:#fafafa; }
+  </style>
+</head>
+<body>
+<div class="toast-list"></div>
+<div id="confirm-overlay" class="confirm-overlay" style="display:none" onclick="if(event.target===this)closeConfirm()">
+  <div class="confirm-box">
+    <div class="confirm-title"><span>⚠️</span><span id="confirm-title">操作确认</span></div>
+    <div class="confirm-content" id="confirm-content"></div>
+    <div class="confirm-actions">
+      <button class="btn btn-default" onclick="closeConfirm()">取消</button>
+      <button class="btn btn-danger" onclick="confirmOk()">确定</button>
+    </div>
+  </div>
+</div>
+
+<main class="main-content">
+  <div class="page-header">
+    <nav class="breadcrumb">
+      <span>服务注册与发现</span><span class="sep">/</span>
+      <a href="namespace-list.html">命名空间</a><span class="sep">/</span>
+      <span class="current">Token 管理</span>
+    </nav>
+    <div class="page-title-row">
+      <h2 class="page-title">Token 管理 <span class="perm-badge">🔐 Master 及以上</span></h2>
+    </div>
+  </div>
+
+  <div class="content-body">
+    <div class="alert alert-info" style="margin-bottom:0">
+      <div style="flex:1">
+        <div style="margin-bottom:10px">ℹ️ <strong>关于 Token：</strong>Token 是 Consul ACL Token 的业务抽象，由系统自动生成，无需手动填写。一个 Token 可关联同一命名空间下的多个真实服务（虚拟服务不支持关联）。</div>
+        <div style="font-weight:500;margin-bottom:6px;color:rgba(0,0,0,0.85)">如何在 DomeOS 中使用 Token：</div>
+        <div style="color:rgba(0,0,0,0.65);border-left:3px solid #91d5ff;padding-left:10px">
+          <div style="margin-bottom:4px">① 在本页面创建 Token，并在详情中复制完整 Token 值。</div>
+          <div style="margin-bottom:4px">② 在 DomeOS 平台进入目标部署的配置页面，找到「服务注册」相关设置。（<span style="color:rgba(0,0,0,0.35)">待完善：具体操作路径补充中…</span>）</div>
+          <div>③ 将 Token 值填入 DomeOS 对应字段并保存，服务实例将自动使用该 Token 完成 Consul 注册鉴权。（<span style="color:rgba(0,0,0,0.35)">待完善：字段名称及截图补充中…</span>）</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="search-bar">
+      <div class="search-item">
+        <label>命名空间</label>
+        <select id="search-ns" class="ant-select">
+          <option value="">全部命名空间</option>
+          <option value="cloud-native">cloud-native</option>
+          <option value="panther-backend">panther-backend</option>
+          <option value="changjie-test">changjie-test</option>
+        </select>
+      </div>
+      <div class="search-item">
+        <label>状态</label>
+        <select id="search-status" class="ant-select">
+          <option value="">全部状态</option>
+          <option value="active">有效</option>
+          <option value="expired">已过期</option>
+        </select>
+      </div>
+      <div class="search-item">
+        <label>关键词</label>
+        <input id="search-kw" class="ant-input" placeholder="搜索 Token 名称或描述" onkeyup="if(event.key==='Enter')applySearch()" />
+      </div>
+      <div class="search-actions">
+        <button class="btn btn-primary" onclick="applySearch()">查询</button>
+        <button class="btn btn-default" onclick="handleReset()">重置</button>
+      </div>
+    </div>
+
+    <div class="ant-card">
+      <div style="display:flex;align-items:center;margin-bottom:12px">
+        <button class="btn btn-primary" onclick="openCreateModal()">+ 新建 Token</button>
+      </div>
+      <table class="ant-table" style="width:100%">
+        <thead>
+          <tr>
+            <th>Token 名称</th>
+            <th>所属命名空间</th>
+            <th>Token（脱敏）</th>
+            <th>关联服务</th>
+            <th>状态</th>
+            <th>创建人</th>
+            <th>创建时间</th>
+            <th>操作</th>
+          </tr>
+        </thead>
+        <tbody id="table-body"></tbody>
+      </table>
+      <div class="table-footer">
+        <span id="page-total" class="pagination-total"></span>
+        <div id="pagination" class="ant-pagination"></div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<!-- 新建 Token Modal -->
+<div id="token-modal" class="modal-overlay" style="display:none" onclick="if(event.target===this)closeTokenModal()">
+  <div class="ant-modal" style="width:500px">
+    <div class="modal-header">
+      <span class="modal-title">新建 Token</span>
+      <button class="modal-close" onclick="closeTokenModal()">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="alert alert-info" style="padding:8px 12px;font-size:12px;margin-bottom:16px">
+        系统将自动生成 Consul ACL Token，创建后可在详情中查看并复制。
+      </div>
+      <div class="form-item">
+        <label class="form-label required">Token 名称</label>
+        <div class="form-control">
+          <input id="form-name" class="ant-input" placeholder="以小写字母开头，可包含字母、数字和连字符" />
+          <div id="error-name" class="form-error-msg" style="display:none"></div>
+        </div>
+      </div>
+      <div class="form-item">
+        <label class="form-label required">所属命名空间</label>
+        <div class="form-control">
+          <select id="form-ns" class="ant-select">
+            <option value="">请选择</option>
+            <option value="cloud-native">cloud-native</option>
+            <option value="panther-backend">panther-backend</option>
+            <option value="changjie-test">changjie-test</option>
+          </select>
+          <div id="error-ns" class="form-error-msg" style="display:none"></div>
+        </div>
+      </div>
+      <div class="form-item">
+        <label class="form-label">描述</label>
+        <div class="form-control">
+          <textarea id="form-desc" class="ant-input" rows="3" placeholder="说明该 Token 的用途（选填）"></textarea>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-default" onclick="closeTokenModal()">取消</button>
+      <button class="btn btn-primary" onclick="submitTokenModal()">确定</button>
+    </div>
+  </div>
+</div>
+
+<!-- Token 详情 Modal -->
+<div id="view-modal" class="modal-overlay" style="display:none" onclick="if(event.target===this)closeViewModal()">
+  <div class="ant-modal" style="width:580px">
+    <div class="modal-header">
+      <span class="modal-title">Token 详情</span>
+      <button class="modal-close" onclick="closeViewModal()">×</button>
+    </div>
+    <div class="modal-body" id="view-body"></div>
+    <div class="modal-footer">
+      <button class="btn btn-default" onclick="closeViewModal()">关闭</button>
+    </div>
+  </div>
+</div>
+
+<!-- 管理关联服务 Modal -->
+<div id="link-modal" class="modal-overlay" style="display:none" onclick="if(event.target===this)closeLinkModal()">
+  <div class="ant-modal" style="width:580px">
+    <div class="modal-header">
+      <span class="modal-title" id="link-modal-title">管理关联服务</span>
+      <button class="modal-close" onclick="closeLinkModal()">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-hint" style="margin-bottom:10px">勾选服务以关联，取消勾选以解关联。只能关联当前命名空间下的真实服务（虚拟服务不支持关联 Token）。</div>
+      <input id="link-svc-search" class="ant-input" placeholder="搜索服务名称" style="margin-bottom:8px" oninput="renderLinkSvcTable()" />
+      <div class="link-table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th style="width:36px"><input type="checkbox" id="link-check-all" onchange="toggleCheckAll(this)" /></th>
+              <th>服务名称</th>
+              <th>Consul 服务名称</th>
+            </tr>
+          </thead>
+          <tbody id="link-svc-tbody"></tbody>
+        </table>
+      </div>
+      <div style="margin-top:8px;font-size:12px;color:rgba(0,0,0,0.45)">已选 <span id="link-selected-count">0</span> 个服务</div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-default" onclick="closeLinkModal()">取消</button>
+      <button class="btn btn-primary" onclick="submitLinkModal()">保存</button>
+    </div>
+  </div>
+</div>
+
+<script src="../../data/tokens.js"></script>
+<script src="../../data/services.js"></script>
+<script src="../../js/common.js"></script>
+<script>
+const PAGE_SIZE = 10;
+let currentPage = 1;
+let linkingId = null;
+let linkingNsSvcs = [];
+let selectedSvcIds = new Set();
+let activeFilter = { ns: '', status: '', kw: '' };
+
+const { load, save } = useStorage('srsd_tokens', SEED_TOKENS);
+let list = load();
+
+const { load: loadSvcs } = useStorage('srsd_services', SEED_SERVICES);
+const allSvcs = loadSvcs();
+
+const STATUS_MAP = {
+  active:  { label: '有效',   cls: 'tag-success' },
+  expired: { label: '已过期', cls: 'tag-default'  },
+};
+
+function maskToken(t) {
+  if (!t || t.length < 8) return '****';
+  return t.slice(0, 8) + '-****-****-****-' + t.slice(-4);
+}
+
+function getFilteredList() {
+  const kw = activeFilter.kw;
+  return list.filter(item => {
+    const nsOk     = !activeFilter.ns     || item.ns === activeFilter.ns;
+    const statusOk = !activeFilter.status || item.status === activeFilter.status;
+    const kwOk     = !kw || item.name.includes(kw) || (item.desc || '').includes(kw);
+    return nsOk && statusOk && kwOk;
+  });
+}
+
+function renderTable() {
+  const filtered = getFilteredList();
+  const paged    = filtered.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
+  document.getElementById('page-total').textContent = `共 ${filtered.length} 条`;
+  const tbody = document.getElementById('table-body');
+  if (paged.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="8"><div class="empty-table">暂无 Token</div></td></tr>';
+    renderPagination(0);
+    return;
+  }
+  tbody.innerHTML = paged.map(row => {
+    const { label, cls } = STATUS_MAP[row.status] || { label: row.status, cls: 'tag-default' };
+    const svcCount = row.linkedServices.length;
+    const svcCell = svcCount > 0
+      ? `<a href="#" onclick="openLinkModal('${escHtml(row.id)}');return false" style="color:#1890ff">${svcCount} 个服务</a>`
+      : '<span style="color:rgba(0,0,0,0.25)">未关联</span>';
+    return `<tr>
+      <td><a href="#" onclick="openViewModal('${escHtml(row.id)}');return false">${escHtml(row.name)}</a></td>
+      <td>${escHtml(row.ns)}</td>
+      <td><span class="token-val" title="${escHtml(row.consulToken)}">${escHtml(maskToken(row.consulToken))}</span></td>
+      <td>${svcCell}</td>
+      <td><span class="tag ${cls}">${escHtml(label)}</span></td>
+      <td>${escHtml(row.createdBy)}</td>
+      <td>${escHtml(formatTime(row.createdAt))}</td>
+      <td>
+        <button class="btn btn-link" data-action="link"   data-id="${escHtml(row.id)}">管理服务</button>
+        <button class="btn btn-link danger" data-action="delete" data-id="${escHtml(row.id)}">删除</button>
+      </td>
+    </tr>`;
+  }).join('');
+  renderPagination(filtered.length);
+}
+
+function renderPagination(total) {
+  const pages = Math.ceil(total / PAGE_SIZE) || 1;
+  const el = document.getElementById('pagination');
+  if (pages <= 1) { el.innerHTML = ''; return; }
+  el.innerHTML =
+    `<button class="page-btn" onclick="goPage(${currentPage - 1})" ${currentPage === 1 ? 'disabled' : ''}>‹</button>` +
+    Array.from({length: pages}, (_, i) => `<button class="page-btn ${i+1 === currentPage ? 'active' : ''}" onclick="goPage(${i+1})">${i+1}</button>`).join('') +
+    `<button class="page-btn" onclick="goPage(${currentPage + 1})" ${currentPage >= pages ? 'disabled' : ''}>›</button>`;
+}
+
+function goPage(p) {
+  const pages = Math.ceil(getFilteredList().length / PAGE_SIZE) || 1;
+  if (p < 1 || p > pages) return;
+  currentPage = p; renderTable();
+}
+
+function applySearch() {
+  activeFilter.ns     = document.getElementById('search-ns').value;
+  activeFilter.status = document.getElementById('search-status').value;
+  activeFilter.kw     = document.getElementById('search-kw').value.trim();
+  currentPage = 1;
+  renderTable();
+}
+
+function handleReset() {
+  document.getElementById('search-ns').value     = '';
+  document.getElementById('search-status').value = '';
+  document.getElementById('search-kw').value     = '';
+  activeFilter = { ns: '', status: '', kw: '' };
+  currentPage = 1;
+  renderTable();
+}
+
+/* ── 新建 Token ── */
+function openCreateModal() {
+  document.getElementById('form-name').value = '';
+  document.getElementById('form-ns').value   = '';
+  document.getElementById('form-desc').value = '';
+  document.getElementById('error-name').style.display = 'none';
+  document.getElementById('error-ns').style.display   = 'none';
+  openModal(document.getElementById('token-modal'));
+}
+
+function closeTokenModal() { closeModal(document.getElementById('token-modal')); }
+
+function submitTokenModal() {
+  const name = document.getElementById('form-name').value.trim();
+  const ns   = document.getElementById('form-ns').value;
+  let ok = true;
+  if (!name || !/^[a-z][a-z0-9-]*$/.test(name)) {
+    document.getElementById('error-name').textContent = '名称以小写字母开头，可包含小写字母、数字和连字符';
+    document.getElementById('error-name').style.display = ''; ok = false;
+  } else document.getElementById('error-name').style.display = 'none';
+  if (!ns) {
+    document.getElementById('error-ns').textContent = '请选择命名空间';
+    document.getElementById('error-ns').style.display = ''; ok = false;
+  } else document.getElementById('error-ns').style.display = 'none';
+  if (!ok) return;
+
+  const desc = document.getElementById('form-desc').value.trim();
+  const consulToken = genId(); // system auto-generate
+  list.unshift({
+    id: genId(), name, nsId: ns, ns, consulToken, desc,
+    linkedServices: [], status: 'active', createdBy: '吕青华', createdAt: now(),
+  });
+  save(list);
+  closeTokenModal();
+  renderTable();
+  showToast('Token 已创建');
+}
+
+/* ── 查看详情 ── */
+function openViewModal(id) {
+  const tok = list.find(t => t.id === id);
+  if (!tok) return;
+  const linked = tok.linkedServices.map(sid => {
+    const s = allSvcs.find(sv => sv.id === sid);
+    return s ? `<span class="svc-chip">${escHtml(s.name)}</span>` : '';
+  }).join('') || '<span style="color:rgba(0,0,0,0.25)">未关联</span>';
+  document.getElementById('view-body').innerHTML = `
+    <div class="desc-list">
+      <div class="desc-item">
+        <div class="desc-label">Token 名称</div>
+        <div class="desc-value">${escHtml(tok.name)}</div>
+      </div>
+      <div class="desc-item">
+        <div class="desc-label">所属命名空间</div>
+        <div class="desc-value">${escHtml(tok.ns)}</div>
+      </div>
+      <div class="desc-item" style="grid-column:span 2">
+        <div class="desc-label">Token 值</div>
+        <div class="desc-value" style="display:flex;align-items:center;gap:8px">
+          <span class="token-val" style="max-width:none">${escHtml(maskToken(tok.consulToken))}</span>
+          <button class="btn btn-default btn-sm" onclick="copyToken('${escHtml(tok.consulToken)}')">复制完整 Token</button>
+        </div>
+      </div>
+      <div class="desc-item">
+        <div class="desc-label">状态</div>
+        <div class="desc-value">${escHtml(STATUS_MAP[tok.status]?.label || tok.status)}</div>
+      </div>
+      <div class="desc-item">
+        <div class="desc-label">创建人</div>
+        <div class="desc-value">${escHtml(tok.createdBy)}</div>
+      </div>
+      <div class="desc-item">
+        <div class="desc-label">创建时间</div>
+        <div class="desc-value">${escHtml(formatTime(tok.createdAt))}</div>
+      </div>
+      <div class="desc-item" style="grid-column:span 2">
+        <div class="desc-label">描述</div>
+        <div class="desc-value">${escHtml(tok.desc || '--')}</div>
+      </div>
+      <div class="desc-item" style="grid-column:span 2">
+        <div class="desc-label">关联服务</div>
+        <div class="desc-value">${linked}</div>
+      </div>
+    </div>`;
+  openModal(document.getElementById('view-modal'));
+}
+
+function closeViewModal() { closeModal(document.getElementById('view-modal')); }
+
+function copyToken(val) {
+  if (navigator.clipboard) {
+    navigator.clipboard.writeText(val).then(() => showToast('已复制到剪贴板')).catch(() => showToast('复制失败，请手动复制', '❌'));
+  } else {
+    showToast('复制失败，请手动复制', '❌');
+  }
+}
+
+function copyConsulName(val) {
+  if (navigator.clipboard) {
+    navigator.clipboard.writeText(val).then(() => showToast('Consul 服务名称已复制')).catch(() => showToast('复制失败', '❌'));
+  } else {
+    showToast('复制失败', '❌');
+  }
+}
+
+/* ── 管理关联服务 ── */
+function openLinkModal(id) {
+  const tok = list.find(t => t.id === id);
+  if (!tok) return;
+  linkingId = id;
+  document.getElementById('link-modal-title').textContent = `管理关联服务 — ${tok.name}`;
+  linkingNsSvcs = allSvcs.filter(s => s.ns === tok.ns);
+  selectedSvcIds = new Set(tok.linkedServices);
+  document.getElementById('link-svc-search').value = '';
+  renderLinkSvcTable();
+  openModal(document.getElementById('link-modal'));
+}
+
+function closeLinkModal() { closeModal(document.getElementById('link-modal')); linkingId = null; }
+
+function renderLinkSvcTable() {
+  const kw = document.getElementById('link-svc-search').value.trim().toLowerCase();
+  const filtered = kw ? linkingNsSvcs.filter(s => s.name.toLowerCase().includes(kw)) : linkingNsSvcs;
+  const tbody = document.getElementById('link-svc-tbody');
+  if (filtered.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="3" style="text-align:center;color:rgba(0,0,0,0.25);padding:20px">${kw ? '未找到匹配服务' : '该命名空间下暂无真实服务'}</td></tr>`;
+  } else {
+    tbody.innerHTML = filtered.map(s => `
+      <tr>
+        <td><input type="checkbox" data-svc-id="${escHtml(s.id)}" ${selectedSvcIds.has(s.id) ? 'checked' : ''} onchange="toggleSvcCheck(this)" /></td>
+        <td>${escHtml(s.name)}</td>
+        <td style="font-size:12px">
+          <span style="font-family:monospace;color:rgba(0,0,0,0.65)">${escHtml(s.consulName || '--')}</span>
+          ${s.consulName ? `<button class="btn btn-link" style="padding:0 4px;font-size:11px" onclick="copyConsulName('${escHtml(s.consulName)}');event.stopPropagation()">复制</button>` : ''}
+        </td>
+      </tr>`).join('');
+  }
+  updateLinkCount();
+  const allChk = document.getElementById('link-check-all');
+  const total = linkingNsSvcs.length;
+  allChk.checked       = total > 0 && selectedSvcIds.size === total;
+  allChk.indeterminate = selectedSvcIds.size > 0 && selectedSvcIds.size < total;
+}
+
+function toggleSvcCheck(cb) {
+  const id = cb.dataset.svcId;
+  if (cb.checked) selectedSvcIds.add(id); else selectedSvcIds.delete(id);
+  updateLinkCount();
+  const allChk = document.getElementById('link-check-all');
+  const total = linkingNsSvcs.length;
+  allChk.checked       = selectedSvcIds.size === total && total > 0;
+  allChk.indeterminate = selectedSvcIds.size > 0 && selectedSvcIds.size < total;
+}
+
+function toggleCheckAll(cb) {
+  const kw = document.getElementById('link-svc-search').value.trim().toLowerCase();
+  const filtered = kw ? linkingNsSvcs.filter(s => s.name.toLowerCase().includes(kw)) : linkingNsSvcs;
+  if (cb.checked) filtered.forEach(s => selectedSvcIds.add(s.id));
+  else filtered.forEach(s => selectedSvcIds.delete(s.id));
+  renderLinkSvcTable();
+}
+
+function updateLinkCount() {
+  document.getElementById('link-selected-count').textContent = selectedSvcIds.size;
+}
+
+function submitLinkModal() {
+  if (!linkingId) return;
+  const linked = [...selectedSvcIds];
+  list = list.map(t => t.id === linkingId ? { ...t, linkedServices: linked } : t);
+  save(list); closeLinkModal(); renderTable();
+  showToast('关联服务已更新');
+}
+
+document.addEventListener('click', e => {
+  const action = e.target.dataset.action;
+  const id     = e.target.dataset.id;
+  if (!action || !id) return;
+  if (action === 'link') { openLinkModal(id); }
+  if (action === 'delete') {
+    const tok = list.find(t => t.id === id);
+    confirm2(`确认删除 Token「${tok?.name}」？删除后不可恢复，DomeOS 侧使用该 Token 的服务注册将失效。`, () => {
+      list = list.filter(t => t.id !== id);
+      save(list); renderTable(); showToast('Token 已删除');
+    });
+  }
+});
+
+document.getElementById('search-ns').addEventListener('change', e => { activeFilter.ns = e.target.value; currentPage = 1; renderTable(); });
+document.getElementById('search-status').addEventListener('change', e => { activeFilter.status = e.target.value; currentPage = 1; renderTable(); });
+
+renderTable();
+</script>
+</body>
+</html>

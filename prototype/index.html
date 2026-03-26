@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>服务注册与发现</title>
+  <link rel="stylesheet" href="./css/base.css" />
+  <style>
+    html, body { height: 100%; overflow: hidden; margin: 0; }
+    .shell { display: flex; height: 100vh; }
+    #main-frame { flex: 1; border: none; min-width: 0; display: block; background: var(--bg-page); }
+  </style>
+</head>
+<body>
+<div class="shell">
+  <aside class="sider">
+    <div class="sider-title">服务注册与发现</div>
+    <ul class="side-menu">
+
+      <!-- 命名空间 -->
+      <li class="menu-group" id="group-ns">
+        <div class="menu-group-header" onclick="toggleMenu(this)">
+          <span><span class="menu-icon">🗂️</span>命名空间</span>
+          <span class="menu-arrow">›</span>
+        </div>
+        <ul class="sub-menu">
+          <li class="menu-item" data-page="namespace-list.html">
+            <a href="page/namespace/namespace-list.html" target="main-frame">空间列表</a>
+          </li>
+          <li class="menu-item" data-page="token-list.html">
+            <a href="page/namespace/token-list.html" target="main-frame">Token 管理</a>
+          </li>
+        </ul>
+      </li>
+
+      <!-- 服务 -->
+      <li class="menu-group" id="group-svc">
+        <div class="menu-group-header" onclick="toggleMenu(this)">
+          <span><span class="menu-icon">🔧</span>服务</span>
+          <span class="menu-arrow">›</span>
+        </div>
+        <ul class="sub-menu">
+          <li class="menu-item" data-page="service-list.html">
+            <a href="page/service/service-list.html" target="main-frame">服务列表</a>
+          </li>
+          <li class="menu-item" data-page="virtual-service-list.html">
+            <a href="page/service/virtual-service-list.html" target="main-frame">虚拟服务</a>
+          </li>
+        </ul>
+      </li>
+
+      <!-- 申请管理 -->
+      <li class="menu-group" id="group-apply">
+        <div class="menu-group-header" onclick="toggleMenu(this)">
+          <span><span class="menu-icon">📋</span>申请管理</span>
+          <span class="menu-arrow">›</span>
+        </div>
+        <ul class="sub-menu">
+          <li class="menu-item" data-page="apply-list.html">
+            <a href="page/apply/apply-list.html" target="main-frame">申请列表</a>
+          </li>
+        </ul>
+      </li>
+
+      <!-- 审核管理 -->
+      <li class="menu-group" id="group-review">
+        <div class="menu-group-header" onclick="toggleMenu(this)">
+          <span><span class="menu-icon">✅</span>审核管理</span>
+          <span class="menu-arrow">›</span>
+        </div>
+        <ul class="sub-menu">
+          <li class="menu-item" data-page="review-list.html">
+            <a href="page/review/review-list.html" target="main-frame">审核列表</a>
+          </li>
+        </ul>
+      </li>
+
+      <!-- 我的 -->
+      <li class="menu-item" data-page="profile.html">
+        <a href="page/profile/profile.html" target="main-frame">👤 我的</a>
+      </li>
+
+    </ul>
+  </aside>
+  <iframe id="main-frame" name="main-frame" src="page/namespace/namespace-list.html"></iframe>
+</div>
+
+<script src="./js/common.js"></script>
+<script>
+const frame = document.getElementById('main-frame');
+
+frame.addEventListener('load', () => {
+  try {
+    const pageName = frame.contentWindow.location.pathname.split('/').pop().split('?')[0];
+    syncActive(pageName);
+  } catch (e) {}
+});
+
+function syncActive(pageName) {
+  document.querySelectorAll('.side-menu .menu-item').forEach(li => li.classList.remove('active'));
+  document.querySelectorAll('.menu-group').forEach(g => g.classList.remove('has-active'));
+
+  const matched = document.querySelector(`.menu-item[data-page="${pageName}"]`);
+  if (!matched) return;
+  matched.classList.add('active');
+
+  const group = matched.closest('.menu-group');
+  if (group) group.classList.add('expanded', 'has-active');
+}
+
+syncActive('namespace-list.html');
+</script>
+</body>
+</html>
