@@ -28,14 +28,12 @@
         </nav>
         <div class="page-title-row">
           <h2 class="page-title">服务列表</h2>
-          <div class="page-actions">
-            <button class="btn btn-primary" onclick="openCreateModal()">+ 新建</button>
-          </div>
         </div>
       </div>
 
       <div class="content-body">
         <div class="search-bar">
+          <button class="btn btn-primary" onclick="openCreateModal()" style="align-self:flex-end;white-space:nowrap">+ 新建</button>
           <div class="search-item">
             <label>命名空间</label>
             <select id="search-ns" class="ant-select">
@@ -90,8 +88,7 @@
       </div>
     </main>
 
-  <div id="svc-modal" class="modal-overlay" style="display:none" onclick="if(event.target===this)closeSvcModal()">
-    <div class="ant-modal" style="width:580px">
+  <div id="svc-modal" class="modal-overlay" style="display:none" onclick="if(event.target===this)closeSvcModal()">    <div class="ant-modal" style="width:580px">
       <div class="modal-header">
         <span id="modal-title" class="modal-title">新建服务</span>
         <button class="modal-close" onclick="closeSvcModal()">×</button>
@@ -157,6 +154,20 @@
       </div>
     </div>
 
+<!-- 代理地址 Modal -->
+<div id="proxy-modal" class="modal-overlay" style="display:none" onclick="if(event.target===this)closeProxyModal()">
+  <div class="ant-modal" style="width:520px">
+    <div class="modal-header">
+      <span class="modal-title" id="proxy-modal-title">代理地址</span>
+      <button class="modal-close" onclick="closeProxyModal()">×</button>
+    </div>
+    <div class="modal-body" id="proxy-modal-body"></div>
+    <div class="modal-footer">
+      <button class="btn btn-default" onclick="closeProxyModal()">关闭</button>
+    </div>
+  </div>
+</div>
+
 <script src="../../data/services.js"></script>
 <script src="../../js/common.js"></script>
 <script>
@@ -175,7 +186,7 @@ const NS_BIZLINE = {
 const { load, save } = useStorage('srsd_services', SEED_SERVICES);
 let list = load();
 
-const AUTH_LABEL = { none: '--', disabled: '已关闭', basic: 'Basic', forward: 'Forward' };
+const AUTH_LABEL = { none: '未开启', disabled: '未开启', basic: 'Basic', forward: 'Forward' };
 const AUTH_CLASS = { none: 'tag-default', disabled: 'tag-default', basic: 'tag-processing', forward: 'tag-success' };
 
 function getFilteredList() {
@@ -207,7 +218,11 @@ function renderTable() {
       <td><a href="service-detail.html?id=${escHtml(row.id)}">${escHtml(row.name)}</a></td>
       <td>${escHtml(row.ns)}</td>
       <td>${escHtml(row.bizline || '--')}</td>
-      <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${escHtml(row.proxy)}">${escHtml(row.proxy)}</td>
+      <td>
+        <a href="#" onclick="openProxyModal('${escHtml(row.id)}');return false" style="font-family:monospace;font-size:12px;color:var(--color-primary)">
+          ${escHtml(row.protocol || 'http')}://${escHtml(row.proxy)}
+        </a>
+      </td>
       <td><span class="tag ${AUTH_CLASS[row.auth]}">${AUTH_LABEL[row.auth]}</span></td>
       <td>${escHtml(row.desc || '--')}</td>
       <td>${escHtml(formatTime(row.createdAt))}</td>
@@ -349,6 +364,46 @@ function handleConfirmDelete(id) {
     renderTable();
     showToast('删除成功');
   });
+}
+
+function openProxyModal(id) {
+  const row = list.find(r => r.id === id);
+  if (!row) return;
+  const proto = row.protocol || 'http';
+  const defaultAddr = `${proto}://${row.proxy}`;
+  const aliases = row.aliases || [];
+  document.getElementById('proxy-modal-title').textContent = `代理地址 — ${row.name}`;
+  let html = `
+    <div style="margin-bottom:16px">
+      <div style="font-size:12px;color:rgba(0,0,0,0.45);margin-bottom:6px">默认代理地址</div>
+      <div style="display:flex;align-items:center;gap:8px;background:#fafafa;border:1px solid #f0f0f0;padding:8px 12px">
+        <span style="font-family:monospace;font-size:13px;flex:1;word-break:break-all">${escHtml(defaultAddr)}</span>
+        <button class="btn btn-default btn-sm" onclick="copyProxyAddr('${escHtml(defaultAddr)}')">复制</button>
+      </div>
+    </div>`;
+  if (aliases.length > 0) {
+    html += `<div>
+      <div style="font-size:12px;color:rgba(0,0,0,0.45);margin-bottom:6px">别名代理地址</div>`;
+    aliases.forEach(alias => {
+      const aliasUrl = `${proto}://${alias}`;
+      html += `<div style="display:flex;align-items:center;gap:8px;background:#fafafa;border:1px solid #f0f0f0;padding:8px 12px;margin-bottom:4px">
+        <span style="font-family:monospace;font-size:13px;flex:1;word-break:break-all">${escHtml(aliasUrl)}</span>
+        <button class="btn btn-default btn-sm" onclick="copyProxyAddr('${escHtml(aliasUrl)}')">复制</button>
+      </div>`;
+    });
+    html += `</div>`;
+  } else {
+    html += `<div style="color:rgba(0,0,0,0.25);font-size:13px">暂无别名代理地址</div>`;
+  }
+  document.getElementById('proxy-modal-body').innerHTML = html;
+  openModal(document.getElementById('proxy-modal'));
+}
+
+function closeProxyModal() { closeModal(document.getElementById('proxy-modal')); }
+
+function copyProxyAddr(addr) {
+  navigator.clipboard?.writeText(addr).then(() => showToast('已复制到剪贴板'))
+    .catch(() => showToast('复制失败', '❌'));
 }
 
 renderTable();

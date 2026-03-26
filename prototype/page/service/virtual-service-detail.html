@@ -1,0 +1,1373 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>虚拟服务详情 - 服务注册与发现</title>
+  <link rel="stylesheet" href="../../css/base.css" />
+  <style>
+    .cred-row { display:flex; align-items:center; gap:8px; padding:10px 0; border-bottom:1px solid #f0f0f0; }
+    .cred-label { width:90px; color:rgba(0,0,0,0.45); font-size:13px; flex-shrink:0; }
+    .cred-val { font-family:monospace; font-size:13px; flex:1; word-break:break-all; }
+    .copy-btn, .toggle-pwd { padding:0 10px; height:24px; font-size:12px; cursor:pointer; border:1px solid #d9d9d9; background:#fff; border-radius:2px; }
+    .copy-btn { color:#1890ff; } .copy-btn:hover { border-color:#1890ff; }
+    .toggle-pwd { color:rgba(0,0,0,0.65); } .toggle-pwd:hover { border-color:#1890ff; }
+    .pwd-dots { letter-spacing:2px; }
+    .switch { position:relative; display:inline-block; width:44px; height:22px; }
+    .switch input { opacity:0; width:0; height:0; }
+    .switch-slider { position:absolute; cursor:pointer; inset:0; background:#d9d9d9; transition:.3s; border-radius:11px; }
+    .switch-slider:before { position:absolute; content:""; height:16px; width:16px; left:3px; bottom:3px; background:#fff; transition:.3s; border-radius:50%; }
+    .switch input:checked + .switch-slider { background:#1890ff; }
+    .switch input:checked + .switch-slider:before { transform:translateX(22px); }
+    .switch-wrap { display:flex; align-items:center; gap:8px; }
+    .monitor-toolbar { display:flex; align-items:center; gap:12px; margin-bottom:16px; flex-wrap:wrap; }
+    .metric-cards { display:grid; grid-template-columns:repeat(3,1fr); gap:16px; margin-top:16px; }
+    .metric-card { background:#fff; border:1px solid #f0f0f0; padding:16px; }
+    .metric-card .label { font-size:12px; color:rgba(0,0,0,0.45); }
+    .metric-card .value { font-size:22px; font-weight:600; margin-top:4px; }
+    .metric-card .unit { font-size:12px; color:rgba(0,0,0,0.45); margin-left:4px; }
+    .config-section { margin-bottom:24px; }
+    .config-section-title { font-size:14px; font-weight:500; margin-bottom:12px; padding-bottom:8px; border-bottom:1px solid #f0f0f0; }
+    .setting-row { display:flex; align-items:flex-start; padding:10px 0; border-bottom:1px solid #f5f5f5; }
+    .setting-label { width:200px; color:rgba(0,0,0,0.65); font-size:13px; padding-top:4px; flex-shrink:0; white-space:nowrap; }
+    .setting-value { flex:1; color:rgba(0,0,0,0.85); font-size:13px; }
+    .oplog-badge { display:inline-block; padding:1px 6px; font-size:11px; border-radius:2px; }
+    .oplog-create  { background:#e6f7ff; color:#1890ff; }
+    .oplog-update  { background:#fff7e6; color:#fa8c16; }
+    .oplog-delete  { background:#fff2f0; color:#ff4d4f; }
+    .oplog-approve { background:#f6ffed; color:#52c41a; }
+    .desc-list-2col { display:grid; grid-template-columns:repeat(2,1fr); gap:16px 24px; }
+    @media (max-width:900px) { .desc-list-2col { grid-template-columns:1fr; } }
+    .sub-section-title { font-size:13px; font-weight:500; color:rgba(0,0,0,0.65); margin-bottom:8px; padding-left:8px; border-left:3px solid #1890ff; }
+    .protection-block { background:#fafafa; border:1px solid #f0f0f0; padding:16px; margin-bottom:12px; border-radius:2px; }
+    /* 流量规则 */
+    .route-rule-card { border:1px solid #d9d9d9; margin-bottom:12px; border-radius:2px; }
+    .route-rule-header { display:flex; align-items:center; justify-content:space-between; padding:6px 12px; background:#fafafa; border-bottom:1px solid #f0f0f0; font-size:13px; font-weight:500; }
+    .route-rule-body { padding:12px; }
+    .cond-tag { display:inline-block; padding:1px 6px; background:#f0f5ff; border:1px solid #adc6ff; color:#2f54eb; font-size:12px; border-radius:2px; margin:2px; }
+    .upstream-item { display:flex; align-items:center; gap:8px; margin-bottom:4px; }
+    .weight-badge { display:inline-block; padding:2px 8px; background:#f0f5ff; border:1px solid #adc6ff; color:#2f54eb; font-size:12px; min-width:40px; text-align:center; border-radius:2px; }
+    /* 编辑流量规则 modal */
+    .vs-cond-table { width:100%; border-collapse:collapse; margin-bottom:4px; }
+    .vs-cond-table th { font-size:11px; color:rgba(0,0,0,0.45); padding:0 6px 4px 0; font-weight:normal; text-align:left; white-space:nowrap; }
+    .vs-cond-table td { padding:0 6px 5px 0; vertical-align:middle; }
+    .vs-cond-table td:last-child { padding-right:0; text-align:center; width:26px; }
+    .cond-dash { color:rgba(0,0,0,0.25); font-size:13px; display:block; text-align:center; line-height:32px; }
+    .vs-route-card { border:1px solid #d9d9d9; margin-bottom:8px; }
+    .vs-route-card-header { display:flex; align-items:center; justify-content:space-between; padding:5px 10px; background:#fafafa; border-bottom:1px solid #f0f0f0; font-size:13px; font-weight:500; }
+    .vs-route-card-body { padding:10px 10px 6px; }
+    .vs-upstream-section { margin-top:8px; padding-top:8px; border-top:1px dashed #f0f0f0; }
+    .vs-upstream-label { font-size:12px; color:rgba(0,0,0,0.65); margin-bottom:6px; }
+    .vs-upstream-row { display:flex; align-items:center; gap:8px; margin-bottom:6px; }
+    .modal-body-scroll { max-height:calc(80vh - 120px); overflow-y:auto; }
+    .alias-tag { display:inline-flex; align-items:center; gap:4px; padding:2px 8px; background:#f5f5f5; border:1px solid #d9d9d9; font-size:12px; margin:2px; border-radius:2px; }
+    .alias-tag .del { cursor:pointer; color:rgba(0,0,0,0.45); } .alias-tag .del:hover { color:#ff4d4f; }
+  </style>
+</head>
+<body>
+<div class="toast-list"></div>
+<div id="confirm-overlay" class="confirm-overlay" style="display:none" onclick="if(event.target===this)closeConfirm()">
+  <div class="confirm-box">
+    <div class="confirm-title"><span>⚠️</span><span id="confirm-title">操作确认</span></div>
+    <div class="confirm-content" id="confirm-content"></div>
+    <div class="confirm-actions">
+      <button class="btn btn-default" onclick="closeConfirm()">取消</button>
+      <button class="btn btn-danger" onclick="confirmOk()">确定</button>
+    </div>
+  </div>
+</div>
+
+<main class="main-content">
+  <div class="page-header">
+    <nav class="breadcrumb">
+      <span>服务注册与发现</span><span class="sep">/</span>
+      <a href="virtual-service-list.html">虚拟服务</a><span class="sep">/</span>
+      <span id="bc-vsname" class="current">虚拟服务详情</span>
+    </nav>
+    <div class="page-title-row">
+      <h2 class="page-title" id="page-vsname">虚拟服务详情</h2>
+    </div>
+  </div>
+
+  <div id="not-found" class="content-body" style="display:none">
+    <div class="result-state">
+      <div class="result-title">虚拟服务不存在</div>
+      <div class="result-desc">当前虚拟服务可能已被删除，或访问链接不完整。</div>
+      <a class="btn btn-primary" href="virtual-service-list.html">返回虚拟服务列表</a>
+    </div>
+  </div>
+
+  <div id="detail-content" class="content-body" style="display:none">
+    <div class="ant-card">
+      <div class="tabs-nav" id="tabs-nav"></div>
+      <div class="card-body">
+
+        <!-- Tab: 基本信息 -->
+        <div id="tab-info">
+          <div style="display:flex;justify-content:flex-end;margin-bottom:16px">
+            <button class="btn btn-primary" onclick="openEditModal()">编辑基本信息</button>
+          </div>
+          <div id="vs-info-body" class="desc-list-2col"></div>
+        </div>
+
+        <!-- Tab: 流量规则 -->
+        <div id="tab-traffic-rules" style="display:none">
+          <div style="display:flex;justify-content:flex-end;margin-bottom:16px">
+            <button class="btn btn-primary" onclick="openTrafficModal()">编辑流量规则</button>
+          </div>
+          <div class="config-section">
+            <div class="config-section-title">默认后端</div>
+            <div id="default-backend-display"></div>
+          </div>
+          <div class="config-section">
+            <div class="config-section-title">条件路由规则</div>
+            <div id="route-rules-display"></div>
+          </div>
+        </div>
+
+        <!-- Tab: 已授权客户端 -->
+        <div id="tab-clients" style="display:none">
+          <div id="clients-forward-hint" class="alert alert-warning" style="display:none;margin-bottom:16px">
+            ⚠️ Forward Auth 鉴权不支持在此处回收权限，如需撤销访问，请联系管理员在鉴权服务侧操作
+          </div>
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+            <input id="client-search-kw" class="ant-input" style="width:240px" placeholder="搜索客户端名称" onkeyup="if(event.key==='Enter')renderClientsTable()" />
+            <button class="btn btn-default" onclick="renderClientsTable()">查询</button>
+          </div>
+          <table class="ant-table" style="width:100%">
+            <thead><tr><th>客户端名称</th><th>客户端类型</th><th>所属空间</th><th>授权时间</th><th id="client-op-th">操作</th></tr></thead>
+            <tbody id="clients-table-body"></tbody>
+          </table>
+        </div>
+
+        <!-- Tab: 可访问服务 -->
+        <div id="tab-access" style="display:none">
+          <div class="config-section">
+            <div class="config-section-title">公共空间服务 &amp; 同命名空间服务</div>
+            <p style="color:rgba(0,0,0,0.45);font-size:13px;margin-bottom:12px">
+              以下服务可直接访问。根据各服务的鉴权类型，提供相应凭证或配置信息。
+            </p>
+            <div style="display:flex;gap:8px;margin-bottom:12px">
+              <input id="access-search-kw" class="ant-input" style="width:320px" placeholder="输入服务名称或代理地址搜索" onkeyup="if(event.key==='Enter')renderAccessTable()" />
+              <button class="btn btn-default" onclick="renderAccessTable()">查询</button>
+            </div>
+            <table class="ant-table" style="width:100%">
+              <thead><tr><th>服务名称</th><th>命名空间</th><th>代理地址</th><th>鉴权类型</th><th>操作</th></tr></thead>
+              <tbody id="access-accessible-body"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Tab: 安全配置 -->
+        <div id="tab-security" style="display:none">
+          <div class="config-section">
+            <div class="config-section-title">鉴权设置</div>
+            <div class="setting-row">
+              <div class="setting-label">鉴权状态</div>
+              <div class="setting-value">
+                <div class="switch-wrap">
+                  <label class="switch"><input type="checkbox" id="sec-auth-enable" onchange="handleAuthToggle()" /><span class="switch-slider"></span></label>
+                  <span id="sec-auth-label">已关闭</span>
+                </div>
+              </div>
+            </div>
+            <div id="sec-auth-config" style="display:none">
+              <div class="setting-row">
+                <div class="setting-label">鉴权类型</div>
+                <div class="setting-value">
+                  <div style="display:flex;gap:20px">
+                    <label style="display:flex;align-items:center;gap:6px;cursor:pointer">
+                      <input type="radio" name="sec-auth-type" value="basic" onchange="handleAuthTypeChange()" /> Basic Auth
+                    </label>
+                    <label style="display:flex;align-items:center;gap:6px;cursor:pointer">
+                      <input type="radio" name="sec-auth-type" value="forward" onchange="handleAuthTypeChange()" /> Forward Auth
+                    </label>
+                  </div>
+                </div>
+              </div>
+              <div id="sec-forward-fields" style="display:none">
+                <div class="setting-row">
+                  <div class="setting-label">鉴权服务地址 <span style="color:#ff4d4f">*</span></div>
+                  <div class="setting-value">
+                    <input id="sec-forward-url" class="ant-input" style="max-width:420px" placeholder="http://your-auth-service/verify" />
+                    <div class="form-hint">代理网关收到请求后转发到此地址进行鉴权，鉴权通过则放行</div>
+                  </div>
+                </div>
+                <div class="setting-row">
+                  <div class="setting-label">请求方法</div>
+                  <div class="setting-value">
+                    <select id="sec-forward-method" class="ant-select" style="width:120px">
+                      <option value="GET">GET</option>
+                      <option value="POST">POST</option>
+                      <option value="HEAD">HEAD</option>
+                    </select>
+                  </div>
+                </div>
+                <div class="setting-row">
+                  <div class="setting-label">转发请求头</div>
+                  <div class="setting-value">
+                    <div class="form-hint" style="margin-top:0;margin-bottom:8px">转发鉴权请求时携带的原始请求头，填写字段名和字段说明，可添加多组</div>
+                    <div id="sec-forward-req-headers" style="margin-bottom:8px"></div>
+                    <div style="display:flex;gap:8px;align-items:center">
+                      <input id="sec-fwd-req-field" class="ant-input" style="width:160px" placeholder="字段名，如 Cookie" />
+                      <input id="sec-fwd-req-desc" class="ant-input" style="width:200px" placeholder="字段说明，如 登录凭证" />
+                      <button class="btn btn-default btn-sm" onclick="addFwdReqHeader()">+ 添加</button>
+                    </div>
+                  </div>
+                </div>
+                <div class="setting-row">
+                  <div class="setting-label">响应头回写</div>
+                  <div class="setting-value">
+                    <div class="form-hint" style="margin-top:0;margin-bottom:8px">鉴权成功后将鉴权响应中的指定头回写到原始请求，填写字段名和字段说明，可添加多组</div>
+                    <div id="sec-forward-res-headers" style="margin-bottom:8px"></div>
+                    <div style="display:flex;gap:8px;align-items:center">
+                      <input id="sec-fwd-res-field" class="ant-input" style="width:160px" placeholder="字段名，如 X-Auth-User" />
+                      <input id="sec-fwd-res-desc" class="ant-input" style="width:200px" placeholder="字段说明，如 用户ID" />
+                      <button class="btn btn-default btn-sm" onclick="addFwdResHeader()">+ 添加</button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="config-section">
+            <div class="config-section-title">服务保护规则</div>
+            <div class="protection-block">
+              <div class="sub-section-title">IP 访问控制（对应 APISIX ip-restriction 插件）</div>
+              <div class="setting-row" style="border:none;padding:4px 0">
+                <div class="setting-label">启用</div>
+                <div class="setting-value">
+                  <div class="switch-wrap">
+                    <label class="switch"><input type="checkbox" id="sec-ip-ctrl-enable" onchange="handleIpCtrlToggle()" /><span class="switch-slider"></span></label>
+                  </div>
+                </div>
+              </div>
+              <div id="sec-ip-ctrl-config" style="display:none">
+                <div class="setting-row" style="border:none;padding:4px 0">
+                  <div class="setting-label">白名单</div>
+                  <div class="setting-value">
+                    <textarea id="sec-ip-whitelist" class="ant-input" rows="3" style="max-width:400px;font-family:monospace;font-size:12px" placeholder="每行一个 IP 或 CIDR，如：&#10;192.168.1.0/24&#10;10.0.0.1"></textarea>
+                  </div>
+                </div>
+                <div class="setting-row" style="border:none;padding:4px 0">
+                  <div class="setting-label">黑名单</div>
+                  <div class="setting-value">
+                    <textarea id="sec-ip-blacklist" class="ant-input" rows="3" style="max-width:400px;font-family:monospace;font-size:12px" placeholder="每行一个 IP 或 CIDR"></textarea>
+                  </div>
+                </div>
+                <div class="setting-row" style="border:none;padding:4px 0">
+                  <div class="setting-label">拒绝提示语</div>
+                  <div class="setting-value">
+                    <input id="sec-ip-message" class="ant-input" style="max-width:360px" placeholder="留空则使用默认提示：Your IP address is not allowed" />
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="protection-block">
+              <div class="sub-section-title">请求体大小限制（对应 APISIX client-control 插件）</div>
+              <div class="setting-row" style="border:none;padding:4px 0">
+                <div class="setting-label">启用</div>
+                <div class="setting-value">
+                  <div class="switch-wrap">
+                    <label class="switch"><input type="checkbox" id="sec-req-size-enable" onchange="handleReqSizeToggle()" /><span class="switch-slider"></span></label>
+                  </div>
+                </div>
+              </div>
+              <div id="sec-req-size-config" style="display:none">
+                <div class="setting-row" style="border:none;padding:4px 0">
+                  <div class="setting-label">最大请求体</div>
+                  <div class="setting-value" style="display:flex;align-items:center;gap:8px">
+                    <input id="sec-req-size-limit" class="ant-input" style="width:100px" type="number" value="10" />
+                    <span style="color:rgba(0,0,0,0.45)">MB</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="protection-block">
+              <div class="sub-section-title">CORS 跨域配置（对应 APISIX cors 插件）</div>
+              <div class="setting-row" style="border:none;padding:4px 0">
+                <div class="setting-label">启用</div>
+                <div class="setting-value">
+                  <div class="switch-wrap">
+                    <label class="switch"><input type="checkbox" id="sec-cors-enable" onchange="handleCorsToggle()" /><span class="switch-slider"></span></label>
+                  </div>
+                </div>
+              </div>
+              <div id="sec-cors-config" style="display:none">
+                <div class="setting-row" style="border:none;padding:4px 0">
+                  <div class="setting-label">允许来源</div>
+                  <div class="setting-value">
+                    <input id="sec-cors-origins" class="ant-input" style="max-width:400px" placeholder="* 表示所有来源，多个来源用英文逗号分隔" />
+                  </div>
+                </div>
+                <div class="setting-row" style="border:none;padding:4px 0">
+                  <div class="setting-label">允许方法</div>
+                  <div class="setting-value">
+                    <div style="display:flex;flex-wrap:wrap;gap:12px">
+                      <label style="display:flex;align-items:center;gap:4px;cursor:pointer"><input type="checkbox" class="cors-method" value="GET" checked /> GET</label>
+                      <label style="display:flex;align-items:center;gap:4px;cursor:pointer"><input type="checkbox" class="cors-method" value="POST" checked /> POST</label>
+                      <label style="display:flex;align-items:center;gap:4px;cursor:pointer"><input type="checkbox" class="cors-method" value="PUT" /> PUT</label>
+                      <label style="display:flex;align-items:center;gap:4px;cursor:pointer"><input type="checkbox" class="cors-method" value="DELETE" /> DELETE</label>
+                      <label style="display:flex;align-items:center;gap:4px;cursor:pointer"><input type="checkbox" class="cors-method" value="PATCH" /> PATCH</label>
+                      <label style="display:flex;align-items:center;gap:4px;cursor:pointer"><input type="checkbox" class="cors-method" value="HEAD" /> HEAD</label>
+                      <label style="display:flex;align-items:center;gap:4px;cursor:pointer"><input type="checkbox" class="cors-method" value="OPTIONS" checked /> OPTIONS</label>
+                    </div>
+                  </div>
+                </div>
+                <div class="setting-row" style="border:none;padding:4px 0">
+                  <div class="setting-label">允许请求头</div>
+                  <div class="setting-value">
+                    <input id="sec-cors-allow-headers" class="ant-input" style="max-width:400px" placeholder="多个请求头用英文逗号分隔" />
+                  </div>
+                </div>
+                <div class="setting-row" style="border:none;padding:4px 0">
+                  <div class="setting-label">暴露响应头</div>
+                  <div class="setting-value">
+                    <input id="sec-cors-expose-headers" class="ant-input" style="max-width:400px" placeholder="多个响应头用英文逗号分隔（可选）" />
+                  </div>
+                </div>
+                <div class="setting-row" style="border:none;padding:4px 0">
+                  <div class="setting-label">预检缓存时长</div>
+                  <div class="setting-value" style="display:flex;align-items:center;gap:8px">
+                    <input id="sec-cors-max-age" class="ant-input" style="width:100px" type="number" value="3600" />
+                    <span style="color:rgba(0,0,0,0.45)">秒</span>
+                  </div>
+                </div>
+                <div class="setting-row" style="border:none;padding:4px 0">
+                  <div class="setting-label">允许携带凭证</div>
+                  <div class="setting-value">
+                    <label style="display:flex;align-items:center;gap:6px;cursor:pointer">
+                      <input type="checkbox" id="sec-cors-credential" />
+                      <span>开启（allow_credential = true）</span>
+                    </label>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="protection-block">
+              <div class="sub-section-title">Referer 访问限制（对应 APISIX referer-restriction 插件）</div>
+              <div class="setting-row" style="border:none;padding:4px 0">
+                <div class="setting-label">启用</div>
+                <div class="setting-value">
+                  <div class="switch-wrap">
+                    <label class="switch"><input type="checkbox" id="sec-referer-enable" onchange="handleRefererToggle()" /><span class="switch-slider"></span></label>
+                  </div>
+                </div>
+              </div>
+              <div id="sec-referer-config" style="display:none">
+                <div class="setting-row" style="border:none;padding:4px 0">
+                  <div class="setting-label">白名单</div>
+                  <div class="setting-value">
+                    <textarea id="sec-referer-whitelist" class="ant-input" rows="3" style="max-width:400px;font-family:monospace;font-size:12px" placeholder="每行一个域名或通配符"></textarea>
+                  </div>
+                </div>
+                <div class="setting-row" style="border:none;padding:4px 0">
+                  <div class="setting-label">黑名单</div>
+                  <div class="setting-value">
+                    <textarea id="sec-referer-blacklist" class="ant-input" rows="3" style="max-width:400px;font-family:monospace;font-size:12px" placeholder="每行一个域名或通配符"></textarea>
+                  </div>
+                </div>
+                <div class="setting-row" style="border:none;padding:4px 0">
+                  <div class="setting-label">允许无 Referer 请求</div>
+                  <div class="setting-value">
+                    <label style="display:flex;align-items:center;gap:6px;cursor:pointer">
+                      <input type="checkbox" id="sec-referer-bypass-missing" checked />
+                      <span>开启（bypass_missing = true）</span>
+                    </label>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="protection-block">
+              <div class="sub-section-title">User-Agent 限制（对应 APISIX ua-restriction 插件）</div>
+              <div class="setting-row" style="border:none;padding:4px 0">
+                <div class="setting-label">启用</div>
+                <div class="setting-value">
+                  <div class="switch-wrap">
+                    <label class="switch"><input type="checkbox" id="sec-ua-enable" onchange="handleUaToggle()" /><span class="switch-slider"></span></label>
+                  </div>
+                </div>
+              </div>
+              <div id="sec-ua-config" style="display:none">
+                <div class="setting-row" style="border:none;padding:4px 0">
+                  <div class="setting-label">UA 白名单</div>
+                  <div class="setting-value">
+                    <textarea id="sec-ua-whitelist" class="ant-input" rows="3" style="max-width:400px;font-family:monospace;font-size:12px" placeholder="每行一个 User-Agent 字符串或正则"></textarea>
+                  </div>
+                </div>
+                <div class="setting-row" style="border:none;padding:4px 0">
+                  <div class="setting-label">UA 黑名单</div>
+                  <div class="setting-value">
+                    <textarea id="sec-ua-blacklist" class="ant-input" rows="3" style="max-width:400px;font-family:monospace;font-size:12px" placeholder="每行一个 User-Agent 字符串或正则"></textarea>
+                  </div>
+                </div>
+                <div class="setting-row" style="border:none;padding:4px 0">
+                  <div class="setting-label">拒绝提示语</div>
+                  <div class="setting-value">
+                    <input id="sec-ua-message" class="ant-input" style="max-width:360px" placeholder="留空则使用默认提示：Not allowed" />
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="protection-block">
+              <div class="sub-section-title">URI 阻断（对应 APISIX uri-blocker 插件）</div>
+              <div class="setting-row" style="border:none;padding:4px 0">
+                <div class="setting-label">启用</div>
+                <div class="setting-value">
+                  <div class="switch-wrap">
+                    <label class="switch"><input type="checkbox" id="sec-uri-blocker-enable" onchange="handleUriBlockerToggle()" /><span class="switch-slider"></span></label>
+                  </div>
+                </div>
+              </div>
+              <div id="sec-uri-blocker-config" style="display:none">
+                <div class="setting-row" style="border:none;padding:4px 0">
+                  <div class="setting-label">阻断 URI 规则</div>
+                  <div class="setting-value">
+                    <textarea id="sec-uri-block-rules" class="ant-input" rows="4" style="max-width:400px;font-family:monospace;font-size:12px" placeholder="每行一个正则表达式，如：&#10;\.php$&#10;/admin/.*"></textarea>
+                    <div class="form-hint">匹配规则的请求 URI 将被直接拒绝</div>
+                  </div>
+                </div>
+                <div class="setting-row" style="border:none;padding:4px 0">
+                  <div class="setting-label">拒绝状态码</div>
+                  <div class="setting-value">
+                    <input id="sec-uri-reject-code" class="ant-input" style="width:100px" type="number" value="403" />
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <button class="btn btn-primary" onclick="saveSecurityConfig()">保存配置</button>
+        </div>
+
+        <!-- Tab: 通信配置 -->
+        <div id="tab-comm" style="display:none">
+          <div class="config-section">
+            <div class="config-section-title">协议支持</div>
+            <div class="setting-row">
+              <div class="setting-label">WebSocket 支持</div>
+              <div class="setting-value">
+                <div class="switch-wrap">
+                  <label class="switch"><input type="checkbox" id="comm-ws-enable" onchange="handleWsToggle()" /><span class="switch-slider"></span></label>
+                  <span id="comm-ws-label">已关闭</span>
+                </div>
+                <div class="form-hint" style="margin-top:4px">启用后代理网关支持 WebSocket 协议升级</div>
+              </div>
+            </div>
+          </div>
+          <div class="config-section">
+            <div class="config-section-title">代理设置</div>
+            <div class="setting-row">
+              <div class="setting-label">Host 重写</div>
+              <div class="setting-value">
+                <input id="comm-host-rewrite" class="ant-input" style="max-width:380px" placeholder="留空表示不重写 Host Header" />
+              </div>
+            </div>
+            <div class="setting-row">
+              <div class="setting-label">网关 Token</div>
+              <div class="setting-value">
+                <input id="comm-gw-token" class="ant-input" style="max-width:380px" placeholder="留空则不附加 Authorization Header" />
+              </div>
+            </div>
+          </div>
+          <button class="btn btn-primary" onclick="saveCommConfig()">保存配置</button>
+        </div>
+
+        <!-- Tab: 日志收集 -->
+        <div id="tab-log" style="display:none">
+          <div class="config-section">
+            <div class="config-section-title">Kafka 日志收集</div>
+            <div class="setting-row">
+              <div class="setting-label">启用</div>
+              <div class="setting-value">
+                <div class="switch-wrap">
+                  <label class="switch"><input type="checkbox" id="log-kafka-enable" onchange="handleKafkaToggle()" /><span class="switch-slider"></span></label>
+                  <span id="log-kafka-label">已关闭</span>
+                </div>
+              </div>
+            </div>
+            <div id="kafka-config" style="display:none">
+              <div class="setting-row">
+                <div class="setting-label">Broker 地址</div>
+                <div class="setting-value">
+                  <input id="kafka-brokers" class="ant-input" style="max-width:420px" placeholder="kafka01:9092,kafka02:9092" />
+                </div>
+              </div>
+              <div class="setting-row">
+                <div class="setting-label">Topic</div>
+                <div class="setting-value">
+                  <input id="kafka-topic" class="ant-input" style="max-width:300px" placeholder="如 service-access-log" />
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="config-section">
+            <div class="config-section-title">Loki 日志收集</div>
+            <div class="setting-row">
+              <div class="setting-label">启用</div>
+              <div class="setting-value">
+                <div class="switch-wrap">
+                  <label class="switch"><input type="checkbox" id="log-loki-enable" onchange="handleLokiToggle()" /><span class="switch-slider"></span></label>
+                  <span id="log-loki-label">已关闭</span>
+                </div>
+              </div>
+            </div>
+            <div id="loki-config" style="display:none">
+              <div class="setting-row">
+                <div class="setting-label">Loki 推送地址</div>
+                <div class="setting-value">
+                  <input id="loki-url" class="ant-input" style="max-width:420px" placeholder="http://loki:3100/loki/api/v1/push" />
+                </div>
+              </div>
+              <div class="setting-row">
+                <div class="setting-label">租户 ID</div>
+                <div class="setting-value">
+                  <input id="loki-tenant-id" class="ant-input" style="max-width:220px" placeholder="如 prod 或命名空间名称" />
+                </div>
+              </div>
+            </div>
+          </div>
+          <button class="btn btn-primary" onclick="saveLogConfig()">保存配置</button>
+        </div>
+
+        <!-- Tab: 操作记录 -->
+        <div id="tab-oplog" style="display:none">
+          <div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap">
+            <select id="oplog-filter-type" class="ant-select" style="width:160px">
+              <option value="">全部操作类型</option>
+              <option value="create">新建</option>
+              <option value="update">修改</option>
+              <option value="delete">删除</option>
+            </select>
+            <input id="oplog-filter-kw" class="ant-input" style="width:220px" placeholder="搜索操作人" onkeyup="if(event.key==='Enter')renderOplog()" />
+            <button class="btn btn-default" onclick="renderOplog()">查询</button>
+          </div>
+          <table class="ant-table" style="width:100%">
+            <thead><tr><th>操作类型</th><th>操作内容</th><th>操作人</th><th>操作时间</th></tr></thead>
+            <tbody id="oplog-body"></tbody>
+          </table>
+        </div>
+
+        <!-- Tab: 服务监控 -->
+        <div id="tab-monitor" style="display:none">
+          <div class="monitor-toolbar">
+            <span style="color:rgba(0,0,0,0.65)">时间范围</span>
+            <div style="display:flex;gap:4px">
+              <button class="btn btn-sm btn-primary" onclick="setRange('1h',this)">近1小时</button>
+              <button class="btn btn-sm btn-default" onclick="setRange('6h',this)">近6小时</button>
+              <button class="btn btn-sm btn-default" onclick="setRange('24h',this)">近24小时</button>
+            </div>
+          </div>
+          <div class="metric-cards">
+            <div class="metric-card"><div class="label">P50 延迟</div><div class="value">9<span class="unit">ms</span></div></div>
+            <div class="metric-card"><div class="label">P99 延迟</div><div class="value">62<span class="unit">ms</span></div></div>
+            <div class="metric-card"><div class="label">成功率</div><div class="value">99.9<span class="unit">%</span></div></div>
+          </div>
+          <div id="chart-req" style="height:260px;margin-top:16px"></div>
+          <div id="chart-status" style="height:260px;margin-top:16px"></div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</main>
+
+<!-- 编辑基本信息 Modal -->
+<div id="edit-modal" class="modal-overlay" style="display:none" onclick="if(event.target===this)closeEditModal()">
+  <div class="ant-modal" style="width:520px">
+    <div class="modal-header">
+      <span class="modal-title">编辑基本信息</span>
+      <button class="modal-close" onclick="closeEditModal()">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-item">
+        <label class="form-label">虚拟服务名称</label>
+        <div class="form-control">
+          <input id="edit-name" class="ant-input" disabled />
+          <div class="form-hint">服务名称创建后不可修改</div>
+        </div>
+      </div>
+      <div class="form-item">
+        <label class="form-label required">业务线</label>
+        <div class="form-control">
+          <select id="edit-bizline" class="ant-select">
+            <option value="">请选择</option>
+            <option value="北京研发中心">北京研发中心</option>
+            <option value="大数据中心">大数据中心</option>
+            <option value="北京研发部">北京研发部</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-item">
+        <label class="form-label">描述</label>
+        <div class="form-control">
+          <textarea id="edit-desc" class="ant-input" rows="3"></textarea>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-default" onclick="closeEditModal()">取消</button>
+      <button class="btn btn-primary" onclick="submitEditModal()">确定</button>
+    </div>
+  </div>
+</div>
+
+<!-- 编辑流量规则 Modal -->
+<div id="traffic-modal" class="modal-overlay" style="display:none" onclick="if(event.target===this)closeTrafficModal()">
+  <div class="ant-modal" style="width:700px">
+    <div class="modal-header">
+      <span class="modal-title">编辑流量规则</span>
+      <button class="modal-close" onclick="closeTrafficModal()">×</button>
+    </div>
+    <div class="modal-body modal-body-scroll">
+      <div class="form-item" style="align-items:flex-start">
+        <label class="form-label required" style="padding-top:2px">默认后端</label>
+        <div class="form-control">
+          <div class="form-hint" style="margin-top:0;margin-bottom:8px">所有条件路由均不匹配时，流量转发到此服务。</div>
+          <select id="tm-default-backend" class="ant-select" style="width:280px">
+            <option value="">请选择服务</option>
+          </select>
+          <div id="tm-error-default-backend" class="form-error-msg" style="display:none"></div>
+        </div>
+      </div>
+      <div class="form-item" style="align-items:flex-start">
+        <label class="form-label" style="padding-top:2px">条件路由</label>
+        <div class="form-control">
+          <div class="form-hint" style="margin-top:0;margin-bottom:8px">每条规则可配置多个后端服务及权重，权重之和须为 100。</div>
+          <div id="tm-route-list"></div>
+          <button class="btn btn-default btn-sm" onclick="tmAddRoute()">+ 添加路由规则</button>
+          <div id="tm-error-routes" class="form-error-msg" style="display:none;margin-top:4px"></div>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-default" onclick="closeTrafficModal()">取消</button>
+      <button class="btn btn-primary" onclick="submitTrafficModal()">确定</button>
+    </div>
+  </div>
+</div>
+
+<!-- 查看凭证 Modal -->
+<div id="cred-modal" class="modal-overlay" style="display:none" onclick="if(event.target===this)closeModal(document.getElementById('cred-modal'))">
+  <div class="ant-modal" style="width:480px">
+    <div class="modal-header">
+      <span class="modal-title" id="cred-modal-title">访问凭证</span>
+      <button class="modal-close" onclick="closeModal(document.getElementById('cred-modal'))">×</button>
+    </div>
+    <div class="modal-body" id="cred-modal-body"></div>
+    <div class="modal-footer">
+      <button class="btn btn-default" onclick="closeModal(document.getElementById('cred-modal'))">关闭</button>
+    </div>
+  </div>
+</div>
+
+<script src="../../data/virtual-services.js"></script>
+<script src="../../data/services.js"></script>
+<script src="../../js/common.js"></script>
+<script src="https://axures.bjcnc.scs.sohucs.com/cdn-assets/echarts.min.js"></script>
+<script>
+/* ── 初始化数据 ── */
+const vsId = new URLSearchParams(location.search).get('id');
+const { load: loadVss, save: saveVss } = useStorage('srsd_virtual_services', SEED_VIRTUAL_SERVICES);
+let allVss = loadVss();
+let vs = allVss.find(v => v.id === vsId);
+
+const { load: loadSvcs } = useStorage('srsd_services', SEED_SERVICES);
+const allSvcs = loadSvcs();
+
+const CLIENTS_KEY = 'srsd_vs_clients_' + vsId;
+const CLIENTS_SEED = vs ? [
+  { id: 'vc-1', name: 'monitor-agent',   type: 'service', ns: 'cloud-native',    grantedAt: '2026-02-05T08:00:00Z' },
+] : [];
+const { load: loadClients, save: saveClients } = useStorage(CLIENTS_KEY, CLIENTS_SEED);
+let clients = loadClients();
+
+const OPLOG_SEED = vs ? [
+  { id: 'vl-1', type: 'create', content: '创建虚拟服务',        operator: '吕青华', time: vs?.createdAt || '2026-02-01T10:00:00Z' },
+  { id: 'vl-2', type: 'update', content: '修改流量规则',        operator: '吕青华', time: '2026-02-20T14:00:00Z' },
+] : [];
+
+const AUTH_CLASS_MAP = { none: 'tag-default', disabled: 'tag-default', basic: 'tag-processing', forward: 'tag-success' };
+const COND_TYPE_LABEL  = { header: 'HTTP 请求头', cookie: 'Cookie', query: '查询参数', path: '路径前缀' };
+const MATCH_TYPE_LABEL = { exact: '精确', prefix: '前缀', regex: '正则' };
+const PUBLIC_NAMESPACES = new Set(['domeos-pub', 'sohu-cs-public']);
+
+/* ── 404 处理 ── */
+if (!vs) {
+  document.getElementById('not-found').style.display = '';
+} else {
+  document.getElementById('bc-vsname').textContent = vs.name;
+  document.getElementById('page-vsname').textContent = vs.name;
+  document.getElementById('detail-content').style.display = '';
+}
+
+/* ── Tab 配置 ── */
+function buildTabs() {
+  if (!vs) return [];
+  const tabs = [
+    { key: 'info',          label: '基本信息' },
+    { key: 'traffic-rules', label: '流量规则' },
+  ];
+  if (vs.auth === 'basic' || vs.auth === 'forward') {
+    tabs.push({ key: 'clients', label: '已授权客户端' });
+  }
+  tabs.push(
+    { key: 'access',   label: '可访问服务' },
+    { key: 'security', label: '安全配置' },
+    { key: 'comm',     label: '通信配置' },
+    { key: 'log',      label: '日志收集' },
+    { key: 'oplog',    label: '操作记录' },
+    { key: 'monitor',  label: '服务监控' },
+  );
+  return tabs;
+}
+
+let activeTab = 'info';
+let chartsInitialized = false;
+
+function renderTabs() {
+  const tabs = buildTabs();
+  document.getElementById('tabs-nav').innerHTML = tabs.map(t =>
+    `<div class="tab-item ${t.key === activeTab ? 'active' : ''}" onclick="switchTab('${t.key}')">${escHtml(t.label)}</div>`
+  ).join('');
+}
+
+function switchTab(key) {
+  const tabs = buildTabs();
+  tabs.forEach(t => {
+    const el = document.getElementById('tab-' + t.key);
+    if (el) el.style.display = t.key === key ? '' : 'none';
+  });
+  activeTab = key;
+  renderTabs();
+  if (key === 'monitor'      && !chartsInitialized) initCharts();
+  if (key === 'clients')     renderClientsTable();
+  if (key === 'access')      renderAccessTable();
+  if (key === 'oplog')       renderOplog();
+  if (key === 'log')         initLogTab();
+  if (key === 'security')    initSecurityTab();
+  if (key === 'comm')        initCommTab();
+  if (key === 'traffic-rules') renderTrafficRules();
+}
+
+/* ── 基本信息 ── */
+function renderInfo() {
+  const db = vs.defaultBackend || {};
+  const routes = vs.routes || [];
+  const rows = [
+    { label: '虚拟服务名称', value: vs.name },
+    { label: '命名空间',     value: vs.ns },
+    { label: '业务线',       value: vs.bizline || '--' },
+    { label: '代理地址',     value: vs.proxy },
+    { label: '默认后端',     value: db.serviceName || db.serviceId || '--' },
+    { label: '条件路由数',   value: String(routes.length) },
+    { label: '创建人',       value: vs.createdBy || '--' },
+    { label: '创建时间',     value: formatTime(vs.createdAt) },
+    { label: '服务描述',     value: vs.desc || '--' },
+  ];
+  document.getElementById('vs-info-body').innerHTML = rows.map(r => `
+    <div class="desc-item">
+      <div class="desc-label">${escHtml(r.label)}</div>
+      <div class="desc-value">${escHtml(r.value)}</div>
+    </div>
+  `).join('');
+}
+
+function openEditModal() {
+  document.getElementById('edit-name').value    = vs.name;
+  document.getElementById('edit-bizline').value = vs.bizline || '';
+  document.getElementById('edit-desc').value    = vs.desc || '';
+  openModal(document.getElementById('edit-modal'));
+}
+function closeEditModal() { closeModal(document.getElementById('edit-modal')); }
+function submitEditModal() {
+  vs.bizline = document.getElementById('edit-bizline').value;
+  vs.desc    = document.getElementById('edit-desc').value.trim();
+  allVss = allVss.map(v => v.id === vs.id ? vs : v);
+  saveVss(allVss);
+  renderInfo();
+  closeEditModal();
+  showToast('基本信息已更新');
+}
+
+/* ── 流量规则 ── */
+function renderTrafficRules() {
+  const db = vs.defaultBackend || {};
+  const routes = vs.routes || [];
+
+  document.getElementById('default-backend-display').innerHTML = db.serviceName || db.serviceId
+    ? `<div style="font-size:13px;color:rgba(0,0,0,0.85)">${escHtml(db.serviceName || db.serviceId)}</div>`
+    : '<div style="color:rgba(0,0,0,0.25);font-size:13px">未配置</div>';
+
+  if (routes.length === 0) {
+    document.getElementById('route-rules-display').innerHTML =
+      '<div style="color:rgba(0,0,0,0.25);font-size:13px">暂无条件路由，流量将全部转发到默认后端。</div>';
+    return;
+  }
+
+  document.getElementById('route-rules-display').innerHTML = routes.map((r, i) => {
+    const condHtml = r.conditions.map(c => {
+      const typeLabel = COND_TYPE_LABEL[c.type] || c.type;
+      const matchLabel = c.type === 'path' ? '前缀' : (MATCH_TYPE_LABEL[c.matchType] || c.matchType);
+      const fieldPart = c.type === 'path' ? '' : `<strong>${escHtml(c.field)}</strong> `;
+      return `<span class="cond-tag">${escHtml(typeLabel)} ${fieldPart}${escHtml(matchLabel)} "${escHtml(c.value)}"</span>`;
+    }).join('<span style="font-size:12px;color:rgba(0,0,0,0.45);margin:0 4px">且</span>');
+
+    const upstreams = r.upstreams || (r.targetServiceId ? [{ serviceId: r.targetServiceId, serviceName: r.targetServiceName || '', weight: 100 }] : []);
+    const upstreamHtml = upstreams.map(u =>
+      `<div class="upstream-item">
+        <span style="font-size:13px">${escHtml(u.serviceName || u.serviceId)}</span>
+        <span class="weight-badge">${u.weight}%</span>
+      </div>`
+    ).join('');
+
+    return `<div class="route-rule-card">
+      <div class="route-rule-header">
+        <span>规则 #${i + 1}</span>
+      </div>
+      <div class="route-rule-body">
+        <div style="margin-bottom:10px">
+          <div style="font-size:12px;color:rgba(0,0,0,0.45);margin-bottom:6px">匹配条件</div>
+          <div>${condHtml}</div>
+        </div>
+        <div>
+          <div style="font-size:12px;color:rgba(0,0,0,0.45);margin-bottom:6px">命中时按权重转发至</div>
+          ${upstreamHtml}
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+/* ── 编辑流量规则 Modal ── */
+let tmRoutes = [];
+let tmDefaultBackendId = '';
+const COND_TYPE_OPTS = [
+  { v:'header', l:'HTTP 请求头' }, { v:'cookie', l:'Cookie' },
+  { v:'query',  l:'查询参数'   }, { v:'path',   l:'路径前缀' },
+];
+
+function openTrafficModal() {
+  const nsSvcs = allSvcs.filter(s => s.ns === vs.ns);
+  tmDefaultBackendId = vs.defaultBackend?.serviceId || '';
+  tmRoutes = JSON.parse(JSON.stringify(vs.routes || [])).map(r => ({
+    ...r,
+    upstreams: r.upstreams
+      || (r.targetServiceId ? [{ serviceId: r.targetServiceId, serviceName: r.targetServiceName || '', weight: 100 }] : [{ serviceId: '', serviceName: '', weight: 100 }]),
+  }));
+  document.getElementById('tm-error-default-backend').style.display = 'none';
+  document.getElementById('tm-error-routes').style.display = 'none';
+  tmRefreshDefaultSelect(nsSvcs);
+  tmRenderRouteList(nsSvcs);
+  openModal(document.getElementById('traffic-modal'));
+}
+function closeTrafficModal() { closeModal(document.getElementById('traffic-modal')); }
+
+function tmRefreshDefaultSelect(nsSvcs) {
+  document.getElementById('tm-default-backend').innerHTML =
+    '<option value="">请选择服务</option>' +
+    nsSvcs.map(s => `<option value="${escHtml(s.id)}" ${tmDefaultBackendId === s.id ? 'selected' : ''}>${escHtml(s.name)}</option>`).join('');
+}
+
+function tmRenderUpstreamRow(ri, ui, u, nsSvcs) {
+  const canRemove = tmRoutes[ri].upstreams.length > 1;
+  return `<div class="vs-upstream-row" data-tm-upstream-idx="${ui}">
+    <select class="ant-select" style="flex:1">
+      <option value="">请选择服务</option>
+      ${nsSvcs.map(s => `<option value="${escHtml(s.id)}" ${u.serviceId === s.id ? 'selected' : ''}>${escHtml(s.name)}</option>`).join('')}
+    </select>
+    <span style="color:rgba(0,0,0,0.45);white-space:nowrap;font-size:13px">权重</span>
+    <input type="number" class="ant-input" style="width:70px" min="0" max="100" value="${u.weight}" />
+    <span style="color:rgba(0,0,0,0.45)">%</span>
+    ${canRemove ? `<button class="btn btn-link danger btn-sm" onclick="tmSyncAndRemoveUpstream(${ri},${ui})">移除</button>` : '<span style="width:42px"></span>'}
+  </div>`;
+}
+
+function tmRenderCondRow(ri, ci, c) {
+  const isPath = c.type === 'path';
+  return `<tr data-tm-cond-idx="${ci}">
+    <td>
+      <select class="ant-select tm-cond-type" style="width:100%" onchange="tmHandleCondTypeChange(${ri},${ci},this.value)">
+        ${COND_TYPE_OPTS.map(o => `<option value="${o.v}" ${c.type===o.v?'selected':''}>${o.l}</option>`).join('')}
+      </select>
+    </td>
+    <td>${isPath ? '<span class="cond-dash">—</span>'
+      : `<input class="ant-input tm-cond-field" style="width:100%" placeholder="字段名" value="${escHtml(c.field||'')}" oninput="tmSyncFromDOM()" />`}
+    </td>
+    <td>${isPath ? '<span class="cond-dash" style="font-size:11px">前缀</span>'
+      : `<select class="ant-select tm-cond-match" style="width:100%" onchange="tmSyncFromDOM()">
+          <option value="exact"  ${c.matchType==='exact' ?'selected':''}>精确</option>
+          <option value="prefix" ${c.matchType==='prefix'?'selected':''}>前缀</option>
+          <option value="regex"  ${c.matchType==='regex' ?'selected':''}>正则</option>
+        </select>`}
+    </td>
+    <td><input class="ant-input tm-cond-value" style="width:100%" placeholder="${isPath?'如 /api/v2/':'匹配值'}" value="${escHtml(c.value||'')}" oninput="tmSyncFromDOM()" /></td>
+    <td><button class="btn btn-link danger btn-sm" onclick="tmSyncAndRemoveCond(${ri},${ci})">×</button></td>
+  </tr>`;
+}
+
+function tmRenderRouteList(nsSvcs) {
+  const ns = nsSvcs || allSvcs.filter(s => s.ns === vs.ns);
+  document.getElementById('tm-route-list').innerHTML = tmRoutes.length === 0
+    ? '<div style="color:rgba(0,0,0,0.25);font-size:13px;margin-bottom:8px">暂无条件路由，流量将全部转发到默认后端。</div>'
+    : tmRoutes.map((r, ri) => `
+      <div class="vs-route-card" data-tm-route-idx="${ri}">
+        <div class="vs-route-card-header">
+          <span>规则 #${ri + 1}</span>
+          <button class="btn btn-link danger btn-sm" onclick="tmRemoveRoute(${ri})">删除规则</button>
+        </div>
+        <div class="vs-route-card-body">
+          <table class="vs-cond-table">
+            <thead><tr>
+              <th style="width:112px">匹配类型</th>
+              <th style="width:88px">字段名</th>
+              <th style="width:72px">匹配方式</th>
+              <th>匹配值</th><th></th>
+            </tr></thead>
+            <tbody>${r.conditions.map((c, ci) => tmRenderCondRow(ri, ci, c)).join('')}</tbody>
+          </table>
+          <button class="btn btn-link btn-sm" onclick="tmSyncAndAddCond(${ri})">+ 添加条件</button>
+          <div class="vs-upstream-section">
+            <div class="vs-upstream-label">命中时按权重转发至（权重之和须为 100）</div>
+            <div id="tm-upstreams-${ri}">
+              ${r.upstreams.map((u, ui) => tmRenderUpstreamRow(ri, ui, u, ns)).join('')}
+            </div>
+            <button class="btn btn-link btn-sm" onclick="tmSyncAndAddUpstream(${ri})">+ 添加后端</button>
+          </div>
+        </div>
+      </div>`).join('');
+}
+
+function tmSyncFromDOM() {
+  document.getElementById('tm-route-list').querySelectorAll('[data-tm-route-idx]').forEach((card, ri) => {
+    if (!tmRoutes[ri]) return;
+    card.querySelectorAll('tbody tr[data-tm-cond-idx]').forEach((row, ci) => {
+      if (!tmRoutes[ri].conditions[ci]) return;
+      const ts = row.querySelector('.tm-cond-type');
+      const fi = row.querySelector('.tm-cond-field');
+      const ms = row.querySelector('.tm-cond-match');
+      const vi = row.querySelector('.tm-cond-value');
+      if (ts) tmRoutes[ri].conditions[ci].type      = ts.value;
+      if (fi) tmRoutes[ri].conditions[ci].field     = fi.value;
+      if (ms) tmRoutes[ri].conditions[ci].matchType = ms.value;
+      if (vi) tmRoutes[ri].conditions[ci].value     = vi.value;
+    });
+    card.querySelectorAll(`#tm-upstreams-${ri} [data-tm-upstream-idx]`).forEach((row, ui) => {
+      if (!tmRoutes[ri].upstreams[ui]) return;
+      const sel = row.querySelector('select');
+      const inp = row.querySelector('input[type=number]');
+      if (sel) { tmRoutes[ri].upstreams[ui].serviceId = sel.value; tmRoutes[ri].upstreams[ui].serviceName = sel.selectedOptions[0]?.text || ''; }
+      if (inp) tmRoutes[ri].upstreams[ui].weight = +inp.value;
+    });
+  });
+}
+
+function tmAddRoute() { tmSyncFromDOM(); tmRoutes.push({ id: genId(), conditions: [{ type: 'header', field: '', matchType: 'exact', value: '' }], upstreams: [{ serviceId: '', serviceName: '', weight: 100 }] }); tmRenderRouteList(); }
+function tmRemoveRoute(ri) { tmSyncFromDOM(); tmRoutes.splice(ri, 1); tmRenderRouteList(); }
+function tmSyncAndAddCond(ri) { tmSyncFromDOM(); tmRoutes[ri].conditions.push({ type: 'header', field: '', matchType: 'exact', value: '' }); tmRenderRouteList(); }
+function tmSyncAndRemoveCond(ri, ci) { tmSyncFromDOM(); tmRoutes[ri].conditions.splice(ci, 1); if (!tmRoutes[ri].conditions.length) tmRoutes[ri].conditions.push({ type: 'header', field: '', matchType: 'exact', value: '' }); tmRenderRouteList(); }
+function tmSyncAndAddUpstream(ri) { tmSyncFromDOM(); tmRoutes[ri].upstreams.push({ serviceId: '', serviceName: '', weight: 0 }); tmRenderRouteList(); }
+function tmSyncAndRemoveUpstream(ri, ui) { tmSyncFromDOM(); tmRoutes[ri].upstreams.splice(ui, 1); tmRenderRouteList(); }
+function tmHandleCondTypeChange(ri, ci, type) { tmSyncFromDOM(); tmRoutes[ri].conditions[ci].type = type; if (type === 'path') { tmRoutes[ri].conditions[ci].matchType = 'prefix'; tmRoutes[ri].conditions[ci].field = ''; } tmRenderRouteList(); }
+
+function submitTrafficModal() {
+  tmSyncFromDOM();
+  const dbSel = document.getElementById('tm-default-backend');
+  const dbId  = dbSel.value;
+  let ok = true;
+  if (!dbId) { document.getElementById('tm-error-default-backend').textContent = '请选择默认后端服务'; document.getElementById('tm-error-default-backend').style.display = ''; ok = false; }
+  else document.getElementById('tm-error-default-backend').style.display = 'none';
+
+  const routeErr = tmRoutes.reduce((err, r, i) => {
+    if (err) return err;
+    if (r.conditions.some(c => !c.value.trim() || (c.type !== 'path' && !c.field.trim()))) return `规则 #${i+1} 有未填写的匹配条件`;
+    if (r.upstreams.some(u => !u.serviceId)) return `规则 #${i+1} 有未选择的后端服务`;
+    const tw = r.upstreams.reduce((s, u) => s + (u.weight||0), 0);
+    if (tw !== 100) return `规则 #${i+1} 权重之和须为 100（当前：${tw}）`;
+    return '';
+  }, '');
+  if (routeErr) { document.getElementById('tm-error-routes').textContent = routeErr; document.getElementById('tm-error-routes').style.display = ''; ok = false; }
+  else document.getElementById('tm-error-routes').style.display = 'none';
+
+  if (!ok) return;
+  vs.defaultBackend = { serviceId: dbSel.value, serviceName: dbSel.selectedOptions[0]?.text || '' };
+  vs.routes = JSON.parse(JSON.stringify(tmRoutes));
+  allVss = allVss.map(v => v.id === vs.id ? vs : v);
+  saveVss(allVss);
+  closeTrafficModal();
+  renderTrafficRules();
+  renderInfo();
+  showToast('流量规则已保存');
+}
+
+/* ── 已授权客户端 ── */
+function renderClientsTable() {
+  const kw = document.getElementById('client-search-kw').value.trim();
+  const rows = clients.filter(c => !kw || c.name.includes(kw) || c.ns.includes(kw));
+  const isForward = vs.auth === 'forward';
+  document.getElementById('clients-forward-hint').style.display = isForward ? '' : 'none';
+  document.getElementById('client-op-th').textContent = isForward ? '' : '操作';
+  const tbody = document.getElementById('clients-table-body');
+  if (rows.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="5"><div class="empty-table">暂无已授权客户端</div></td></tr>';
+    return;
+  }
+  tbody.innerHTML = rows.map(c => `
+    <tr>
+      <td>${escHtml(c.name)}</td>
+      <td>${c.type === 'service' ? '服务' : '用户'}</td>
+      <td>${escHtml(c.ns)}</td>
+      <td>${escHtml(formatTime(c.grantedAt))}</td>
+      <td>${isForward ? '' : `<button class="btn btn-link danger" data-action="del-client" data-id="${escHtml(c.id)}">撤销</button>`}</td>
+    </tr>
+  `).join('');
+}
+
+document.addEventListener('click', e => {
+  const action = e.target.dataset.action;
+  const id     = e.target.dataset.id;
+  if (action === 'del-client') {
+    const cli = clients.find(c => c.id === id);
+    confirm2(`确认撤销客户端「${cli?.name}」的访问权限？`, () => {
+      clients = clients.filter(c => c.id !== id);
+      saveClients(clients);
+      renderClientsTable();
+      showToast('权限已撤销');
+    });
+  }
+});
+
+/* ── 可访问服务 ── */
+function renderAccessTable() {
+  const kw = document.getElementById('access-search-kw')?.value.trim().toLowerCase() || '';
+  const accessible = allSvcs.filter(s =>
+    (PUBLIC_NAMESPACES.has(s.ns) || s.ns === vs.ns) &&
+    (!kw || s.name.toLowerCase().includes(kw) || s.proxy.toLowerCase().includes(kw))
+  );
+  const tbody = document.getElementById('access-accessible-body');
+  if (accessible.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="5"><div class="empty-table">暂无可访问的服务</div></td></tr>';
+    return;
+  }
+  tbody.innerHTML = accessible.map(s => {
+    const authLabel = { none: '无需鉴权', disabled: '无需鉴权', basic: 'Basic Auth', forward: 'Forward Auth' }[s.auth] || s.auth;
+    const authClass = AUTH_CLASS_MAP[s.auth] || 'tag-default';
+    let op = '<span style="color:rgba(0,0,0,0.25)">直接访问</span>';
+    if (s.auth === 'basic')   op = `<button class="btn btn-link" onclick="viewCred('${escHtml(s.id)}')">查看凭证</button>`;
+    return `<tr>
+      <td>${escHtml(s.name)}</td>
+      <td>${escHtml(s.ns)}</td>
+      <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escHtml(s.proxy)}</td>
+      <td><span class="tag ${authClass}">${escHtml(authLabel)}</span></td>
+      <td>${op}</td>
+    </tr>`;
+  }).join('');
+}
+
+function viewCred(svcId) {
+  const s = allSvcs.find(sv => sv.id === svcId);
+  if (!s) return;
+  document.getElementById('cred-modal-title').textContent = `访问凭证 — ${s.name}`;
+  document.getElementById('cred-modal-body').innerHTML = `
+    <div class="cred-row"><div class="cred-label">User</div><div class="cred-val">srsd-user</div><button class="copy-btn" onclick="navigator.clipboard?.writeText('srsd-user')">复制</button></div>
+    <div class="cred-row"><div class="cred-label">Password</div><div class="cred-val"><span style="letter-spacing:2px">••••••••••••</span></div><button class="copy-btn" onclick="showToast('已复制到剪贴板')">复制</button></div>`;
+  openModal(document.getElementById('cred-modal'));
+}
+
+/* ── 安全配置 ── */
+let fwdReqHeaders = [];
+let fwdResHeaders = [];
+let secAliases    = [];
+
+function initSecurityTab() {
+  const enabled = vs.auth === 'basic' || vs.auth === 'forward';
+  document.getElementById('sec-auth-enable').checked = enabled;
+  document.getElementById('sec-auth-label').textContent = enabled ? '已开启' : '已关闭';
+  document.getElementById('sec-auth-config').style.display = enabled ? '' : 'none';
+  if (enabled) {
+    const type = vs.auth;
+    document.querySelectorAll('input[name="sec-auth-type"]').forEach(r => { r.checked = r.value === type; });
+    document.getElementById('sec-forward-fields').style.display = type === 'forward' ? '' : 'none';
+    if (type === 'forward') {
+      const cfg = vs.authConfig || {};
+      document.getElementById('sec-forward-url').value = cfg.forwardUrl || '';
+      document.getElementById('sec-forward-method').value = cfg.method || 'GET';
+      fwdReqHeaders = cfg.reqHeaders ? cfg.reqHeaders.map(h => typeof h === 'object' ? h : { field: h, desc: '' }) : [];
+      fwdResHeaders = cfg.resHeaders ? cfg.resHeaders.map(h => typeof h === 'object' ? h : { field: h, desc: '' }) : [];
+    } else {
+      fwdReqHeaders = [];
+      fwdResHeaders = [];
+    }
+  } else {
+    fwdReqHeaders = [];
+    fwdResHeaders = [];
+  }
+  renderFwdHeaders();
+  const ipCtrl = vs.ipControl || {};
+  document.getElementById('sec-ip-ctrl-enable').checked = !!ipCtrl.enabled;
+  document.getElementById('sec-ip-ctrl-config').style.display = ipCtrl.enabled ? '' : 'none';
+  document.getElementById('sec-ip-whitelist').value = (ipCtrl.whitelist || []).join('\n');
+  document.getElementById('sec-ip-blacklist').value = (ipCtrl.blacklist || []).join('\n');
+  document.getElementById('sec-ip-message').value = ipCtrl.message || '';
+  const reqSize = vs.reqSizeConfig || {};
+  document.getElementById('sec-req-size-enable').checked = !!reqSize.enabled;
+  document.getElementById('sec-req-size-config').style.display = reqSize.enabled ? '' : 'none';
+  if (reqSize.limitMB) document.getElementById('sec-req-size-limit').value = reqSize.limitMB;
+  const cors = vs.corsConfig || {};
+  document.getElementById('sec-cors-enable').checked = !!cors.enabled;
+  document.getElementById('sec-cors-config').style.display = cors.enabled ? '' : 'none';
+  document.getElementById('sec-cors-origins').value = cors.origins || '';
+  document.getElementById('sec-cors-allow-headers').value = cors.allowHeaders || '';
+  document.getElementById('sec-cors-expose-headers').value = cors.exposeHeaders || '';
+  document.getElementById('sec-cors-max-age').value = cors.maxAge || 3600;
+  document.getElementById('sec-cors-credential').checked = !!cors.credential;
+  document.querySelectorAll('.cors-method').forEach(cb => { cb.checked = (cors.methods || ['GET','POST','OPTIONS']).includes(cb.value); });
+  const referer = vs.refererConfig || {};
+  document.getElementById('sec-referer-enable').checked = !!referer.enabled;
+  document.getElementById('sec-referer-config').style.display = referer.enabled ? '' : 'none';
+  document.getElementById('sec-referer-whitelist').value = (referer.whitelist || []).join('\n');
+  document.getElementById('sec-referer-blacklist').value = (referer.blacklist || []).join('\n');
+  document.getElementById('sec-referer-bypass-missing').checked = referer.bypassMissing !== false;
+  const ua = vs.uaConfig || {};
+  document.getElementById('sec-ua-enable').checked = !!ua.enabled;
+  document.getElementById('sec-ua-config').style.display = ua.enabled ? '' : 'none';
+  document.getElementById('sec-ua-whitelist').value = (ua.whitelist || []).join('\n');
+  document.getElementById('sec-ua-blacklist').value = (ua.blacklist || []).join('\n');
+  document.getElementById('sec-ua-message').value = ua.message || '';
+  const uriB = vs.uriBlockerConfig || {};
+  document.getElementById('sec-uri-blocker-enable').checked = !!uriB.enabled;
+  document.getElementById('sec-uri-blocker-config').style.display = uriB.enabled ? '' : 'none';
+  document.getElementById('sec-uri-block-rules').value = (uriB.blockRules || []).join('\n');
+  if (uriB.rejectedCode) document.getElementById('sec-uri-reject-code').value = uriB.rejectedCode;
+}
+
+function renderFwdHeaders() {
+  const reqEl = document.getElementById('sec-forward-req-headers');
+  const resEl = document.getElementById('sec-forward-res-headers');
+  if (reqEl) reqEl.innerHTML = fwdReqHeaders.map((h, i) => `
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
+      <span style="font-family:monospace;font-size:12px;background:#f5f5f5;padding:2px 6px;border-radius:2px;min-width:80px">${escHtml(h.field)}</span>
+      ${h.desc ? `<span style="font-size:12px;color:rgba(0,0,0,0.45)">${escHtml(h.desc)}</span>` : ''}
+      <button class="btn btn-link danger btn-sm" onclick="removeFwdReqHeader(${i})">×</button>
+    </div>`).join('') || '<div style="color:rgba(0,0,0,0.25);font-size:12px;margin-bottom:4px">暂未添加</div>';
+  if (resEl) resEl.innerHTML = fwdResHeaders.map((h, i) => `
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
+      <span style="font-family:monospace;font-size:12px;background:#f5f5f5;padding:2px 6px;border-radius:2px;min-width:80px">${escHtml(h.field)}</span>
+      ${h.desc ? `<span style="font-size:12px;color:rgba(0,0,0,0.45)">${escHtml(h.desc)}</span>` : ''}
+      <button class="btn btn-link danger btn-sm" onclick="removeFwdResHeader(${i})">×</button>
+    </div>`).join('') || '<div style="color:rgba(0,0,0,0.25);font-size:12px;margin-bottom:4px">暂未添加</div>';
+}
+
+function addFwdReqHeader() {
+  const field = document.getElementById('sec-fwd-req-field').value.trim();
+  const desc  = document.getElementById('sec-fwd-req-desc').value.trim();
+  if (!field) return;
+  fwdReqHeaders.push({ field, desc });
+  document.getElementById('sec-fwd-req-field').value = '';
+  document.getElementById('sec-fwd-req-desc').value  = '';
+  renderFwdHeaders();
+}
+function addFwdResHeader() {
+  const field = document.getElementById('sec-fwd-res-field').value.trim();
+  const desc  = document.getElementById('sec-fwd-res-desc').value.trim();
+  if (!field) return;
+  fwdResHeaders.push({ field, desc });
+  document.getElementById('sec-fwd-res-field').value = '';
+  document.getElementById('sec-fwd-res-desc').value  = '';
+  renderFwdHeaders();
+}
+function removeFwdReqHeader(i) { fwdReqHeaders.splice(i, 1); renderFwdHeaders(); }
+function removeFwdResHeader(i) { fwdResHeaders.splice(i, 1); renderFwdHeaders(); }
+
+function handleAuthToggle() {
+  const en = document.getElementById('sec-auth-enable').checked;
+  document.getElementById('sec-auth-label').textContent = en ? '已开启' : '已关闭';
+  document.getElementById('sec-auth-config').style.display = en ? '' : 'none';
+}
+function handleAuthTypeChange() {
+  const type = document.querySelector('input[name="sec-auth-type"]:checked')?.value;
+  document.getElementById('sec-forward-fields').style.display = type === 'forward' ? '' : 'none';
+}
+function handleIpCtrlToggle()    { document.getElementById('sec-ip-ctrl-config').style.display    = document.getElementById('sec-ip-ctrl-enable').checked    ? '' : 'none'; }
+function handleReqSizeToggle()   { document.getElementById('sec-req-size-config').style.display   = document.getElementById('sec-req-size-enable').checked   ? '' : 'none'; }
+function handleCorsToggle()      { document.getElementById('sec-cors-config').style.display       = document.getElementById('sec-cors-enable').checked       ? '' : 'none'; }
+function handleRefererToggle()   { document.getElementById('sec-referer-config').style.display    = document.getElementById('sec-referer-enable').checked    ? '' : 'none'; }
+function handleUaToggle()        { document.getElementById('sec-ua-config').style.display         = document.getElementById('sec-ua-enable').checked         ? '' : 'none'; }
+function handleUriBlockerToggle(){ document.getElementById('sec-uri-blocker-config').style.display= document.getElementById('sec-uri-blocker-enable').checked? '' : 'none'; }
+
+function saveSecurityConfig() {
+  const enabled = document.getElementById('sec-auth-enable').checked;
+  const type    = document.querySelector('input[name="sec-auth-type"]:checked')?.value || 'basic';
+  vs.auth = enabled ? type : 'disabled';
+  if (enabled && type === 'forward') {
+    vs.authConfig = {
+      type: 'forward',
+      forwardUrl: document.getElementById('sec-forward-url').value.trim(),
+      method:     document.getElementById('sec-forward-method').value,
+      reqHeaders: [...fwdReqHeaders],
+      resHeaders: [...fwdResHeaders],
+    };
+  } else if (enabled && type === 'basic') {
+    vs.authConfig = { type: 'basic' };
+  }
+  vs.ipControl = {
+    enabled:   document.getElementById('sec-ip-ctrl-enable').checked,
+    whitelist: document.getElementById('sec-ip-whitelist').value.split('\n').map(s => s.trim()).filter(Boolean),
+    blacklist: document.getElementById('sec-ip-blacklist').value.split('\n').map(s => s.trim()).filter(Boolean),
+    message:   document.getElementById('sec-ip-message').value.trim(),
+  };
+  vs.reqSizeConfig = {
+    enabled: document.getElementById('sec-req-size-enable').checked,
+    limitMB: +document.getElementById('sec-req-size-limit').value,
+  };
+  vs.corsConfig = {
+    enabled:       document.getElementById('sec-cors-enable').checked,
+    origins:       document.getElementById('sec-cors-origins').value.trim(),
+    methods:       Array.from(document.querySelectorAll('.cors-method:checked')).map(cb => cb.value),
+    allowHeaders:  document.getElementById('sec-cors-allow-headers').value.trim(),
+    exposeHeaders: document.getElementById('sec-cors-expose-headers').value.trim(),
+    maxAge:        +document.getElementById('sec-cors-max-age').value,
+    credential:    document.getElementById('sec-cors-credential').checked,
+  };
+  vs.refererConfig = {
+    enabled:       document.getElementById('sec-referer-enable').checked,
+    whitelist:     document.getElementById('sec-referer-whitelist').value.split('\n').map(s => s.trim()).filter(Boolean),
+    blacklist:     document.getElementById('sec-referer-blacklist').value.split('\n').map(s => s.trim()).filter(Boolean),
+    bypassMissing: document.getElementById('sec-referer-bypass-missing').checked,
+  };
+  vs.uaConfig = {
+    enabled:   document.getElementById('sec-ua-enable').checked,
+    whitelist: document.getElementById('sec-ua-whitelist').value.split('\n').map(s => s.trim()).filter(Boolean),
+    blacklist: document.getElementById('sec-ua-blacklist').value.split('\n').map(s => s.trim()).filter(Boolean),
+    message:   document.getElementById('sec-ua-message').value.trim(),
+  };
+  vs.uriBlockerConfig = {
+    enabled:      document.getElementById('sec-uri-blocker-enable').checked,
+    blockRules:   document.getElementById('sec-uri-block-rules').value.split('\n').map(s => s.trim()).filter(Boolean),
+    rejectedCode: +document.getElementById('sec-uri-reject-code').value || 403,
+  };
+  allVss = allVss.map(v => v.id === vs.id ? vs : v);
+  saveVss(allVss);
+  renderTabs();
+  showToast('安全配置已保存');
+}
+
+/* ── 通信配置 ── */
+function initCommTab() {
+  const comm = vs.commConfig || {};
+  const wsEn = document.getElementById('comm-ws-enable');
+  wsEn.checked = !!comm.wsEnabled;
+  document.getElementById('comm-ws-label').textContent = comm.wsEnabled ? '已开启' : '已关闭';
+  document.getElementById('comm-host-rewrite').value = comm.hostRewrite || '';
+  document.getElementById('comm-gw-token').value     = comm.gwToken    || '';
+}
+function handleWsToggle() {
+  document.getElementById('comm-ws-label').textContent = document.getElementById('comm-ws-enable').checked ? '已开启' : '已关闭';
+}
+function saveCommConfig() {
+  vs.commConfig = {
+    wsEnabled:   document.getElementById('comm-ws-enable').checked,
+    hostRewrite: document.getElementById('comm-host-rewrite').value.trim(),
+    gwToken:     document.getElementById('comm-gw-token').value.trim(),
+  };
+  allVss = allVss.map(v => v.id === vs.id ? vs : v);
+  saveVss(allVss);
+  showToast('通信配置已保存');
+}
+
+/* ── 日志收集 ── */
+function initLogTab() {
+  const log = vs.logConfig || {};
+  document.getElementById('log-kafka-enable').checked = !!log.kafkaEnabled;
+  document.getElementById('log-kafka-label').textContent = log.kafkaEnabled ? '已开启' : '已关闭';
+  document.getElementById('kafka-config').style.display = log.kafkaEnabled ? '' : 'none';
+  document.getElementById('kafka-brokers').value = log.kafkaBrokers || '';
+  document.getElementById('kafka-topic').value   = log.kafkaTopic   || '';
+  document.getElementById('log-loki-enable').checked = !!log.lokiEnabled;
+  document.getElementById('log-loki-label').textContent = log.lokiEnabled ? '已开启' : '已关闭';
+  document.getElementById('loki-config').style.display = log.lokiEnabled ? '' : 'none';
+  document.getElementById('loki-url').value       = log.lokiUrl      || '';
+  document.getElementById('loki-tenant-id').value = log.lokiTenantId || '';
+}
+function handleKafkaToggle() {
+  const en = document.getElementById('log-kafka-enable').checked;
+  document.getElementById('log-kafka-label').textContent = en ? '已开启' : '已关闭';
+  document.getElementById('kafka-config').style.display = en ? '' : 'none';
+}
+function handleLokiToggle() {
+  const en = document.getElementById('log-loki-enable').checked;
+  document.getElementById('log-loki-label').textContent = en ? '已开启' : '已关闭';
+  document.getElementById('loki-config').style.display = en ? '' : 'none';
+}
+function saveLogConfig() {
+  vs.logConfig = {
+    kafkaEnabled: document.getElementById('log-kafka-enable').checked,
+    kafkaBrokers: document.getElementById('kafka-brokers').value.trim(),
+    kafkaTopic:   document.getElementById('kafka-topic').value.trim(),
+    lokiEnabled:  document.getElementById('log-loki-enable').checked,
+    lokiUrl:      document.getElementById('loki-url').value.trim(),
+    lokiTenantId: document.getElementById('loki-tenant-id').value.trim(),
+  };
+  allVss = allVss.map(v => v.id === vs.id ? vs : v);
+  saveVss(allVss);
+  showToast('日志配置已保存');
+}
+
+/* ── 操作记录 ── */
+const TYPE_LABEL = { create: '新建', update: '修改', delete: '删除', approve: '审核通过' };
+const TYPE_CLASS = { create: 'oplog-create', update: 'oplog-update', delete: 'oplog-delete', approve: 'oplog-approve' };
+function renderOplog() {
+  const type = document.getElementById('oplog-filter-type').value;
+  const kw   = document.getElementById('oplog-filter-kw').value.trim();
+  const rows = OPLOG_SEED.filter(l =>
+    (!type || l.type === type) && (!kw || l.operator.includes(kw) || l.content.includes(kw))
+  );
+  const tbody = document.getElementById('oplog-body');
+  if (rows.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="4"><div class="empty-table">暂无操作记录</div></td></tr>';
+    return;
+  }
+  tbody.innerHTML = rows.map(l => `
+    <tr>
+      <td><span class="oplog-badge ${TYPE_CLASS[l.type] || ''}">${escHtml(TYPE_LABEL[l.type] || l.type)}</span></td>
+      <td>${escHtml(l.content)}</td>
+      <td>${escHtml(l.operator)}</td>
+      <td>${escHtml(formatTime(l.time))}</td>
+    </tr>
+  `).join('');
+}
+
+/* ── 监控 ── */
+function setRange(range, btn) {
+  document.querySelectorAll('.monitor-toolbar .btn').forEach(b => b.className = 'btn btn-sm btn-default');
+  btn.className = 'btn btn-sm btn-primary';
+}
+
+function initCharts() {
+  chartsInitialized = true;
+  try {
+    const c1 = echarts.init(document.getElementById('chart-req'));
+    c1.setOption({ title: { text: '请求量', left: 'center', textStyle: { fontSize: 13 } },
+      tooltip: { trigger: 'axis' }, xAxis: { type: 'category', data: ['10:00','10:10','10:20','10:30','10:40','10:50','11:00'] },
+      yAxis: { type: 'value', name: '次/分' },
+      series: [{ data: [120,145,98,175,230,188,210], type: 'line', smooth: true, areaStyle: {} }] });
+    const c2 = echarts.init(document.getElementById('chart-status'));
+    c2.setOption({ title: { text: '响应状态分布', left: 'center', textStyle: { fontSize: 13 } },
+      tooltip: { trigger: 'axis' }, xAxis: { type: 'category', data: ['10:00','10:10','10:20','10:30','10:40','10:50','11:00'] },
+      yAxis: { type: 'value' },
+      series: [
+        { name: '2xx', data: [118,143,97,172,227,186,208], type: 'bar', stack: 'status', color: '#52c41a' },
+        { name: '5xx', data: [2,2,1,3,3,2,2], type: 'bar', stack: 'status', color: '#ff4d4f' },
+      ] });
+  } catch(e) {}
+}
+
+/* ── 初始化 ── */
+if (vs) {
+  renderInfo();
+  renderTabs();
+  switchTab('info');
+}
+</script>
+</body>
+</html>

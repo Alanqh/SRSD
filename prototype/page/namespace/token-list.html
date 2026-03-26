@@ -39,14 +39,11 @@
     </nav>
     <div class="page-title-row">
       <h2 class="page-title">Token 管理 <span class="perm-badge">🔐 Master 及以上</span></h2>
-      <div class="page-actions">
-        <button class="btn btn-primary" onclick="openCreateModal()">+ 新建 Token</button>
-      </div>
     </div>
   </div>
 
   <div class="content-body">
-    <div class="alert alert-info" style="margin-bottom:0">
+    <div class="alert alert-info" style="margin-bottom:0;flex-direction:column">
       <div style="margin-bottom:8px">ℹ️ Token 是 Consul ACL Token 的业务抽象，由系统自动生成，无需手动填写。一个 Token 可关联同一命名空间下的多个真实服务（虚拟服务不支持关联）。</div>
       <div style="font-weight:500;margin-bottom:6px">如何在 DomeOS 中使用 Token：</div>
       <div style="color:rgba(0,0,0,0.65);padding-left:12px">
@@ -57,6 +54,7 @@
     </div>
 
     <div class="search-bar">
+      <button class="btn btn-primary" onclick="openCreateModal()" style="align-self:flex-end;white-space:nowrap">+ 新建 Token</button>
       <div class="search-item">
         <label>命名空间</label>
         <select id="search-ns" class="ant-select">

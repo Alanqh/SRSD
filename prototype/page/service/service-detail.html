@@ -212,30 +212,25 @@
                 <div class="setting-row">
                   <div class="setting-label">转发请求头</div>
                   <div class="setting-value">
+                    <div class="form-hint" style="margin-top:0;margin-bottom:8px">转发鉴权请求时携带的原始请求头，填写字段名和字段说明，可添加多组</div>
                     <div id="sec-forward-req-headers" style="margin-bottom:8px"></div>
-                    <div style="display:flex;gap:8px">
-                      <input id="sec-fwd-req-input" class="ant-input" style="width:220px" placeholder="Header 名称，如 Cookie" />
+                    <div style="display:flex;gap:8px;align-items:center">
+                      <input id="sec-fwd-req-field" class="ant-input" style="width:160px" placeholder="字段名，如 Cookie" />
+                      <input id="sec-fwd-req-desc" class="ant-input" style="width:200px" placeholder="字段说明，如 登录凭证" />
                       <button class="btn btn-default btn-sm" onclick="addFwdReqHeader()">+ 添加</button>
                     </div>
-                    <div class="form-hint">转发鉴权请求时携带的原始请求头（默认已含 Authorization）</div>
                   </div>
                 </div>
                 <div class="setting-row">
                   <div class="setting-label">响应头回写</div>
                   <div class="setting-value">
+                    <div class="form-hint" style="margin-top:0;margin-bottom:8px">鉴权成功后将鉴权响应中的指定头回写到原始请求，填写字段名和字段说明，可添加多组</div>
                     <div id="sec-forward-res-headers" style="margin-bottom:8px"></div>
-                    <div style="display:flex;gap:8px">
-                      <input id="sec-fwd-res-input" class="ant-input" style="width:220px" placeholder="Header 名称，如 X-Auth-User" />
+                    <div style="display:flex;gap:8px;align-items:center">
+                      <input id="sec-fwd-res-field" class="ant-input" style="width:160px" placeholder="字段名，如 X-Auth-User" />
+                      <input id="sec-fwd-res-desc" class="ant-input" style="width:200px" placeholder="字段说明，如 用户ID" />
                       <button class="btn btn-default btn-sm" onclick="addFwdResHeader()">+ 添加</button>
                     </div>
-                    <div class="form-hint">鉴权响应中需回写到原始请求的 Header（如用户ID、角色）</div>
-                  </div>
-                </div>
-                <div class="setting-row">
-                  <div class="setting-label">鉴权超时</div>
-                  <div class="setting-value" style="display:flex;align-items:center;gap:8px">
-                    <input id="sec-forward-timeout" class="ant-input" style="width:100px" type="number" value="3" />
-                    <span style="color:rgba(0,0,0,0.45)">秒</span>
                   </div>
                 </div>
               </div>
@@ -398,10 +393,73 @@
                 </div>
               </div>
             </div>
+            <div class="protection-block">
+              <div class="sub-section-title">User-Agent 限制（对应 APISIX ua-restriction 插件）</div>
+              <div class="setting-row" style="border:none;padding:4px 0">
+                <div class="setting-label">启用</div>
+                <div class="setting-value">
+                  <div class="switch-wrap">
+                    <label class="switch"><input type="checkbox" id="sec-ua-enable" onchange="handleUaToggle()" /><span class="switch-slider"></span></label>
+                  </div>
+                </div>
+              </div>
+              <div id="sec-ua-config" style="display:none">
+                <div class="setting-row" style="border:none;padding:4px 0">
+                  <div class="setting-label">UA 白名单</div>
+                  <div class="setting-value">
+                    <textarea id="sec-ua-whitelist" class="ant-input" rows="3" style="max-width:400px;font-family:monospace;font-size:12px" placeholder="每行一个 User-Agent 字符串或正则，如：&#10;Mozilla/5.0*&#10;curl/*"></textarea>
+                    <div class="form-hint">仅允许匹配的 User-Agent 访问，留空则不启用白名单限制</div>
+                  </div>
+                </div>
+                <div class="setting-row" style="border:none;padding:4px 0">
+                  <div class="setting-label">UA 黑名单</div>
+                  <div class="setting-value">
+                    <textarea id="sec-ua-blacklist" class="ant-input" rows="3" style="max-width:400px;font-family:monospace;font-size:12px" placeholder="每行一个 User-Agent 字符串或正则，如：&#10;python-requests*&#10;Go-http-client*"></textarea>
+                    <div class="form-hint">拒绝匹配的 User-Agent 访问，留空则不启用黑名单限制</div>
+                  </div>
+                </div>
+                <div class="setting-row" style="border:none;padding:4px 0">
+                  <div class="setting-label">拒绝提示语</div>
+                  <div class="setting-value">
+                    <input id="sec-ua-message" class="ant-input" style="max-width:360px" placeholder="留空则使用默认提示：Not allowed" />
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="protection-block">
+              <div class="sub-section-title">URI 阻断（对应 APISIX uri-blocker 插件）</div>
+              <div class="setting-row" style="border:none;padding:4px 0">
+                <div class="setting-label">启用</div>
+                <div class="setting-value">
+                  <div class="switch-wrap">
+                    <label class="switch"><input type="checkbox" id="sec-uri-blocker-enable" onchange="handleUriBlockerToggle()" /><span class="switch-slider"></span></label>
+                  </div>
+                </div>
+              </div>
+              <div id="sec-uri-blocker-config" style="display:none">
+                <div class="setting-row" style="border:none;padding:4px 0">
+                  <div class="setting-label">阻断 URI 规则</div>
+                  <div class="setting-value">
+                    <textarea id="sec-uri-block-rules" class="ant-input" rows="4" style="max-width:400px;font-family:monospace;font-size:12px" placeholder="每行一个正则表达式，如：&#10;\.php$&#10;/admin/.*&#10;/\.git/.*"></textarea>
+                    <div class="form-hint">匹配规则的请求 URI 将被直接拒绝（对应 block_rules 字段，支持正则）</div>
+                  </div>
+                </div>
+                <div class="setting-row" style="border:none;padding:4px 0">
+                  <div class="setting-label">拒绝状态码</div>
+                  <div class="setting-value" style="display:flex;align-items:center;gap:8px">
+                    <input id="sec-uri-reject-code" class="ant-input" style="width:100px" type="number" value="403" />
+                    <span style="color:rgba(0,0,0,0.45)">（对应 rejected_code，默认 403）</span>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
 
           <div class="config-section">
             <div class="config-section-title">服务别名</div>
+            <div class="alert alert-warning" style="margin-bottom:12px">
+              ⚠️ 添加服务别名后，需要在自己的 DNS 里配置 CNAME 记录，将别名指向此服务的代理地址（<span id="alias-proxy-hint" style="font-family:monospace;font-size:12px"></span>），否则别名无法正常解析。
+            </div>
             <div class="setting-row">
               <div class="setting-label">当前别名</div>
               <div class="setting-value">
@@ -410,7 +468,7 @@
                   <input id="alias-input" class="ant-input" style="max-width:320px" placeholder="输入自定义域名，如 myservice.example.com" />
                   <button class="btn btn-default" onclick="addSecAlias()">添加</button>
                 </div>
-                <div class="form-hint">别名将通过 DNS 解析到当前代理地址，每个服务最多配置 5 个</div>
+                <div class="form-hint">每个服务最多配置 5 个别名</div>
               </div>
             </div>
           </div>
@@ -559,6 +617,13 @@
               <div class="setting-value"><input id="health-path" class="ant-input" style="max-width:360px" value="/health" placeholder="/health" /></div>
             </div>
             <div class="setting-row">
+              <div class="setting-label">检查端口</div>
+              <div class="setting-value">
+                <input id="health-port" class="ant-input" style="width:100px" type="number" placeholder="默认使用实例端口" />
+                <div class="form-hint">留空则使用实例注册端口</div>
+              </div>
+            </div>
+            <div class="setting-row">
               <div class="setting-label">检查间隔</div>
               <div class="setting-value" style="display:flex;align-items:center;gap:8px">
                 <input id="health-interval" class="ant-input" style="width:120px" type="number" value="10" />
@@ -572,13 +637,43 @@
                 <span style="color:rgba(0,0,0,0.45)">秒</span>
               </div>
             </div>
+            <div class="sub-section-title" style="margin:12px 0 8px">健康判定条件</div>
             <div class="setting-row">
-              <div class="setting-label">健康阈值（连续成功次数）</div>
+              <div class="setting-label">连续成功次数</div>
               <div class="setting-value"><input id="health-healthy-threshold" class="ant-input" style="width:100px" type="number" value="2" /></div>
             </div>
             <div class="setting-row">
-              <div class="setting-label">故障阈值（连续失败次数）</div>
+              <div class="setting-label">健康 HTTP 状态码</div>
+              <div class="setting-value">
+                <input id="health-healthy-statuses" class="ant-input" style="max-width:300px" value="200,302" placeholder="多个状态码用英文逗号分隔" />
+                <div class="form-hint">响应状态码在此列表内则视为健康（对应 healthy.http_statuses）</div>
+              </div>
+            </div>
+            <div class="sub-section-title" style="margin:12px 0 8px">故障判定条件</div>
+            <div class="setting-row">
+              <div class="setting-label">连续失败次数</div>
               <div class="setting-value"><input id="health-unhealthy-threshold" class="ant-input" style="width:100px" type="number" value="3" /></div>
+            </div>
+            <div class="setting-row">
+              <div class="setting-label">故障 HTTP 状态码</div>
+              <div class="setting-value">
+                <input id="health-unhealthy-statuses" class="ant-input" style="max-width:300px" value="429,500,501,502,503,504" placeholder="多个状态码用英文逗号分隔" />
+                <div class="form-hint">响应状态码在此列表内则视为不健康（对应 unhealthy.http_statuses）</div>
+              </div>
+            </div>
+            <div class="setting-row">
+              <div class="setting-label">TCP 连接失败次数</div>
+              <div class="setting-value">
+                <input id="health-unhealthy-tcp" class="ant-input" style="width:100px" type="number" value="2" />
+                <div class="form-hint">连续 TCP 连接失败达到此数值则标为不健康</div>
+              </div>
+            </div>
+            <div class="setting-row">
+              <div class="setting-label">超时次数</div>
+              <div class="setting-value">
+                <input id="health-unhealthy-timeouts" class="ant-input" style="width:100px" type="number" value="3" />
+                <div class="form-hint">连续超时达到此数值则标为不健康</div>
+              </div>
             </div>
           </div>
 
@@ -599,11 +694,10 @@
             <div id="health-passive-config" style="display:none">
               <div class="sub-section-title" style="margin:12px 0 8px">不健康条件</div>
               <div class="setting-row">
-                <div class="setting-label">HTTP 5xx 触发</div>
+                <div class="setting-label">故障 HTTP 状态码</div>
                 <div class="setting-value">
-                  <div class="switch-wrap">
-                    <label class="switch"><input type="checkbox" id="health-passive-5xx" checked /><span class="switch-slider"></span></label>
-                  </div>
+                  <input id="health-passive-fail-statuses" class="ant-input" style="max-width:300px" value="429,500,503" placeholder="多个状态码用英文逗号分隔" />
+                  <div class="form-hint">对应 unhealthy.http_statuses</div>
                 </div>
               </div>
               <div class="setting-row">
@@ -612,7 +706,26 @@
                   <input id="health-passive-fail-count" class="ant-input" style="width:100px" type="number" value="3" />
                 </div>
               </div>
+              <div class="setting-row">
+                <div class="setting-label">TCP 连接失败次数</div>
+                <div class="setting-value">
+                  <input id="health-passive-tcp-fail" class="ant-input" style="width:100px" type="number" value="2" />
+                </div>
+              </div>
+              <div class="setting-row">
+                <div class="setting-label">超时次数</div>
+                <div class="setting-value">
+                  <input id="health-passive-timeout-count" class="ant-input" style="width:100px" type="number" value="3" />
+                </div>
+              </div>
               <div class="sub-section-title" style="margin:12px 0 8px">恢复条件</div>
+              <div class="setting-row">
+                <div class="setting-label">健康 HTTP 状态码</div>
+                <div class="setting-value">
+                  <input id="health-passive-ok-statuses" class="ant-input" style="max-width:300px" value="200,201,202,204,301,302" placeholder="多个状态码用英文逗号分隔" />
+                  <div class="form-hint">对应 healthy.http_statuses</div>
+                </div>
+              </div>
               <div class="setting-row">
                 <div class="setting-label">连续成功次数</div>
                 <div class="setting-value">
@@ -1175,6 +1288,28 @@ function viewPrivateCred(crossId) {
 }
 function viewFwdConfig(id) {
   const s = allSvcs.find(sv => sv.id === id) || { name: id, authConfig: { forwardUrl: 'http://sso-service/auth' } };
+  const reqHdrs = (s.authConfig?.reqHeaders || []);
+  const resHdrs = (s.authConfig?.resHeaders || []);
+  const reqRows = reqHdrs.length === 0
+    ? '<div style="color:rgba(0,0,0,0.25);font-size:13px">未配置</div>'
+    : reqHdrs.map(h => {
+        const field = typeof h === 'object' ? h.field : h;
+        const desc  = typeof h === 'object' ? h.desc  : '';
+        return `<div style="display:flex;gap:8px;margin-bottom:4px;font-size:13px">
+          <span style="font-family:monospace;color:var(--color-primary)">${escHtml(field)}</span>
+          ${desc ? `<span style="color:rgba(0,0,0,0.45)">— ${escHtml(desc)}</span>` : ''}
+        </div>`;
+      }).join('');
+  const resRows = resHdrs.length === 0
+    ? '<div style="color:rgba(0,0,0,0.25);font-size:13px">未配置</div>'
+    : resHdrs.map(h => {
+        const field = typeof h === 'object' ? h.field : h;
+        const desc  = typeof h === 'object' ? h.desc  : '';
+        return `<div style="display:flex;gap:8px;margin-bottom:4px;font-size:13px">
+          <span style="font-family:monospace;color:var(--color-primary)">${escHtml(field)}</span>
+          ${desc ? `<span style="color:rgba(0,0,0,0.45)">— ${escHtml(desc)}</span>` : ''}
+        </div>`;
+      }).join('');
   document.getElementById('cred-modal-title').textContent = `鉴权配置 — ${s.name || id}`;
   document.getElementById('cred-modal-body').innerHTML = `
     <div class="cred-row"><div class="cred-label">鉴权类型</div><div class="cred-val">Forward Auth</div></div>
@@ -1182,9 +1317,17 @@ function viewFwdConfig(id) {
       <div class="cred-label">鉴权地址</div>
       <div class="cred-val" style="font-family:monospace;font-size:12px">${escHtml(s.authConfig?.forwardUrl || '--')}</div>
     </div>
+    <div class="cred-row" style="flex-direction:column;align-items:flex-start;gap:4px">
+      <div class="cred-label" style="width:auto;font-weight:500">转发请求头</div>
+      <div style="padding-left:4px;width:100%">${reqRows}</div>
+    </div>
+    <div class="cred-row" style="flex-direction:column;align-items:flex-start;gap:4px">
+      <div class="cred-label" style="width:auto;font-weight:500">响应头回写</div>
+      <div style="padding-left:4px;width:100%">${resRows}</div>
+    </div>
     <div class="cred-row">
       <div class="cred-label">说明</div>
-      <div class="cred-val" style="color:rgba(0,0,0,0.65)">请求时须在 Header 中携带有效凭证，代理网关自动转发至鉴权服务验证</div>
+      <div class="cred-val" style="color:rgba(0,0,0,0.65)">请求时须在指定 Header 中携带有效凭证，代理网关自动转发至鉴权服务验证</div>
     </div>`;
   openModal(document.getElementById('cred-modal'));
 }
@@ -1203,8 +1346,8 @@ function copyText(text) {
 
 /* ── 安全配置 ── */
 let secAliases = [];
-let fwdReqHeaders = ['Authorization'];
-let fwdResHeaders = [];
+let fwdReqHeaders = []; // [{field, desc}]
+let fwdResHeaders = []; // [{field, desc}]
 
 function initSecurityTab() {
   const enabled = svc.auth === 'basic' || svc.auth === 'forward';
@@ -1219,9 +1362,15 @@ function initSecurityTab() {
     if (svc.auth === 'forward' && svc.authConfig) {
       document.getElementById('sec-forward-url').value = svc.authConfig.forwardUrl || '';
       if (svc.authConfig.method) document.getElementById('sec-forward-method').value = svc.authConfig.method;
-      if (svc.authConfig.reqHeaders) { fwdReqHeaders = [...svc.authConfig.reqHeaders]; }
-      if (svc.authConfig.resHeaders) { fwdResHeaders = [...svc.authConfig.resHeaders]; }
+      fwdReqHeaders = svc.authConfig.reqHeaders ? [...svc.authConfig.reqHeaders] : [];
+      fwdResHeaders = svc.authConfig.resHeaders ? [...svc.authConfig.resHeaders] : [];
+    } else {
+      fwdReqHeaders = [];
+      fwdResHeaders = [];
     }
+  } else {
+    fwdReqHeaders = [];
+    fwdResHeaders = [];
   }
   renderFwdHeaders();
   const ipCtrl = svc.ipControl || {};
@@ -1253,7 +1402,23 @@ function initSecurityTab() {
   document.getElementById('sec-referer-whitelist').value = (referer.whitelist || []).join('\n');
   document.getElementById('sec-referer-blacklist').value = (referer.blacklist || []).join('\n');
   document.getElementById('sec-referer-bypass-missing').checked = referer.bypassMissing !== false;
+  // UA restriction
+  const ua = svc.uaConfig || {};
+  document.getElementById('sec-ua-enable').checked = !!ua.enabled;
+  document.getElementById('sec-ua-config').style.display = ua.enabled ? '' : 'none';
+  document.getElementById('sec-ua-whitelist').value = (ua.whitelist || []).join('\n');
+  document.getElementById('sec-ua-blacklist').value = (ua.blacklist || []).join('\n');
+  document.getElementById('sec-ua-message').value = ua.message || '';
+  // URI blocker
+  const uriB = svc.uriBlockerConfig || {};
+  document.getElementById('sec-uri-blocker-enable').checked = !!uriB.enabled;
+  document.getElementById('sec-uri-blocker-config').style.display = uriB.enabled ? '' : 'none';
+  document.getElementById('sec-uri-block-rules').value = (uriB.blockRules || []).join('\n');
+  if (uriB.rejectedCode) document.getElementById('sec-uri-reject-code').value = uriB.rejectedCode;
+  // Aliases
   secAliases = [...(svc.aliases || [])];
+  const proxyHint = document.getElementById('alias-proxy-hint');
+  if (proxyHint) proxyHint.textContent = svc.proxy || '';
   renderSecAliasTags();
 }
 
@@ -1268,26 +1433,44 @@ function handleAuthTypeChange() {
   document.getElementById('sec-forward-fields').style.display = type === 'forward' ? '' : 'none';
 }
 function addFwdReqHeader() {
-  const v = document.getElementById('sec-fwd-req-input').value.trim();
-  if (!v || fwdReqHeaders.includes(v)) return;
-  fwdReqHeaders.push(v);
-  document.getElementById('sec-fwd-req-input').value = '';
+  const field = document.getElementById('sec-fwd-req-field').value.trim();
+  const desc  = document.getElementById('sec-fwd-req-desc').value.trim();
+  if (!field) return;
+  if (fwdReqHeaders.some(h => h.field === field)) return;
+  fwdReqHeaders.push({ field, desc });
+  document.getElementById('sec-fwd-req-field').value = '';
+  document.getElementById('sec-fwd-req-desc').value = '';
   renderFwdHeaders();
 }
 function addFwdResHeader() {
-  const v = document.getElementById('sec-fwd-res-input').value.trim();
-  if (!v || fwdResHeaders.includes(v)) return;
-  fwdResHeaders.push(v);
-  document.getElementById('sec-fwd-res-input').value = '';
+  const field = document.getElementById('sec-fwd-res-field').value.trim();
+  const desc  = document.getElementById('sec-fwd-res-desc').value.trim();
+  if (!field) return;
+  if (fwdResHeaders.some(h => h.field === field)) return;
+  fwdResHeaders.push({ field, desc });
+  document.getElementById('sec-fwd-res-field').value = '';
+  document.getElementById('sec-fwd-res-desc').value = '';
   renderFwdHeaders();
 }
 function removeFwdReqHeader(i) { fwdReqHeaders.splice(i,1); renderFwdHeaders(); }
 function removeFwdResHeader(i) { fwdResHeaders.splice(i,1); renderFwdHeaders(); }
 function renderFwdHeaders() {
-  document.getElementById('sec-forward-req-headers').innerHTML = fwdReqHeaders.map((h,i) =>
-    `<span class="alias-tag">${escHtml(h)}<span class="del" onclick="removeFwdReqHeader(${i})">×</span></span>`).join('');
-  document.getElementById('sec-forward-res-headers').innerHTML = fwdResHeaders.map((h,i) =>
-    `<span class="alias-tag">${escHtml(h)}<span class="del" onclick="removeFwdResHeader(${i})">×</span></span>`).join('');
+  document.getElementById('sec-forward-req-headers').innerHTML = fwdReqHeaders.length === 0
+    ? '<div style="color:rgba(0,0,0,0.25);font-size:12px">暂未添加</div>'
+    : fwdReqHeaders.map((h,i) => `
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;background:#fafafa;border:1px solid #f0f0f0;padding:4px 8px">
+        <span style="font-family:monospace;font-size:12px;color:var(--color-primary);min-width:120px">${escHtml(h.field)}</span>
+        <span style="font-size:12px;color:rgba(0,0,0,0.65);flex:1">${escHtml(h.desc || '--')}</span>
+        <span class="del" onclick="removeFwdReqHeader(${i})" style="cursor:pointer;color:rgba(0,0,0,0.45);font-size:14px">×</span>
+      </div>`).join('');
+  document.getElementById('sec-forward-res-headers').innerHTML = fwdResHeaders.length === 0
+    ? '<div style="color:rgba(0,0,0,0.25);font-size:12px">暂未添加</div>'
+    : fwdResHeaders.map((h,i) => `
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;background:#fafafa;border:1px solid #f0f0f0;padding:4px 8px">
+        <span style="font-family:monospace;font-size:12px;color:var(--color-primary);min-width:120px">${escHtml(h.field)}</span>
+        <span style="font-size:12px;color:rgba(0,0,0,0.65);flex:1">${escHtml(h.desc || '--')}</span>
+        <span class="del" onclick="removeFwdResHeader(${i})" style="cursor:pointer;color:rgba(0,0,0,0.45);font-size:14px">×</span>
+      </div>`).join('');
 }
 function handleIpCtrlToggle() {
   document.getElementById('sec-ip-ctrl-config').style.display =
@@ -1304,6 +1487,14 @@ function handleCorsToggle() {
 function handleRefererToggle() {
   document.getElementById('sec-referer-config').style.display =
     document.getElementById('sec-referer-enable').checked ? '' : 'none';
+}
+function handleUaToggle() {
+  document.getElementById('sec-ua-config').style.display =
+    document.getElementById('sec-ua-enable').checked ? '' : 'none';
+}
+function handleUriBlockerToggle() {
+  document.getElementById('sec-uri-blocker-config').style.display =
+    document.getElementById('sec-uri-blocker-enable').checked ? '' : 'none';
 }
 function addSecAlias() {
   const v = document.getElementById('alias-input').value.trim();
@@ -1330,7 +1521,6 @@ function saveSecurityConfig() {
       method:     document.getElementById('sec-forward-method').value,
       reqHeaders: [...fwdReqHeaders],
       resHeaders: [...fwdResHeaders],
-      timeout:    +document.getElementById('sec-forward-timeout').value,
     };
   } else if (enabled) {
     svc.authConfig = { type: 'basic' };
@@ -1361,6 +1551,17 @@ function saveSecurityConfig() {
     whitelist:     document.getElementById('sec-referer-whitelist').value.split('\n').map(s => s.trim()).filter(Boolean),
     blacklist:     document.getElementById('sec-referer-blacklist').value.split('\n').map(s => s.trim()).filter(Boolean),
     bypassMissing: document.getElementById('sec-referer-bypass-missing').checked,
+  };
+  svc.uaConfig = {
+    enabled:   document.getElementById('sec-ua-enable').checked,
+    whitelist: document.getElementById('sec-ua-whitelist').value.split('\n').map(s => s.trim()).filter(Boolean),
+    blacklist: document.getElementById('sec-ua-blacklist').value.split('\n').map(s => s.trim()).filter(Boolean),
+    message:   document.getElementById('sec-ua-message').value.trim(),
+  };
+  svc.uriBlockerConfig = {
+    enabled:      document.getElementById('sec-uri-blocker-enable').checked,
+    blockRules:   document.getElementById('sec-uri-block-rules').value.split('\n').map(s => s.trim()).filter(Boolean),
+    rejectedCode: +document.getElementById('sec-uri-reject-code').value || 403,
   };
   svc.aliases = [...secAliases];
   allSvcs = allSvcs.map(s => s.id === svc.id ? svc : s);
