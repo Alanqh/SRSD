@@ -212,7 +212,7 @@ function viewPublicCred() {
   credPwdVisible = false;
   document.getElementById('cred-modal-title').textContent = '通用凭证';
   document.getElementById('cred-modal-body').innerHTML = `
-    <div class="alert alert-info" style="margin-bottom:12px">此为您的全局通用凭证，可用于访问所有公共空间或同命名空间下开启 Basic Auth 鉴权的服务。使用时将 User:Password 进行 Base64 编码，以 <code>Authorization: Basic 编码值</code> 格式加入请求头。</div>
+    <div class="alert alert-info" style="margin-bottom:12px"><div><div>此为您的全局通用凭证，可用于访问所有公共空间或同命名空间下开启 Basic Auth 鉴权的服务。</div><div style="margin-top:6px">使用时将 User:Password 进行 Base64 编码，以 <code>Authorization: Basic 编码值</code> 格式加入请求头。</div></div></div>
     <div class="cred-row">
       <div class="cred-label">User</div>
       <div class="cred-val">${escHtml(GLOBAL_USER)}</div>
@@ -231,7 +231,7 @@ function viewPrivateCred(name, pwd) {
   credPwdVisible = false;
   document.getElementById('cred-modal-title').textContent = `专用凭证 — ${name}`;
   document.getElementById('cred-modal-body').innerHTML = `
-    <div class="alert alert-info" style="margin-bottom:12px">此为跨空间访问的专用凭证，仅授权给您本人使用，请妥善保管</div>
+    <div class="alert alert-info" style="margin-bottom:12px"><div><div>此为跨空间访问的专用凭证，仅授权给您本人使用，请妥善保管。</div><div style="margin-top:6px">使用时将 User:Password 进行 Base64 编码，以 <code>Authorization: Basic 编码值</code> 格式加入请求头。</div></div></div>
     <div class="cred-row">
       <div class="cred-label">User</div>
       <div class="cred-val">${escHtml(GLOBAL_USER)}</div>
@@ -250,14 +250,15 @@ function viewFwdConfig(name, forwardUrl) {
   document.getElementById('cred-modal-title').textContent = `鉴权配置 — ${name}`;
   document.getElementById('cred-modal-body').innerHTML = `
     <div class="cred-row"><div class="cred-label">鉴权类型</div><div class="cred-val">Forward Auth</div></div>
-    <div class="cred-row">
-      <div class="cred-label">鉴权地址</div>
-      <div class="cred-val" style="font-family:monospace;font-size:12px">${escHtml(forwardUrl || '--')}</div>
+    <div class="cred-row" style="flex-direction:column;align-items:flex-start;gap:4px">
+      <div class="cred-label" style="width:auto;font-weight:500">转发请求头</div>
+      <div style="padding-left:4px;width:100%;color:rgba(0,0,0,0.25);font-size:13px">未配置</div>
     </div>
-    <div class="cred-row">
-      <div class="cred-label">说明</div>
-      <div class="cred-val" style="color:rgba(0,0,0,0.65)">请求时须在 Header 中携带有效凭证，代理网关自动转发至鉴权服务验证</div>
-    </div>`;
+    <div class="cred-row" style="flex-direction:column;align-items:flex-start;gap:4px">
+      <div class="cred-label" style="width:auto;font-weight:500">响应头回写</div>
+      <div style="padding-left:4px;width:100%;color:rgba(0,0,0,0.25);font-size:13px">未配置</div>
+    </div>
+    <div class="cred-row"><div class="cred-label">说明</div><div class="cred-val" style="color:rgba(0,0,0,0.65)">请求时须在 Header 中携带有效凭证，代理网关自动转发至鉴权服务验证</div></div>`;
   openModal(document.getElementById('cred-modal'));
 }
 

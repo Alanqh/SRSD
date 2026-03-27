@@ -1743,7 +1743,7 @@ function viewUniversalCred(svcId) {
   credPwdVisible = false;
   document.getElementById('cred-modal-title').textContent = `通用凭证 — ${s.name}`;
   document.getElementById('cred-modal-body').innerHTML = `
-    <div class="alert alert-info" style="margin-bottom:12px">此为通用凭证，与该服务同命名空间或公共空间的服务均可使用此凭证访问</div>
+    <div class="alert alert-info" style="margin-bottom:12px"><div><div>此为通用凭证，与该服务同命名空间或公共空间的服务均可使用此凭证访问。</div><div style="margin-top:6px">使用时将 User:Password 进行 Base64 编码，以 <code>Authorization: Basic 编码值</code> 格式加入请求头。</div></div></div>
     <div class="cred-row">
       <div class="cred-label">User</div>
       <div class="cred-val">srsd-user</div>
@@ -1761,7 +1761,7 @@ function viewPrivateCred(crossId) {
   credPwdVisible = false;
   document.getElementById('cred-modal-title').textContent = '专用凭证';
   document.getElementById('cred-modal-body').innerHTML = `
-    <div class="alert alert-info" style="margin-bottom:12px">此为跨空间访问的专用凭证，仅授权给本服务使用，请妥善保管</div>
+    <div class="alert alert-info" style="margin-bottom:12px"><div><div>此为跨空间访问的专用凭证，仅授权给本服务使用，请妥善保管。</div><div style="margin-top:6px">使用时将 User:Password 进行 Base64 编码，以 <code>Authorization: Basic 编码值</code> 格式加入请求头。</div></div></div>
     <div class="cred-row">
       <div class="cred-label">User</div>
       <div class="cred-val">svc-private-${escHtml(crossId)}</div>
@@ -1802,10 +1802,6 @@ function viewFwdConfig(id) {
   document.getElementById('cred-modal-title').textContent = `鉴权配置 — ${s.name || id}`;
   document.getElementById('cred-modal-body').innerHTML = `
     <div class="cred-row"><div class="cred-label">鉴权类型</div><div class="cred-val">Forward Auth</div></div>
-    <div class="cred-row">
-      <div class="cred-label">鉴权地址</div>
-      <div class="cred-val" style="font-family:monospace;font-size:12px">${escHtml(s.authConfig?.forwardUrl || '--')}</div>
-    </div>
     <div class="cred-row" style="flex-direction:column;align-items:flex-start;gap:4px">
       <div class="cred-label" style="width:auto;font-weight:500">转发请求头</div>
       <div style="padding-left:4px;width:100%">${reqRows}</div>
