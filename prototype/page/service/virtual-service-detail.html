@@ -211,6 +211,19 @@
               <tbody id="access-accessible-body"></tbody>
             </table>
           </div>
+          <div class="config-section">
+            <div class="config-section-title">其他私有空间服务（需申请审批）</div>
+            <div class="alert alert-info" style="margin-bottom:12px">
+              访问其他私有命名空间下的鉴权服务，需先提交访问申请，审批通过后方可使用专用凭证。未开启鉴权的服务无需申请。
+            </div>
+            <div style="display:flex;justify-content:flex-end;margin-bottom:12px">
+              <a class="btn btn-primary" href="../apply/apply-list.html">+ 申请访问其他服务</a>
+            </div>
+            <table class="ant-table" style="width:100%">
+              <thead><tr><th>服务名称</th><th>所属空间</th><th>代理地址</th><th>鉴权类型</th><th>申请状态</th><th>操作</th></tr></thead>
+              <tbody id="access-private-body"></tbody>
+            </table>
+          </div>
         </div>
 
         <!-- Tab: 安全配置 -->
@@ -988,7 +1001,7 @@ function switchTab(key) {
   renderTabs();
   if (key === 'monitor'      && !chartsInitialized) initCharts();
   if (key === 'clients')     renderClientsTable();
-  if (key === 'access')      renderAccessTable();
+  if (key === 'access')      { renderAccessTable(); renderAccessPrivateList(); }
   if (key === 'oplog')       renderOplog();
   if (key === 'log')         { renderLogDisplay(); initLogTab(); }
   if (key === 'security')    { renderSecurityDisplay(); initSecurityTab(); }
@@ -1357,7 +1370,8 @@ function renderAccessTable() {
     const authLabel = { none: '无需鉴权', disabled: '无需鉴权', basic: 'Basic Auth', forward: 'Forward Auth' }[s.auth] || s.auth;
     const authClass = AUTH_CLASS_MAP[s.auth] || 'tag-default';
     let op = '<span style="color:rgba(0,0,0,0.25)">直接访问</span>';
-    if (s.auth === 'basic')   op = `<button class="btn btn-link" onclick="viewCred('${escHtml(s.id)}')">查看凭证</button>`;
+    if (s.auth === 'basic')   op = `<button class="btn btn-link" onclick="viewUniversalCred('${escHtml(s.id)}')">查看通用凭证</button>`;
+    if (s.auth === 'forward') op = `<button class="btn btn-link" onclick="viewFwdConfig('${escHtml(s.id)}')">查询鉴权配置</button>`;
     return `<tr>
       <td>${escHtml(s.name)}</td>
       <td>${escHtml(s.ns)}</td>
@@ -1368,13 +1382,96 @@ function renderAccessTable() {
   }).join('');
 }
 
-function viewCred(svcId) {
+function renderAccessPrivateList() {
+  const MOCK_APPROVED = [
+    { id: 'cross-1', name: 'nightingale-prod', ns: 'cloud-native', proxy: 'nightingale-prod-cloud-native.domeos.sohucs.com', auth: 'forward', status: '已授权' },
+  ].filter(r => r.ns !== vs.ns && !PUBLIC_NAMESPACES.has(r.ns));
+  const tbody = document.getElementById('access-private-body');
+  if (MOCK_APPROVED.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="6"><div class="empty-table">暂无已申请的跨空间服务</div></td></tr>';
+    return;
+  }
+  tbody.innerHTML = MOCK_APPROVED.map(r => {
+    const authLabel = { basic: 'Basic Auth', forward: 'Forward Auth' }[r.auth] || r.auth;
+    const authClass = { basic: 'tag-processing', forward: 'tag-success' }[r.auth] || 'tag-default';
+    let op = '';
+    if (r.auth === 'basic')   op = `<button class="btn btn-link" onclick="viewPrivateCred('${escHtml(r.id)}')">查看专用凭证</button>`;
+    if (r.auth === 'forward') op = `<button class="btn btn-link" onclick="viewFwdConfig('${escHtml(r.id)}')">查看鉴权配置</button>`;
+    return `<tr>
+      <td>${escHtml(r.name)}</td>
+      <td>${escHtml(r.ns)}</td>
+      <td><button class="btn btn-default btn-sm" onclick="openProxyModal(${JSON.stringify({name:r.name,proxy:r.proxy,protocol:'http',aliases:[]})})">查看</button></td>
+      <td><span class="tag ${authClass}">${escHtml(authLabel)}</span></td>
+      <td><span class="tag tag-success">${escHtml(r.status)}</span></td>
+      <td>${op}</td>
+    </tr>`;
+  }).join('');
+}
+
+let credPwdVisible = false;
+function viewUniversalCred(svcId) {
   const s = allSvcs.find(sv => sv.id === svcId);
   if (!s) return;
-  document.getElementById('cred-modal-title').textContent = `访问凭证 — ${s.name}`;
+  credPwdVisible = false;
+  document.getElementById('cred-modal-title').textContent = `通用凭证 — ${s.name}`;
   document.getElementById('cred-modal-body').innerHTML = `
-    <div class="cred-row"><div class="cred-label">User</div><div class="cred-val">srsd-user</div><button class="copy-btn" onclick="navigator.clipboard?.writeText('srsd-user')">复制</button></div>
-    <div class="cred-row"><div class="cred-label">Password</div><div class="cred-val"><span style="letter-spacing:2px">••••••••••••</span></div><button class="copy-btn" onclick="showToast('已复制到剪贴板')">复制</button></div>`;
+    <div class="alert alert-info" style="margin-bottom:12px">此为通用凭证，与该服务同命名空间或公共空间的服务均可使用此凭证访问</div>
+    <div class="cred-row"><div class="cred-label">User</div><div class="cred-val">srsd-user</div><button class="copy-btn" onclick="navigator.clipboard?.writeText('srsd-user').then(()=>showToast('已复制'))">复制</button></div>
+    <div class="cred-row">
+      <div class="cred-label">Password</div>
+      <div class="cred-val" id="cred-pwd-val"><span class="pwd-dots">••••••••••••</span></div>
+      <button class="toggle-pwd" id="cred-pwd-toggle" onclick="toggleCredPwd('s3cur3-uni-pwd-${escHtml(s.ns)}')">显示</button>
+      <button class="copy-btn" onclick="navigator.clipboard?.writeText('s3cur3-uni-pwd-${escHtml(s.ns)}').then(()=>showToast('已复制'))">复制</button>
+    </div>`;
+  openModal(document.getElementById('cred-modal'));
+}
+function viewPrivateCred(crossId) {
+  credPwdVisible = false;
+  document.getElementById('cred-modal-title').textContent = '专用凭证';
+  document.getElementById('cred-modal-body').innerHTML = `
+    <div class="alert alert-info" style="margin-bottom:12px">此为跨空间访问的专用凭证，仅授权给本服务使用，请妥善保管</div>
+    <div class="cred-row"><div class="cred-label">User</div><div class="cred-val">svc-private-${escHtml(crossId)}</div><button class="copy-btn" onclick="navigator.clipboard?.writeText('svc-private-${escHtml(crossId)}').then(()=>showToast('已复制'))">复制</button></div>
+    <div class="cred-row">
+      <div class="cred-label">Password</div>
+      <div class="cred-val" id="cred-pwd-val"><span class="pwd-dots">••••••••••••</span></div>
+      <button class="toggle-pwd" id="cred-pwd-toggle" onclick="toggleCredPwd('xH7mQp3kL9n')">显示</button>
+      <button class="copy-btn" onclick="navigator.clipboard?.writeText('xH7mQp3kL9n').then(()=>showToast('已复制'))">复制</button>
+    </div>`;
+  openModal(document.getElementById('cred-modal'));
+}
+function toggleCredPwd(pwd) {
+  credPwdVisible = !credPwdVisible;
+  document.getElementById('cred-pwd-val').innerHTML = credPwdVisible
+    ? `<span style="font-family:monospace">${escHtml(pwd)}</span>` : '<span class="pwd-dots">••••••••••••</span>';
+  document.getElementById('cred-pwd-toggle').textContent = credPwdVisible ? '隐藏' : '显示';
+}
+function viewFwdConfig(id) {
+  const s = allSvcs.find(sv => sv.id === id) || { name: id, authConfig: { forwardUrl: 'http://sso-service/auth' } };
+  const reqHdrs = s.authConfig?.reqHeaders || [];
+  const resHdrs = s.authConfig?.resHeaders || [];
+  const fmtHdrs = arr => arr.length === 0
+    ? '<div style="color:rgba(0,0,0,0.25);font-size:13px">未配置</div>'
+    : arr.map(h => {
+        const field = typeof h === 'object' ? h.field : h;
+        const desc  = typeof h === 'object' ? h.desc  : '';
+        return `<div style="display:flex;gap:8px;margin-bottom:4px;font-size:13px">
+          <span style="font-family:monospace;color:var(--color-primary)">${escHtml(field)}</span>
+          ${desc ? `<span style="color:rgba(0,0,0,0.45)">— ${escHtml(desc)}</span>` : ''}
+        </div>`;
+      }).join('');
+  document.getElementById('cred-modal-title').textContent = `鉴权配置 — ${s.name || id}`;
+  document.getElementById('cred-modal-body').innerHTML = `
+    <div class="cred-row"><div class="cred-label">鉴权类型</div><div class="cred-val">Forward Auth</div></div>
+    <div class="cred-row"><div class="cred-label">鉴权地址</div><div class="cred-val" style="font-family:monospace;font-size:12px">${escHtml(s.authConfig?.forwardUrl || '--')}</div></div>
+    <div class="cred-row" style="flex-direction:column;align-items:flex-start;gap:4px">
+      <div class="cred-label" style="width:auto;font-weight:500">转发请求头</div>
+      <div style="padding-left:4px;width:100%">${fmtHdrs(reqHdrs)}</div>
+    </div>
+    <div class="cred-row" style="flex-direction:column;align-items:flex-start;gap:4px">
+      <div class="cred-label" style="width:auto;font-weight:500">响应头回写</div>
+      <div style="padding-left:4px;width:100%">${fmtHdrs(resHdrs)}</div>
+    </div>
+    <div class="cred-row"><div class="cred-label">说明</div><div class="cred-val" style="color:rgba(0,0,0,0.65)">请求时须在指定 Header 中携带有效凭证，代理网关自动转发至鉴权服务验证</div></div>`;
   openModal(document.getElementById('cred-modal'));
 }
 

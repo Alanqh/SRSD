@@ -2242,6 +2242,7 @@ function saveSecurityConfig() {
   svc.aliases = [...secAliases];
   allSvcs = allSvcs.map(s => s.id === svc.id ? svc : s);
   saveSvcs(allSvcs);
+  cancelEditMode('security');
   renderInfo();
   renderTabs();
   showToast('安全配置已保存');
