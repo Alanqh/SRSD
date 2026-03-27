@@ -865,7 +865,7 @@
           </div>
         </div>
 
-        <!-- Tab: 健康管理 -->
+        <!-- Tab: 健康检查 -->
         <div id="tab-health" style="display:none">
           <div style="display:flex;justify-content:flex-end;margin-bottom:16px">
             <button id="edit-btn-health" class="btn btn-primary" onclick="enterEditMode('health')">编辑配置</button>
@@ -876,7 +876,7 @@
           </div>
           <div id="health-display" class="cfg-display">
             <div class="config-section">
-              <div class="config-section-title">主动健康检查</div>
+              <div class="config-section-title">主动健康检查（对应 APISIX checks.active）</div>
               <div class="setting-row">
                 <div class="setting-label">启用主动检查</div>
                 <div class="setting-value" id="health-enable-display"></div>
@@ -886,85 +886,97 @@
                 <div class="setting-label">检查类型</div>
                 <div class="setting-value" id="health-type-display"></div>
               </div>
-              <div class="setting-row">
-                <div class="setting-label">检查路径</div>
+              <div class="setting-row" id="health-active-path-display-row">
+                <div class="setting-label">检查路径<br><span style="font-size:11px;color:rgba(0,0,0,0.35);font-weight:400">http_path</span></div>
                 <div class="setting-value" id="health-path-display"></div>
               </div>
               <div class="setting-row">
-                <div class="setting-label">检查端口</div>
+                <div class="setting-label">检查主机名<br><span style="font-size:11px;color:rgba(0,0,0,0.35);font-weight:400">host</span></div>
+                <div class="setting-value" id="health-host-display"></div>
+              </div>
+              <div class="setting-row">
+                <div class="setting-label">检查端口<br><span style="font-size:11px;color:rgba(0,0,0,0.35);font-weight:400">port</span></div>
                 <div class="setting-value" id="health-port-display"></div>
               </div>
               <div class="setting-row">
-                <div class="setting-label">检查间隔</div>
-                <div class="setting-value" id="health-interval-display"></div>
-              </div>
-              <div class="setting-row">
-                <div class="setting-label">超时时间</div>
+                <div class="setting-label">超时时间<br><span style="font-size:11px;color:rgba(0,0,0,0.35);font-weight:400">timeout</span></div>
                 <div class="setting-value" id="health-timeout-display"></div>
               </div>
-              <div class="sub-section-title" style="margin:12px 0 8px">健康判定条件</div>
+              <div class="sub-section-title" style="margin:12px 0 8px">健康判定条件（healthy）</div>
               <div class="setting-row">
-                <div class="setting-label">连续成功次数</div>
+                <div class="setting-label">探测间隔<br><span style="font-size:11px;color:rgba(0,0,0,0.35);font-weight:400">healthy.interval</span></div>
+                <div class="setting-value" id="health-healthy-interval-display"></div>
+              </div>
+              <div class="setting-row">
+                <div class="setting-label">连续成功次数<br><span style="font-size:11px;color:rgba(0,0,0,0.35);font-weight:400">healthy.successes</span></div>
                 <div class="setting-value" id="health-healthy-threshold-display"></div>
               </div>
-              <div class="setting-row">
-                <div class="setting-label">健康 HTTP 状态码</div>
+              <div class="setting-row" id="health-active-healthy-statuses-display-row">
+                <div class="setting-label">健康 HTTP 状态码<br><span style="font-size:11px;color:rgba(0,0,0,0.35);font-weight:400">healthy.http_statuses</span></div>
                 <div class="setting-value" id="health-healthy-statuses-display"></div>
               </div>
-              <div class="sub-section-title" style="margin:12px 0 8px">故障判定条件</div>
+              <div class="sub-section-title" style="margin:12px 0 8px">故障判定条件（unhealthy）</div>
               <div class="setting-row">
-                <div class="setting-label">连续失败次数</div>
+                <div class="setting-label">探测间隔<br><span style="font-size:11px;color:rgba(0,0,0,0.35);font-weight:400">unhealthy.interval</span></div>
+                <div class="setting-value" id="health-unhealthy-interval-display"></div>
+              </div>
+              <div class="setting-row" id="health-active-http-failures-display-row">
+                <div class="setting-label">连续 HTTP 失败次数<br><span style="font-size:11px;color:rgba(0,0,0,0.35);font-weight:400">unhealthy.http_failures</span></div>
                 <div class="setting-value" id="health-unhealthy-threshold-display"></div>
               </div>
-              <div class="setting-row">
-                <div class="setting-label">故障 HTTP 状态码</div>
+              <div class="setting-row" id="health-active-unhealthy-statuses-display-row">
+                <div class="setting-label">故障 HTTP 状态码<br><span style="font-size:11px;color:rgba(0,0,0,0.35);font-weight:400">unhealthy.http_statuses</span></div>
                 <div class="setting-value" id="health-unhealthy-statuses-display"></div>
               </div>
               <div class="setting-row">
-                <div class="setting-label">TCP 连接失败次数</div>
+                <div class="setting-label">TCP 连接失败次数<br><span style="font-size:11px;color:rgba(0,0,0,0.35);font-weight:400">unhealthy.tcp_failures</span></div>
                 <div class="setting-value" id="health-unhealthy-tcp-display"></div>
               </div>
               <div class="setting-row">
-                <div class="setting-label">超时次数</div>
+                <div class="setting-label">超时次数<br><span style="font-size:11px;color:rgba(0,0,0,0.35);font-weight:400">unhealthy.timeouts</span></div>
                 <div class="setting-value" id="health-unhealthy-timeouts-display"></div>
               </div>
               </div><!-- end #health-active-details -->
             </div>
 
             <div class="config-section">
-              <div class="config-section-title">被动健康检查</div>
+              <div class="config-section-title">被动健康检查（对应 APISIX checks.passive）</div>
               <div class="alert alert-info" style="margin-bottom:12px">
-                ℹ️ 被动检查基于实际请求响应判断实例健康状态，与主动检查互补，无需主动发起探测请求
+                ℹ️ 被动检查基于实际请求响应判断实例健康状态，与主动检查互补，无需主动发起探测请求。因不健康节点无法收到请求，建议同时启用主动检查以完成健康状态恢复
               </div>
               <div class="setting-row">
                 <div class="setting-label">启用被动检查</div>
                 <div class="setting-value" id="health-passive-enable-display"></div>
               </div>
               <div id="health-passive-display" style="display:none">
-                <div class="sub-section-title" style="margin:12px 0 8px">不健康条件</div>
                 <div class="setting-row">
-                  <div class="setting-label">故障 HTTP 状态码</div>
+                  <div class="setting-label">检查类型</div>
+                  <div class="setting-value" id="health-passive-type-display"></div>
+                </div>
+                <div class="sub-section-title" style="margin:12px 0 8px">不健康条件（unhealthy）</div>
+                <div class="setting-row" id="health-passive-fail-statuses-display-row">
+                  <div class="setting-label">故障 HTTP 状态码<br><span style="font-size:11px;color:rgba(0,0,0,0.35);font-weight:400">unhealthy.http_statuses</span></div>
                   <div class="setting-value" id="health-passive-fail-statuses-display"></div>
                 </div>
-                <div class="setting-row">
-                  <div class="setting-label">连续失败次数</div>
+                <div class="setting-row" id="health-passive-http-failures-display-row">
+                  <div class="setting-label">连续 HTTP 失败次数<br><span style="font-size:11px;color:rgba(0,0,0,0.35);font-weight:400">unhealthy.http_failures</span></div>
                   <div class="setting-value" id="health-passive-fail-count-display"></div>
                 </div>
                 <div class="setting-row">
-                  <div class="setting-label">TCP 连接失败次数</div>
+                  <div class="setting-label">TCP 连接失败次数<br><span style="font-size:11px;color:rgba(0,0,0,0.35);font-weight:400">unhealthy.tcp_failures</span></div>
                   <div class="setting-value" id="health-passive-tcp-fail-display"></div>
                 </div>
                 <div class="setting-row">
-                  <div class="setting-label">超时次数</div>
+                  <div class="setting-label">超时次数<br><span style="font-size:11px;color:rgba(0,0,0,0.35);font-weight:400">unhealthy.timeouts</span></div>
                   <div class="setting-value" id="health-passive-timeout-count-display"></div>
                 </div>
-                <div class="sub-section-title" style="margin:12px 0 8px">恢复条件</div>
-                <div class="setting-row">
-                  <div class="setting-label">健康 HTTP 状态码</div>
+                <div class="sub-section-title" style="margin:12px 0 8px">恢复条件（healthy）</div>
+                <div class="setting-row" id="health-passive-ok-statuses-display-row">
+                  <div class="setting-label">健康 HTTP 状态码<br><span style="font-size:11px;color:rgba(0,0,0,0.35);font-weight:400">healthy.http_statuses</span></div>
                   <div class="setting-value" id="health-passive-ok-statuses-display"></div>
                 </div>
                 <div class="setting-row">
-                  <div class="setting-label">连续成功次数</div>
+                  <div class="setting-label">连续成功次数<br><span style="font-size:11px;color:rgba(0,0,0,0.35);font-weight:400">healthy.successes</span></div>
                   <div class="setting-value" id="health-passive-ok-count-display"></div>
                 </div>
               </div>
@@ -972,7 +984,7 @@
           </div>
           <div id="health-edit" class="cfg-edit" style="display:none">
             <div class="config-section">
-              <div class="config-section-title">主动健康检查</div>
+              <div class="config-section-title">主动健康检查（对应 APISIX checks.active）</div>
               <div class="setting-row">
                 <div class="setting-label">启用主动检查</div>
                 <div class="setting-value">
@@ -985,82 +997,106 @@
               <div class="setting-row">
                 <div class="setting-label">检查类型</div>
                 <div class="setting-value">
-                  <select id="health-type" class="ant-select" style="width:180px">
+                  <select id="health-type" class="ant-select" style="width:180px" onchange="handleActiveTypeChange()">
                     <option value="http">HTTP</option>
                     <option value="tcp">TCP</option>
                     <option value="grpc">gRPC</option>
                   </select>
+                  <div class="form-hint">对应 type 字段；选 TCP/gRPC 时检查路径无效</div>
+                </div>
+              </div>
+              <div class="setting-row" id="health-active-path-edit-row">
+                <div class="setting-label">检查路径</div>
+                <div class="setting-value">
+                  <input id="health-path" class="ant-input" style="max-width:360px" value="/health" placeholder="/health" />
+                  <div class="form-hint">对应 http_path；HTTP/HTTPS 类型时有效，Gateway 将发送 GET 请求到此路径</div>
                 </div>
               </div>
               <div class="setting-row">
-                <div class="setting-label">检查路径</div>
-                <div class="setting-value"><input id="health-path" class="ant-input" style="max-width:360px" value="/health" placeholder="/health" /></div>
+                <div class="setting-label">检查主机名</div>
+                <div class="setting-value">
+                  <input id="health-host" class="ant-input" style="max-width:360px" placeholder="留空则使用实例地址" />
+                  <div class="form-hint">对应 host；用于 SNI 或 HTTP Host 请求头，多实例共享同一虚拟主机时填写</div>
+                </div>
               </div>
               <div class="setting-row">
                 <div class="setting-label">检查端口</div>
                 <div class="setting-value">
                   <input id="health-port" class="ant-input" style="width:100px" type="number" placeholder="默认使用实例端口" />
-                  <div class="form-hint">留空则使用实例注册端口</div>
-                </div>
-              </div>
-              <div class="setting-row">
-                <div class="setting-label">检查间隔</div>
-                <div class="setting-value" style="display:flex;align-items:center;gap:8px">
-                  <input id="health-interval" class="ant-input" style="width:120px" type="number" value="10" />
-                  <span style="color:rgba(0,0,0,0.45)">秒</span>
+                  <div class="form-hint">对应 port；留空则使用实例注册端口</div>
                 </div>
               </div>
               <div class="setting-row">
                 <div class="setting-label">超时时间</div>
                 <div class="setting-value" style="display:flex;align-items:center;gap:8px">
-                  <input id="health-timeout" class="ant-input" style="width:120px" type="number" value="3" />
-                  <span style="color:rgba(0,0,0,0.45)">秒</span>
+                  <input id="health-timeout" class="ant-input" style="width:100px" type="number" value="1" />
+                  <span style="color:rgba(0,0,0,0.45)">秒（对应 timeout，默认 1）</span>
                 </div>
               </div>
-              <div class="sub-section-title" style="margin:12px 0 8px">健康判定条件</div>
+              <div class="sub-section-title" style="margin:12px 0 8px">健康判定条件（healthy）</div>
               <div class="setting-row">
-                <div class="setting-label">连续成功次数</div>
-                <div class="setting-value"><input id="health-healthy-threshold" class="ant-input" style="width:100px" type="number" value="2" /></div>
+                <div class="setting-label">探测间隔</div>
+                <div class="setting-value" style="display:flex;align-items:center;gap:8px">
+                  <input id="health-healthy-interval" class="ant-input" style="width:100px" type="number" value="10" />
+                  <span style="color:rgba(0,0,0,0.45)">秒（对应 healthy.interval）；对已健康节点的探测频率</span>
+                </div>
               </div>
               <div class="setting-row">
+                <div class="setting-label">连续成功次数</div>
+                <div class="setting-value">
+                  <input id="health-healthy-threshold" class="ant-input" style="width:100px" type="number" value="2" />
+                  <div class="form-hint">对应 healthy.successes；连续成功达到此值后将不健康节点标记为健康</div>
+                </div>
+              </div>
+              <div class="setting-row" id="health-active-healthy-statuses-edit-row">
                 <div class="setting-label">健康 HTTP 状态码</div>
                 <div class="setting-value">
                   <input id="health-healthy-statuses" class="ant-input" style="max-width:300px" value="200,302" placeholder="多个状态码用英文逗号分隔" />
-                  <div class="form-hint">响应状态码在此列表内则视为健康（对应 healthy.http_statuses）</div>
+                  <div class="form-hint">对应 healthy.http_statuses；响应状态码在此列表内则视为一次成功探测</div>
                 </div>
               </div>
-              <div class="sub-section-title" style="margin:12px 0 8px">故障判定条件</div>
+              <div class="sub-section-title" style="margin:12px 0 8px">故障判定条件（unhealthy）</div>
               <div class="setting-row">
-                <div class="setting-label">连续失败次数</div>
-                <div class="setting-value"><input id="health-unhealthy-threshold" class="ant-input" style="width:100px" type="number" value="3" /></div>
+                <div class="setting-label">探测间隔</div>
+                <div class="setting-value" style="display:flex;align-items:center;gap:8px">
+                  <input id="health-unhealthy-interval" class="ant-input" style="width:100px" type="number" value="1" />
+                  <span style="color:rgba(0,0,0,0.45)">秒（对应 unhealthy.interval）；对已不健康节点的探测频率，通常设小以快速恢复</span>
+                </div>
               </div>
-              <div class="setting-row">
+              <div class="setting-row" id="health-active-http-failures-edit-row">
+                <div class="setting-label">连续 HTTP 失败次数</div>
+                <div class="setting-value">
+                  <input id="health-unhealthy-threshold" class="ant-input" style="width:100px" type="number" value="3" />
+                  <div class="form-hint">对应 unhealthy.http_failures；连续 HTTP 失败达到此值后将节点标记为不健康</div>
+                </div>
+              </div>
+              <div class="setting-row" id="health-active-unhealthy-statuses-edit-row">
                 <div class="setting-label">故障 HTTP 状态码</div>
                 <div class="setting-value">
                   <input id="health-unhealthy-statuses" class="ant-input" style="max-width:300px" value="429,500,501,502,503,504" placeholder="多个状态码用英文逗号分隔" />
-                  <div class="form-hint">响应状态码在此列表内则视为不健康（对应 unhealthy.http_statuses）</div>
+                  <div class="form-hint">对应 unhealthy.http_statuses；响应状态码在此列表内则视为一次失败探测</div>
                 </div>
               </div>
               <div class="setting-row">
                 <div class="setting-label">TCP 连接失败次数</div>
                 <div class="setting-value">
                   <input id="health-unhealthy-tcp" class="ant-input" style="width:100px" type="number" value="2" />
-                  <div class="form-hint">连续 TCP 连接失败达到此数值则标为不健康</div>
+                  <div class="form-hint">对应 unhealthy.tcp_failures；连续 TCP 连接失败达到此值则标为不健康</div>
                 </div>
               </div>
               <div class="setting-row">
                 <div class="setting-label">超时次数</div>
                 <div class="setting-value">
                   <input id="health-unhealthy-timeouts" class="ant-input" style="width:100px" type="number" value="3" />
-                  <div class="form-hint">连续超时达到此数值则标为不健康</div>
+                  <div class="form-hint">对应 unhealthy.timeouts；连续超时达到此值则标为不健康</div>
                 </div>
               </div>
             </div>
 
             <div class="config-section">
-              <div class="config-section-title">被动健康检查</div>
+              <div class="config-section-title">被动健康检查（对应 APISIX checks.passive）</div>
               <div class="alert alert-info" style="margin-bottom:12px">
-                ℹ️ 被动检查基于实际请求响应判断实例健康状态，与主动检查互补，无需主动发起探测请求
+                ℹ️ 被动检查基于实际请求响应判断实例健康状态，与主动检查互补，无需主动发起探测请求。因不健康节点无法收到请求，建议同时启用主动检查以完成健康状态恢复
               </div>
               <div class="setting-row">
                 <div class="setting-label">启用被动检查</div>
@@ -1072,44 +1108,59 @@
                 </div>
               </div>
               <div id="health-passive-config" style="display:none">
-                <div class="sub-section-title" style="margin:12px 0 8px">不健康条件</div>
                 <div class="setting-row">
+                  <div class="setting-label">检查类型</div>
+                  <div class="setting-value">
+                    <select id="health-passive-type" class="ant-select" style="width:180px" onchange="handlePassiveTypeChange()">
+                      <option value="http">HTTP</option>
+                      <option value="https">HTTPS</option>
+                      <option value="tcp">TCP</option>
+                    </select>
+                    <div class="form-hint">对应 type 字段；TCP 模式下不关注 HTTP 状态码</div>
+                  </div>
+                </div>
+                <div class="sub-section-title" style="margin:12px 0 8px">不健康条件（unhealthy）</div>
+                <div class="setting-row" id="health-passive-fail-statuses-edit-row">
                   <div class="setting-label">故障 HTTP 状态码</div>
                   <div class="setting-value">
                     <input id="health-passive-fail-statuses" class="ant-input" style="max-width:300px" value="429,500,503" placeholder="多个状态码用英文逗号分隔" />
-                    <div class="form-hint">对应 unhealthy.http_statuses</div>
+                    <div class="form-hint">对应 unhealthy.http_statuses；实际响应中出现此类状态码则计入失败</div>
                   </div>
                 </div>
-                <div class="setting-row">
-                  <div class="setting-label">连续失败次数</div>
+                <div class="setting-row" id="health-passive-http-failures-edit-row">
+                  <div class="setting-label">连续 HTTP 失败次数</div>
                   <div class="setting-value">
                     <input id="health-passive-fail-count" class="ant-input" style="width:100px" type="number" value="3" />
+                    <div class="form-hint">对应 unhealthy.http_failures；连续失败达到此值则标为不健康</div>
                   </div>
                 </div>
                 <div class="setting-row">
                   <div class="setting-label">TCP 连接失败次数</div>
                   <div class="setting-value">
                     <input id="health-passive-tcp-fail" class="ant-input" style="width:100px" type="number" value="2" />
+                    <div class="form-hint">对应 unhealthy.tcp_failures；连续 TCP 失败达到此值则标为不健康</div>
                   </div>
                 </div>
                 <div class="setting-row">
                   <div class="setting-label">超时次数</div>
                   <div class="setting-value">
                     <input id="health-passive-timeout-count" class="ant-input" style="width:100px" type="number" value="3" />
+                    <div class="form-hint">对应 unhealthy.timeouts；连续超时达到此值则标为不健康</div>
                   </div>
                 </div>
-                <div class="sub-section-title" style="margin:12px 0 8px">恢复条件</div>
-                <div class="setting-row">
+                <div class="sub-section-title" style="margin:12px 0 8px">恢复条件（healthy）</div>
+                <div class="setting-row" id="health-passive-ok-statuses-edit-row">
                   <div class="setting-label">健康 HTTP 状态码</div>
                   <div class="setting-value">
                     <input id="health-passive-ok-statuses" class="ant-input" style="max-width:300px" value="200,201,202,204,301,302" placeholder="多个状态码用英文逗号分隔" />
-                    <div class="form-hint">对应 healthy.http_statuses</div>
+                    <div class="form-hint">对应 healthy.http_statuses；响应此类状态码则计入恢复成功次数</div>
                   </div>
                 </div>
                 <div class="setting-row">
                   <div class="setting-label">连续成功次数</div>
                   <div class="setting-value">
                     <input id="health-passive-ok-count" class="ant-input" style="width:100px" type="number" value="2" />
+                    <div class="form-hint">对应 healthy.successes；连续成功达到此值则从不健康恢复为健康</div>
                   </div>
                 </div>
               </div>
@@ -1453,7 +1504,7 @@ function buildTabs() {
     { key: 'security', label: '安全配置' },
     { key: 'traffic',  label: '流量调度' },
     { key: 'comm',     label: '通信配置' },
-    { key: 'health',   label: '健康管理' },
+    { key: 'health',   label: '健康检查' },
     { key: 'log',      label: '日志收集' },
     { key: 'oplog',    label: '操作记录' },
     { key: 'monitor',  label: '服务监控' },
@@ -2363,7 +2414,7 @@ function saveCommConfig() {
   showToast('通信配置已保存');
 }
 
-/* ── 健康管理 ── */
+/* ── 健康检查 ── */
 function initHealthTab() {
   // 初始化编辑态数据
   const health = svc.healthCheck || {};
@@ -2371,28 +2422,33 @@ function initHealthTab() {
   document.getElementById('health-enable-label').textContent = health.enabled !== false ? '已开启' : '已关闭';
   document.getElementById('health-enable-label').style.color = health.enabled !== false ? '#1890ff' : 'rgba(0,0,0,0.45)';
   document.getElementById('health-type').value = health.type || 'http';
+  handleActiveTypeChange();
   document.getElementById('health-path').value = health.path || '/health';
+  document.getElementById('health-host').value = health.host || '';
   if (health.port) document.getElementById('health-port').value = health.port;
-  document.getElementById('health-interval').value = health.interval || 10;
-  document.getElementById('health-timeout').value = health.timeout || 3;
+  document.getElementById('health-timeout').value = health.timeout || 1;
+  document.getElementById('health-healthy-interval').value = health.healthyInterval || 10;
   document.getElementById('health-healthy-threshold').value = health.healthyThreshold || 2;
   document.getElementById('health-healthy-statuses').value = health.healthyStatuses || '200,302';
+  document.getElementById('health-unhealthy-interval').value = health.unhealthyInterval || 1;
   document.getElementById('health-unhealthy-threshold').value = health.unhealthyThreshold || 3;
   document.getElementById('health-unhealthy-statuses').value = health.unhealthyStatuses || '429,500,501,502,503,504';
   document.getElementById('health-unhealthy-tcp').value = health.unhealthyTcp || 2;
   document.getElementById('health-unhealthy-timeouts').value = health.unhealthyTimeouts || 3;
-  
+
   // 被动健康检查
   const passive = health.passive || {};
   document.getElementById('health-passive-enable').checked = !!passive.enabled;
   handlePassiveToggle();
+  document.getElementById('health-passive-type').value = passive.type || 'http';
+  handlePassiveTypeChange();
   document.getElementById('health-passive-fail-statuses').value = passive.failStatuses || '429,500,503';
   document.getElementById('health-passive-fail-count').value = passive.failCount || 3;
   document.getElementById('health-passive-tcp-fail').value = passive.tcpFail || 2;
   document.getElementById('health-passive-timeout-count').value = passive.timeoutCount || 3;
   document.getElementById('health-passive-ok-statuses').value = passive.okStatuses || '200,201,202,204,301,302';
   document.getElementById('health-passive-ok-count').value = passive.okCount || 2;
-  
+
   // 渲染终态展示
   renderHealthDisplay();
 }
@@ -2402,13 +2458,21 @@ function renderHealthDisplay() {
   document.getElementById('health-enable-display').innerHTML = `<span class="tag ${enabled ? 'tag-success' : 'tag-default'}">${enabled ? '已开启' : '已关闭'}</span>`;
   document.getElementById('health-active-details').style.display = enabled ? '' : 'none';
   if (enabled) {
-    document.getElementById('health-type-display').textContent = health.type || 'http';
+    const type = health.type || 'http';
+    const activeIsHttp = type !== 'tcp';
+    document.getElementById('health-type-display').textContent = type.toUpperCase();
+    document.getElementById('health-active-path-display-row').style.display = activeIsHttp ? '' : 'none';
+    document.getElementById('health-active-healthy-statuses-display-row').style.display = activeIsHttp ? '' : 'none';
+    document.getElementById('health-active-http-failures-display-row').style.display = activeIsHttp ? '' : 'none';
+    document.getElementById('health-active-unhealthy-statuses-display-row').style.display = activeIsHttp ? '' : 'none';
     document.getElementById('health-path-display').textContent = health.path || '/health';
-    document.getElementById('health-port-display').textContent = health.port || '默认使用实例端口';
-    document.getElementById('health-interval-display').textContent = `${health.interval || 10} 秒`;
-    document.getElementById('health-timeout-display').textContent = `${health.timeout || 3} 秒`;
+    document.getElementById('health-host-display').textContent = health.host || '（默认使用实例地址）';
+    document.getElementById('health-port-display').textContent = health.port || '（默认使用实例端口）';
+    document.getElementById('health-timeout-display').textContent = `${health.timeout || 1} 秒`;
+    document.getElementById('health-healthy-interval-display').textContent = `${health.healthyInterval || 10} 秒`;
     document.getElementById('health-healthy-threshold-display').textContent = health.healthyThreshold || 2;
     document.getElementById('health-healthy-statuses-display').textContent = health.healthyStatuses || '200,302';
+    document.getElementById('health-unhealthy-interval-display').textContent = `${health.unhealthyInterval || 1} 秒`;
     document.getElementById('health-unhealthy-threshold-display').textContent = health.unhealthyThreshold || 3;
     document.getElementById('health-unhealthy-statuses-display').textContent = health.unhealthyStatuses || '429,500,501,502,503,504';
     document.getElementById('health-unhealthy-tcp-display').textContent = health.unhealthyTcp || 2;
@@ -2420,6 +2484,12 @@ function renderHealthDisplay() {
   document.getElementById('health-passive-enable-display').innerHTML = `<span class="tag ${passiveEnabled ? 'tag-success' : 'tag-default'}">${passiveEnabled ? '已开启' : '已关闭'}</span>`;
   document.getElementById('health-passive-display').style.display = passiveEnabled ? '' : 'none';
   if (passiveEnabled) {
+    const passiveType = passive.type || 'http';
+    const passiveIsHttp = passiveType !== 'tcp';
+    document.getElementById('health-passive-type-display').textContent = passiveType.toUpperCase();
+    document.getElementById('health-passive-fail-statuses-display-row').style.display = passiveIsHttp ? '' : 'none';
+    document.getElementById('health-passive-http-failures-display-row').style.display = passiveIsHttp ? '' : 'none';
+    document.getElementById('health-passive-ok-statuses-display-row').style.display = passiveIsHttp ? '' : 'none';
     document.getElementById('health-passive-fail-statuses-display').textContent = passive.failStatuses || '429,500,503';
     document.getElementById('health-passive-fail-count-display').textContent = passive.failCount || 3;
     document.getElementById('health-passive-tcp-fail-display').textContent = passive.tcpFail || 2;
@@ -2427,6 +2497,21 @@ function renderHealthDisplay() {
     document.getElementById('health-passive-ok-statuses-display').textContent = passive.okStatuses || '200,201,202,204,301,302';
     document.getElementById('health-passive-ok-count-display').textContent = passive.okCount || 2;
   }
+}
+function handleActiveTypeChange() {
+  const type = document.getElementById('health-type').value;
+  const isHttp = type !== 'tcp';
+  document.getElementById('health-active-path-edit-row').style.display = isHttp ? '' : 'none';
+  document.getElementById('health-active-healthy-statuses-edit-row').style.display = isHttp ? '' : 'none';
+  document.getElementById('health-active-http-failures-edit-row').style.display = isHttp ? '' : 'none';
+  document.getElementById('health-active-unhealthy-statuses-edit-row').style.display = isHttp ? '' : 'none';
+}
+function handlePassiveTypeChange() {
+  const type = document.getElementById('health-passive-type').value;
+  const isHttp = type !== 'tcp';
+  document.getElementById('health-passive-fail-statuses-edit-row').style.display = isHttp ? '' : 'none';
+  document.getElementById('health-passive-http-failures-edit-row').style.display = isHttp ? '' : 'none';
+  document.getElementById('health-passive-ok-statuses-edit-row').style.display = isHttp ? '' : 'none';
 }
 function handlePassiveToggle() {
   const enabled = document.getElementById('health-passive-enable').checked;
@@ -2444,17 +2529,20 @@ function saveHealthConfig() {
     enabled: document.getElementById('health-enable').checked,
     type: document.getElementById('health-type').value,
     path: document.getElementById('health-path').value,
+    host: document.getElementById('health-host').value.trim() || null,
     port: document.getElementById('health-port').value || null,
-    interval: +document.getElementById('health-interval').value,
     timeout: +document.getElementById('health-timeout').value,
+    healthyInterval: +document.getElementById('health-healthy-interval').value,
     healthyThreshold: +document.getElementById('health-healthy-threshold').value,
     healthyStatuses: document.getElementById('health-healthy-statuses').value,
+    unhealthyInterval: +document.getElementById('health-unhealthy-interval').value,
     unhealthyThreshold: +document.getElementById('health-unhealthy-threshold').value,
     unhealthyStatuses: document.getElementById('health-unhealthy-statuses').value,
     unhealthyTcp: +document.getElementById('health-unhealthy-tcp').value,
     unhealthyTimeouts: +document.getElementById('health-unhealthy-timeouts').value,
     passive: {
       enabled: document.getElementById('health-passive-enable').checked,
+      type: document.getElementById('health-passive-type').value,
       failStatuses: document.getElementById('health-passive-fail-statuses').value,
       failCount: +document.getElementById('health-passive-fail-count').value,
       tcpFail: +document.getElementById('health-passive-tcp-fail').value,
@@ -2468,7 +2556,7 @@ function saveHealthConfig() {
   renderHealthDisplay();
   // 切换回终态展示
   cancelEditMode('health');
-  showToast('健康管理配置已保存');
+  showToast('健康检查配置已保存');
 }
 
 /* ── 日志收集 ── */
