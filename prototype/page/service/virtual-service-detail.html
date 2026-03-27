@@ -161,374 +161,619 @@
 
         <!-- Tab: 安全配置 -->
         <div id="tab-security" style="display:none">
-          <div class="config-section">
-            <div class="config-section-title">鉴权设置</div>
-            <div class="setting-row">
-              <div class="setting-label">鉴权状态</div>
-              <div class="setting-value">
-                <div class="switch-wrap">
-                  <label class="switch"><input type="checkbox" id="sec-auth-enable" onchange="handleAuthToggle()" /><span class="switch-slider"></span></label>
-                  <span id="sec-auth-label">已关闭</span>
-                </div>
-              </div>
+          <div style="display:flex;justify-content:flex-end;margin-bottom:16px">
+            <button id="edit-btn-security" class="btn btn-primary" onclick="enterEditMode('security')">编辑配置</button>
+            <div id="security-edit-actions" style="display:none;gap:8px;align-items:center">
+              <button class="btn btn-default" onclick="cancelEditMode('security')">取消</button>
+              <button class="btn btn-primary" onclick="saveSecurityConfig()">保存</button>
             </div>
-            <div id="sec-auth-config" style="display:none">
+          </div>
+          <div id="security-display" class="cfg-display">
+            <div class="config-section">
+              <div class="config-section-title">鉴权设置</div>
               <div class="setting-row">
-                <div class="setting-label">鉴权类型</div>
-                <div class="setting-value">
-                  <div style="display:flex;gap:20px">
-                    <label style="display:flex;align-items:center;gap:6px;cursor:pointer">
-                      <input type="radio" name="sec-auth-type" value="basic" onchange="handleAuthTypeChange()" /> Basic Auth
-                    </label>
-                    <label style="display:flex;align-items:center;gap:6px;cursor:pointer">
-                      <input type="radio" name="sec-auth-type" value="forward" onchange="handleAuthTypeChange()" /> Forward Auth
-                    </label>
-                  </div>
+                <div class="setting-label">鉴权状态</div>
+                <div class="setting-value" id="sec-auth-display">
+                  <!-- 鉴权状态将在JS中动态生成 -->
                 </div>
               </div>
-              <div id="sec-forward-fields" style="display:none">
+              <div id="sec-auth-config-display" style="display:none">
                 <div class="setting-row">
-                  <div class="setting-label">鉴权服务地址 <span style="color:#ff4d4f">*</span></div>
-                  <div class="setting-value">
-                    <input id="sec-forward-url" class="ant-input" style="max-width:420px" placeholder="http://your-auth-service/verify" />
-                    <div class="form-hint">代理网关收到请求后转发到此地址进行鉴权，鉴权通过则放行</div>
-                  </div>
+                  <div class="setting-label">鉴权类型</div>
+                  <div class="setting-value" id="sec-auth-type-display"></div>
                 </div>
-                <div class="setting-row">
-                  <div class="setting-label">请求方法</div>
-                  <div class="setting-value">
-                    <select id="sec-forward-method" class="ant-select" style="width:120px">
-                      <option value="GET">GET</option>
-                      <option value="POST">POST</option>
-                      <option value="HEAD">HEAD</option>
-                    </select>
+                <div id="sec-forward-fields-display" style="display:none">
+                  <div class="setting-row">
+                    <div class="setting-label">鉴权服务地址</div>
+                    <div class="setting-value" id="sec-forward-url-display"></div>
                   </div>
-                </div>
-                <div class="setting-row">
-                  <div class="setting-label">转发请求头</div>
-                  <div class="setting-value">
-                    <div class="form-hint" style="margin-top:0;margin-bottom:8px">转发鉴权请求时携带的原始请求头，填写字段名和字段说明，可添加多组</div>
-                    <div id="sec-forward-req-headers" style="margin-bottom:8px"></div>
-                    <div style="display:flex;gap:8px;align-items:center">
-                      <input id="sec-fwd-req-field" class="ant-input" style="width:160px" placeholder="字段名，如 Cookie" />
-                      <input id="sec-fwd-req-desc" class="ant-input" style="width:200px" placeholder="字段说明，如 登录凭证" />
-                      <button class="btn btn-default btn-sm" onclick="addFwdReqHeader()">+ 添加</button>
-                    </div>
+                  <div class="setting-row">
+                    <div class="setting-label">请求方法</div>
+                    <div class="setting-value" id="sec-forward-method-display"></div>
                   </div>
-                </div>
-                <div class="setting-row">
-                  <div class="setting-label">响应头回写</div>
-                  <div class="setting-value">
-                    <div class="form-hint" style="margin-top:0;margin-bottom:8px">鉴权成功后将鉴权响应中的指定头回写到原始请求，填写字段名和字段说明，可添加多组</div>
-                    <div id="sec-forward-res-headers" style="margin-bottom:8px"></div>
-                    <div style="display:flex;gap:8px;align-items:center">
-                      <input id="sec-fwd-res-field" class="ant-input" style="width:160px" placeholder="字段名，如 X-Auth-User" />
-                      <input id="sec-fwd-res-desc" class="ant-input" style="width:200px" placeholder="字段说明，如 用户ID" />
-                      <button class="btn btn-default btn-sm" onclick="addFwdResHeader()">+ 添加</button>
-                    </div>
+                  <div class="setting-row">
+                    <div class="setting-label">转发请求头</div>
+                    <div class="setting-value" id="sec-forward-req-headers-display"></div>
+                  </div>
+                  <div class="setting-row">
+                    <div class="setting-label">响应头回写</div>
+                    <div class="setting-value" id="sec-forward-res-headers-display"></div>
                   </div>
                 </div>
               </div>
             </div>
-          </div>
 
-          <div class="config-section">
-            <div class="config-section-title">服务保护规则</div>
-            <div class="protection-block">
-              <div class="sub-section-title">IP 访问控制（对应 APISIX ip-restriction 插件）</div>
-              <div class="setting-row" style="border:none;padding:4px 0">
-                <div class="setting-label">启用</div>
-                <div class="setting-value">
-                  <div class="switch-wrap">
-                    <label class="switch"><input type="checkbox" id="sec-ip-ctrl-enable" onchange="handleIpCtrlToggle()" /><span class="switch-slider"></span></label>
+            <div class="config-section">
+              <div class="config-section-title">服务保护规则</div>
+              <div class="protection-block">
+                <div class="sub-section-title">IP 访问控制（对应 APISIX ip-restriction 插件）</div>
+                <div class="setting-row" style="border:none;padding:4px 0">
+                  <div class="setting-label">启用</div>
+                  <div class="setting-value" id="sec-ip-ctrl-enable-display"></div>
+                </div>
+                <div id="sec-ip-ctrl-display" style="display:none">
+                  <div class="setting-row" style="border:none;padding:4px 0">
+                    <div class="setting-label">白名单</div>
+                    <div class="setting-value" id="sec-ip-whitelist-display"></div>
+                  </div>
+                  <div class="setting-row" style="border:none;padding:4px 0">
+                    <div class="setting-label">黑名单</div>
+                    <div class="setting-value" id="sec-ip-blacklist-display"></div>
+                  </div>
+                  <div class="setting-row" style="border:none;padding:4px 0">
+                    <div class="setting-label">拒绝提示语</div>
+                    <div class="setting-value" id="sec-ip-message-display"></div>
                   </div>
                 </div>
               </div>
-              <div id="sec-ip-ctrl-config" style="display:none">
+              <div class="protection-block">
+                <div class="sub-section-title">请求体大小限制（对应 APISIX client-control 插件）</div>
                 <div class="setting-row" style="border:none;padding:4px 0">
-                  <div class="setting-label">白名单</div>
-                  <div class="setting-value">
-                    <textarea id="sec-ip-whitelist" class="ant-input" rows="3" style="max-width:400px;font-family:monospace;font-size:12px" placeholder="每行一个 IP 或 CIDR，如：&#10;192.168.1.0/24&#10;10.0.0.1"></textarea>
-                  </div>
+                  <div class="setting-label">启用</div>
+                  <div class="setting-value" id="sec-req-size-enable-display"></div>
                 </div>
-                <div class="setting-row" style="border:none;padding:4px 0">
-                  <div class="setting-label">黑名单</div>
-                  <div class="setting-value">
-                    <textarea id="sec-ip-blacklist" class="ant-input" rows="3" style="max-width:400px;font-family:monospace;font-size:12px" placeholder="每行一个 IP 或 CIDR"></textarea>
-                  </div>
-                </div>
-                <div class="setting-row" style="border:none;padding:4px 0">
-                  <div class="setting-label">拒绝提示语</div>
-                  <div class="setting-value">
-                    <input id="sec-ip-message" class="ant-input" style="max-width:360px" placeholder="留空则使用默认提示：Your IP address is not allowed" />
+                <div id="sec-req-size-display" style="display:none">
+                  <div class="setting-row" style="border:none;padding:4px 0">
+                    <div class="setting-label">最大请求体</div>
+                    <div class="setting-value" id="sec-req-size-limit-display"></div>
                   </div>
                 </div>
               </div>
-            </div>
-            <div class="protection-block">
-              <div class="sub-section-title">请求体大小限制（对应 APISIX client-control 插件）</div>
-              <div class="setting-row" style="border:none;padding:4px 0">
-                <div class="setting-label">启用</div>
-                <div class="setting-value">
-                  <div class="switch-wrap">
-                    <label class="switch"><input type="checkbox" id="sec-req-size-enable" onchange="handleReqSizeToggle()" /><span class="switch-slider"></span></label>
+              <div class="protection-block">
+                <div class="sub-section-title">CORS 跨域配置（对应 APISIX cors 插件）</div>
+                <div class="setting-row" style="border:none;padding:4px 0">
+                  <div class="setting-label">启用</div>
+                  <div class="setting-value" id="sec-cors-enable-display"></div>
+                </div>
+                <div id="sec-cors-display" style="display:none">
+                  <div class="setting-row" style="border:none;padding:4px 0">
+                    <div class="setting-label">允许来源</div>
+                    <div class="setting-value" id="sec-cors-origins-display"></div>
+                  </div>
+                  <div class="setting-row" style="border:none;padding:4px 0">
+                    <div class="setting-label">允许方法</div>
+                    <div class="setting-value" id="sec-cors-methods-display"></div>
+                  </div>
+                  <div class="setting-row" style="border:none;padding:4px 0">
+                    <div class="setting-label">允许请求头</div>
+                    <div class="setting-value" id="sec-cors-allow-headers-display"></div>
+                  </div>
+                  <div class="setting-row" style="border:none;padding:4px 0">
+                    <div class="setting-label">暴露响应头</div>
+                    <div class="setting-value" id="sec-cors-expose-headers-display"></div>
+                  </div>
+                  <div class="setting-row" style="border:none;padding:4px 0">
+                    <div class="setting-label">预检缓存时长</div>
+                    <div class="setting-value" id="sec-cors-max-age-display"></div>
+                  </div>
+                  <div class="setting-row" style="border:none;padding:4px 0">
+                    <div class="setting-label">允许携带凭证</div>
+                    <div class="setting-value" id="sec-cors-credential-display"></div>
                   </div>
                 </div>
               </div>
-              <div id="sec-req-size-config" style="display:none">
+              <div class="protection-block">
+                <div class="sub-section-title">Referer 访问限制（对应 APISIX referer-restriction 插件）</div>
                 <div class="setting-row" style="border:none;padding:4px 0">
-                  <div class="setting-label">最大请求体</div>
-                  <div class="setting-value" style="display:flex;align-items:center;gap:8px">
-                    <input id="sec-req-size-limit" class="ant-input" style="width:100px" type="number" value="10" />
-                    <span style="color:rgba(0,0,0,0.45)">MB</span>
+                  <div class="setting-label">启用</div>
+                  <div class="setting-value" id="sec-referer-enable-display"></div>
+                </div>
+                <div id="sec-referer-display" style="display:none">
+                  <div class="setting-row" style="border:none;padding:4px 0">
+                    <div class="setting-label">白名单</div>
+                    <div class="setting-value" id="sec-referer-whitelist-display"></div>
+                  </div>
+                  <div class="setting-row" style="border:none;padding:4px 0">
+                    <div class="setting-label">黑名单</div>
+                    <div class="setting-value" id="sec-referer-blacklist-display"></div>
+                  </div>
+                  <div class="setting-row" style="border:none;padding:4px 0">
+                    <div class="setting-label">允许无 Referer 请求</div>
+                    <div class="setting-value" id="sec-referer-bypass-missing-display"></div>
                   </div>
                 </div>
               </div>
-            </div>
-            <div class="protection-block">
-              <div class="sub-section-title">CORS 跨域配置（对应 APISIX cors 插件）</div>
-              <div class="setting-row" style="border:none;padding:4px 0">
-                <div class="setting-label">启用</div>
-                <div class="setting-value">
-                  <div class="switch-wrap">
-                    <label class="switch"><input type="checkbox" id="sec-cors-enable" onchange="handleCorsToggle()" /><span class="switch-slider"></span></label>
+              <div class="protection-block">
+                <div class="sub-section-title">User-Agent 限制（对应 APISIX ua-restriction 插件）</div>
+                <div class="setting-row" style="border:none;padding:4px 0">
+                  <div class="setting-label">启用</div>
+                  <div class="setting-value" id="sec-ua-enable-display"></div>
+                </div>
+                <div id="sec-ua-display" style="display:none">
+                  <div class="setting-row" style="border:none;padding:4px 0">
+                    <div class="setting-label">UA 白名单</div>
+                    <div class="setting-value" id="sec-ua-whitelist-display"></div>
+                  </div>
+                  <div class="setting-row" style="border:none;padding:4px 0">
+                    <div class="setting-label">UA 黑名单</div>
+                    <div class="setting-value" id="sec-ua-blacklist-display"></div>
+                  </div>
+                  <div class="setting-row" style="border:none;padding:4px 0">
+                    <div class="setting-label">拒绝提示语</div>
+                    <div class="setting-value" id="sec-ua-message-display"></div>
                   </div>
                 </div>
               </div>
-              <div id="sec-cors-config" style="display:none">
+              <div class="protection-block">
+                <div class="sub-section-title">URI 阻断（对应 APISIX uri-blocker 插件）</div>
                 <div class="setting-row" style="border:none;padding:4px 0">
-                  <div class="setting-label">允许来源</div>
-                  <div class="setting-value">
-                    <input id="sec-cors-origins" class="ant-input" style="max-width:400px" placeholder="* 表示所有来源，多个来源用英文逗号分隔" />
-                  </div>
+                  <div class="setting-label">启用</div>
+                  <div class="setting-value" id="sec-uri-blocker-enable-display"></div>
                 </div>
-                <div class="setting-row" style="border:none;padding:4px 0">
-                  <div class="setting-label">允许方法</div>
-                  <div class="setting-value">
-                    <div style="display:flex;flex-wrap:wrap;gap:12px">
-                      <label style="display:flex;align-items:center;gap:4px;cursor:pointer"><input type="checkbox" class="cors-method" value="GET" checked /> GET</label>
-                      <label style="display:flex;align-items:center;gap:4px;cursor:pointer"><input type="checkbox" class="cors-method" value="POST" checked /> POST</label>
-                      <label style="display:flex;align-items:center;gap:4px;cursor:pointer"><input type="checkbox" class="cors-method" value="PUT" /> PUT</label>
-                      <label style="display:flex;align-items:center;gap:4px;cursor:pointer"><input type="checkbox" class="cors-method" value="DELETE" /> DELETE</label>
-                      <label style="display:flex;align-items:center;gap:4px;cursor:pointer"><input type="checkbox" class="cors-method" value="PATCH" /> PATCH</label>
-                      <label style="display:flex;align-items:center;gap:4px;cursor:pointer"><input type="checkbox" class="cors-method" value="HEAD" /> HEAD</label>
-                      <label style="display:flex;align-items:center;gap:4px;cursor:pointer"><input type="checkbox" class="cors-method" value="OPTIONS" checked /> OPTIONS</label>
-                    </div>
+                <div id="sec-uri-blocker-display" style="display:none">
+                  <div class="setting-row" style="border:none;padding:4px 0">
+                    <div class="setting-label">阻断 URI 规则</div>
+                    <div class="setting-value" id="sec-uri-block-rules-display"></div>
                   </div>
-                </div>
-                <div class="setting-row" style="border:none;padding:4px 0">
-                  <div class="setting-label">允许请求头</div>
-                  <div class="setting-value">
-                    <input id="sec-cors-allow-headers" class="ant-input" style="max-width:400px" placeholder="多个请求头用英文逗号分隔" />
-                  </div>
-                </div>
-                <div class="setting-row" style="border:none;padding:4px 0">
-                  <div class="setting-label">暴露响应头</div>
-                  <div class="setting-value">
-                    <input id="sec-cors-expose-headers" class="ant-input" style="max-width:400px" placeholder="多个响应头用英文逗号分隔（可选）" />
-                  </div>
-                </div>
-                <div class="setting-row" style="border:none;padding:4px 0">
-                  <div class="setting-label">预检缓存时长</div>
-                  <div class="setting-value" style="display:flex;align-items:center;gap:8px">
-                    <input id="sec-cors-max-age" class="ant-input" style="width:100px" type="number" value="3600" />
-                    <span style="color:rgba(0,0,0,0.45)">秒</span>
-                  </div>
-                </div>
-                <div class="setting-row" style="border:none;padding:4px 0">
-                  <div class="setting-label">允许携带凭证</div>
-                  <div class="setting-value">
-                    <label style="display:flex;align-items:center;gap:6px;cursor:pointer">
-                      <input type="checkbox" id="sec-cors-credential" />
-                      <span>开启（allow_credential = true）</span>
-                    </label>
-                  </div>
-                </div>
-              </div>
-            </div>
-            <div class="protection-block">
-              <div class="sub-section-title">Referer 访问限制（对应 APISIX referer-restriction 插件）</div>
-              <div class="setting-row" style="border:none;padding:4px 0">
-                <div class="setting-label">启用</div>
-                <div class="setting-value">
-                  <div class="switch-wrap">
-                    <label class="switch"><input type="checkbox" id="sec-referer-enable" onchange="handleRefererToggle()" /><span class="switch-slider"></span></label>
-                  </div>
-                </div>
-              </div>
-              <div id="sec-referer-config" style="display:none">
-                <div class="setting-row" style="border:none;padding:4px 0">
-                  <div class="setting-label">白名单</div>
-                  <div class="setting-value">
-                    <textarea id="sec-referer-whitelist" class="ant-input" rows="3" style="max-width:400px;font-family:monospace;font-size:12px" placeholder="每行一个域名或通配符"></textarea>
-                  </div>
-                </div>
-                <div class="setting-row" style="border:none;padding:4px 0">
-                  <div class="setting-label">黑名单</div>
-                  <div class="setting-value">
-                    <textarea id="sec-referer-blacklist" class="ant-input" rows="3" style="max-width:400px;font-family:monospace;font-size:12px" placeholder="每行一个域名或通配符"></textarea>
-                  </div>
-                </div>
-                <div class="setting-row" style="border:none;padding:4px 0">
-                  <div class="setting-label">允许无 Referer 请求</div>
-                  <div class="setting-value">
-                    <label style="display:flex;align-items:center;gap:6px;cursor:pointer">
-                      <input type="checkbox" id="sec-referer-bypass-missing" checked />
-                      <span>开启（bypass_missing = true）</span>
-                    </label>
-                  </div>
-                </div>
-              </div>
-            </div>
-            <div class="protection-block">
-              <div class="sub-section-title">User-Agent 限制（对应 APISIX ua-restriction 插件）</div>
-              <div class="setting-row" style="border:none;padding:4px 0">
-                <div class="setting-label">启用</div>
-                <div class="setting-value">
-                  <div class="switch-wrap">
-                    <label class="switch"><input type="checkbox" id="sec-ua-enable" onchange="handleUaToggle()" /><span class="switch-slider"></span></label>
-                  </div>
-                </div>
-              </div>
-              <div id="sec-ua-config" style="display:none">
-                <div class="setting-row" style="border:none;padding:4px 0">
-                  <div class="setting-label">UA 白名单</div>
-                  <div class="setting-value">
-                    <textarea id="sec-ua-whitelist" class="ant-input" rows="3" style="max-width:400px;font-family:monospace;font-size:12px" placeholder="每行一个 User-Agent 字符串或正则"></textarea>
-                  </div>
-                </div>
-                <div class="setting-row" style="border:none;padding:4px 0">
-                  <div class="setting-label">UA 黑名单</div>
-                  <div class="setting-value">
-                    <textarea id="sec-ua-blacklist" class="ant-input" rows="3" style="max-width:400px;font-family:monospace;font-size:12px" placeholder="每行一个 User-Agent 字符串或正则"></textarea>
-                  </div>
-                </div>
-                <div class="setting-row" style="border:none;padding:4px 0">
-                  <div class="setting-label">拒绝提示语</div>
-                  <div class="setting-value">
-                    <input id="sec-ua-message" class="ant-input" style="max-width:360px" placeholder="留空则使用默认提示：Not allowed" />
-                  </div>
-                </div>
-              </div>
-            </div>
-            <div class="protection-block">
-              <div class="sub-section-title">URI 阻断（对应 APISIX uri-blocker 插件）</div>
-              <div class="setting-row" style="border:none;padding:4px 0">
-                <div class="setting-label">启用</div>
-                <div class="setting-value">
-                  <div class="switch-wrap">
-                    <label class="switch"><input type="checkbox" id="sec-uri-blocker-enable" onchange="handleUriBlockerToggle()" /><span class="switch-slider"></span></label>
-                  </div>
-                </div>
-              </div>
-              <div id="sec-uri-blocker-config" style="display:none">
-                <div class="setting-row" style="border:none;padding:4px 0">
-                  <div class="setting-label">阻断 URI 规则</div>
-                  <div class="setting-value">
-                    <textarea id="sec-uri-block-rules" class="ant-input" rows="4" style="max-width:400px;font-family:monospace;font-size:12px" placeholder="每行一个正则表达式，如：&#10;\.php$&#10;/admin/.*"></textarea>
-                    <div class="form-hint">匹配规则的请求 URI 将被直接拒绝</div>
-                  </div>
-                </div>
-                <div class="setting-row" style="border:none;padding:4px 0">
-                  <div class="setting-label">拒绝状态码</div>
-                  <div class="setting-value">
-                    <input id="sec-uri-reject-code" class="ant-input" style="width:100px" type="number" value="403" />
+                  <div class="setting-row" style="border:none;padding:4px 0">
+                    <div class="setting-label">拒绝状态码</div>
+                    <div class="setting-value" id="sec-uri-reject-code-display"></div>
                   </div>
                 </div>
               </div>
             </div>
           </div>
-          <button class="btn btn-primary" onclick="saveSecurityConfig()">保存配置</button>
+          <div id="security-edit" class="cfg-edit" style="display:none">
+            <div class="config-section">
+              <div class="config-section-title">鉴权设置</div>
+              <div class="setting-row">
+                <div class="setting-label">鉴权状态</div>
+                <div class="setting-value">
+                  <div class="switch-wrap">
+                    <label class="switch"><input type="checkbox" id="sec-auth-enable" onchange="handleAuthToggle()" /><span class="switch-slider"></span></label>
+                    <span id="sec-auth-label">已关闭</span>
+                  </div>
+                </div>
+              </div>
+              <div id="sec-auth-config" style="display:none">
+                <div class="setting-row">
+                  <div class="setting-label">鉴权类型</div>
+                  <div class="setting-value">
+                    <div style="display:flex;gap:20px">
+                      <label style="display:flex;align-items:center;gap:6px;cursor:pointer">
+                        <input type="radio" name="sec-auth-type" value="basic" onchange="handleAuthTypeChange()" /> Basic Auth
+                      </label>
+                      <label style="display:flex;align-items:center;gap:6px;cursor:pointer">
+                        <input type="radio" name="sec-auth-type" value="forward" onchange="handleAuthTypeChange()" /> Forward Auth
+                      </label>
+                    </div>
+                  </div>
+                </div>
+                <div id="sec-forward-fields" style="display:none">
+                  <div class="setting-row">
+                    <div class="setting-label">鉴权服务地址 <span style="color:#ff4d4f">*</span></div>
+                    <div class="setting-value">
+                      <input id="sec-forward-url" class="ant-input" style="max-width:420px" placeholder="http://your-auth-service/verify" />
+                      <div class="form-hint">代理网关收到请求后转发到此地址进行鉴权，鉴权通过则放行</div>
+                    </div>
+                  </div>
+                  <div class="setting-row">
+                    <div class="setting-label">请求方法</div>
+                    <div class="setting-value">
+                      <select id="sec-forward-method" class="ant-select" style="width:120px">
+                        <option value="GET">GET</option>
+                        <option value="POST">POST</option>
+                        <option value="HEAD">HEAD</option>
+                      </select>
+                    </div>
+                  </div>
+                  <div class="setting-row">
+                    <div class="setting-label">转发请求头</div>
+                    <div class="setting-value">
+                      <div class="form-hint" style="margin-top:0;margin-bottom:8px">转发鉴权请求时携带的原始请求头，填写字段名和字段说明，可添加多组</div>
+                      <div id="sec-forward-req-headers" style="margin-bottom:8px"></div>
+                      <div style="display:flex;gap:8px;align-items:center">
+                        <input id="sec-fwd-req-field" class="ant-input" style="width:160px" placeholder="字段名，如 Cookie" />
+                        <input id="sec-fwd-req-desc" class="ant-input" style="width:200px" placeholder="字段说明，如 登录凭证" />
+                        <button class="btn btn-default btn-sm" onclick="addFwdReqHeader()">+ 添加</button>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="setting-row">
+                    <div class="setting-label">响应头回写</div>
+                    <div class="setting-value">
+                      <div class="form-hint" style="margin-top:0;margin-bottom:8px">鉴权成功后将鉴权响应中的指定头回写到原始请求，填写字段名和字段说明，可添加多组</div>
+                      <div id="sec-forward-res-headers" style="margin-bottom:8px"></div>
+                      <div style="display:flex;gap:8px;align-items:center">
+                        <input id="sec-fwd-res-field" class="ant-input" style="width:160px" placeholder="字段名，如 X-Auth-User" />
+                        <input id="sec-fwd-res-desc" class="ant-input" style="width:200px" placeholder="字段说明，如 用户ID" />
+                        <button class="btn btn-default btn-sm" onclick="addFwdResHeader()">+ 添加</button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="config-section">
+              <div class="config-section-title">服务保护规则</div>
+              <div class="protection-block">
+                <div class="sub-section-title">IP 访问控制（对应 APISIX ip-restriction 插件）</div>
+                <div class="setting-row" style="border:none;padding:4px 0">
+                  <div class="setting-label">启用</div>
+                  <div class="setting-value">
+                    <div class="switch-wrap">
+                      <label class="switch"><input type="checkbox" id="sec-ip-ctrl-enable" onchange="handleIpCtrlToggle()" /><span class="switch-slider"></span></label>
+                    </div>
+                  </div>
+                </div>
+                <div id="sec-ip-ctrl-config" style="display:none">
+                  <div class="setting-row" style="border:none;padding:4px 0">
+                    <div class="setting-label">白名单</div>
+                    <div class="setting-value">
+                      <textarea id="sec-ip-whitelist" class="ant-input" rows="3" style="max-width:400px;font-family:monospace;font-size:12px" placeholder="每行一个 IP 或 CIDR，如：&#10;192.168.1.0/24&#10;10.0.0.1"></textarea>
+                    </div>
+                  </div>
+                  <div class="setting-row" style="border:none;padding:4px 0">
+                    <div class="setting-label">黑名单</div>
+                    <div class="setting-value">
+                      <textarea id="sec-ip-blacklist" class="ant-input" rows="3" style="max-width:400px;font-family:monospace;font-size:12px" placeholder="每行一个 IP 或 CIDR"></textarea>
+                    </div>
+                  </div>
+                  <div class="setting-row" style="border:none;padding:4px 0">
+                    <div class="setting-label">拒绝提示语</div>
+                    <div class="setting-value">
+                      <input id="sec-ip-message" class="ant-input" style="max-width:360px" placeholder="留空则使用默认提示：Your IP address is not allowed" />
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="protection-block">
+                <div class="sub-section-title">请求体大小限制（对应 APISIX client-control 插件）</div>
+                <div class="setting-row" style="border:none;padding:4px 0">
+                  <div class="setting-label">启用</div>
+                  <div class="setting-value">
+                    <div class="switch-wrap">
+                      <label class="switch"><input type="checkbox" id="sec-req-size-enable" onchange="handleReqSizeToggle()" /><span class="switch-slider"></span></label>
+                    </div>
+                  </div>
+                </div>
+                <div id="sec-req-size-config" style="display:none">
+                  <div class="setting-row" style="border:none;padding:4px 0">
+                    <div class="setting-label">最大请求体</div>
+                    <div class="setting-value" style="display:flex;align-items:center;gap:8px">
+                      <input id="sec-req-size-limit" class="ant-input" style="width:100px" type="number" value="10" />
+                      <span style="color:rgba(0,0,0,0.45)">MB</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="protection-block">
+                <div class="sub-section-title">CORS 跨域配置（对应 APISIX cors 插件）</div>
+                <div class="setting-row" style="border:none;padding:4px 0">
+                  <div class="setting-label">启用</div>
+                  <div class="setting-value">
+                    <div class="switch-wrap">
+                      <label class="switch"><input type="checkbox" id="sec-cors-enable" onchange="handleCorsToggle()" /><span class="switch-slider"></span></label>
+                    </div>
+                  </div>
+                </div>
+                <div id="sec-cors-config" style="display:none">
+                  <div class="setting-row" style="border:none;padding:4px 0">
+                    <div class="setting-label">允许来源</div>
+                    <div class="setting-value">
+                      <input id="sec-cors-origins" class="ant-input" style="max-width:400px" placeholder="* 表示所有来源，多个来源用英文逗号分隔" />
+                    </div>
+                  </div>
+                  <div class="setting-row" style="border:none;padding:4px 0">
+                    <div class="setting-label">允许方法</div>
+                    <div class="setting-value">
+                      <div style="display:flex;flex-wrap:wrap;gap:12px">
+                        <label style="display:flex;align-items:center;gap:4px;cursor:pointer"><input type="checkbox" class="cors-method" value="GET" checked /> GET</label>
+                        <label style="display:flex;align-items:center;gap:4px;cursor:pointer"><input type="checkbox" class="cors-method" value="POST" checked /> POST</label>
+                        <label style="display:flex;align-items:center;gap:4px;cursor:pointer"><input type="checkbox" class="cors-method" value="PUT" /> PUT</label>
+                        <label style="display:flex;align-items:center;gap:4px;cursor:pointer"><input type="checkbox" class="cors-method" value="DELETE" /> DELETE</label>
+                        <label style="display:flex;align-items:center;gap:4px;cursor:pointer"><input type="checkbox" class="cors-method" value="PATCH" /> PATCH</label>
+                        <label style="display:flex;align-items:center;gap:4px;cursor:pointer"><input type="checkbox" class="cors-method" value="HEAD" /> HEAD</label>
+                        <label style="display:flex;align-items:center;gap:4px;cursor:pointer"><input type="checkbox" class="cors-method" value="OPTIONS" checked /> OPTIONS</label>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="setting-row" style="border:none;padding:4px 0">
+                    <div class="setting-label">允许请求头</div>
+                    <div class="setting-value">
+                      <input id="sec-cors-allow-headers" class="ant-input" style="max-width:400px" placeholder="多个请求头用英文逗号分隔" />
+                    </div>
+                  </div>
+                  <div class="setting-row" style="border:none;padding:4px 0">
+                    <div class="setting-label">暴露响应头</div>
+                    <div class="setting-value">
+                      <input id="sec-cors-expose-headers" class="ant-input" style="max-width:400px" placeholder="多个响应头用英文逗号分隔（可选）" />
+                    </div>
+                  </div>
+                  <div class="setting-row" style="border:none;padding:4px 0">
+                    <div class="setting-label">预检缓存时长</div>
+                    <div class="setting-value" style="display:flex;align-items:center;gap:8px">
+                      <input id="sec-cors-max-age" class="ant-input" style="width:100px" type="number" value="3600" />
+                      <span style="color:rgba(0,0,0,0.45)">秒</span>
+                    </div>
+                  </div>
+                  <div class="setting-row" style="border:none;padding:4px 0">
+                    <div class="setting-label">允许携带凭证</div>
+                    <div class="setting-value">
+                      <label style="display:flex;align-items:center;gap:6px;cursor:pointer">
+                        <input type="checkbox" id="sec-cors-credential" />
+                        <span>开启（allow_credential = true）</span>
+                      </label>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="protection-block">
+                <div class="sub-section-title">Referer 访问限制（对应 APISIX referer-restriction 插件）</div>
+                <div class="setting-row" style="border:none;padding:4px 0">
+                  <div class="setting-label">启用</div>
+                  <div class="setting-value">
+                    <div class="switch-wrap">
+                      <label class="switch"><input type="checkbox" id="sec-referer-enable" onchange="handleRefererToggle()" /><span class="switch-slider"></span></label>
+                    </div>
+                  </div>
+                </div>
+                <div id="sec-referer-config" style="display:none">
+                  <div class="setting-row" style="border:none;padding:4px 0">
+                    <div class="setting-label">白名单</div>
+                    <div class="setting-value">
+                      <textarea id="sec-referer-whitelist" class="ant-input" rows="3" style="max-width:400px;font-family:monospace;font-size:12px" placeholder="每行一个域名或通配符"></textarea>
+                    </div>
+                  </div>
+                  <div class="setting-row" style="border:none;padding:4px 0">
+                    <div class="setting-label">黑名单</div>
+                    <div class="setting-value">
+                      <textarea id="sec-referer-blacklist" class="ant-input" rows="3" style="max-width:400px;font-family:monospace;font-size:12px" placeholder="每行一个域名或通配符"></textarea>
+                    </div>
+                  </div>
+                  <div class="setting-row" style="border:none;padding:4px 0">
+                    <div class="setting-label">允许无 Referer 请求</div>
+                    <div class="setting-value">
+                      <label style="display:flex;align-items:center;gap:6px;cursor:pointer">
+                        <input type="checkbox" id="sec-referer-bypass-missing" checked />
+                        <span>开启（bypass_missing = true）</span>
+                      </label>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="protection-block">
+                <div class="sub-section-title">User-Agent 限制（对应 APISIX ua-restriction 插件）</div>
+                <div class="setting-row" style="border:none;padding:4px 0">
+                  <div class="setting-label">启用</div>
+                  <div class="setting-value">
+                    <div class="switch-wrap">
+                      <label class="switch"><input type="checkbox" id="sec-ua-enable" onchange="handleUaToggle()" /><span class="switch-slider"></span></label>
+                    </div>
+                  </div>
+                </div>
+                <div id="sec-ua-config" style="display:none">
+                  <div class="setting-row" style="border:none;padding:4px 0">
+                    <div class="setting-label">UA 白名单</div>
+                    <div class="setting-value">
+                      <textarea id="sec-ua-whitelist" class="ant-input" rows="3" style="max-width:400px;font-family:monospace;font-size:12px" placeholder="每行一个 User-Agent 字符串或正则"></textarea>
+                    </div>
+                  </div>
+                  <div class="setting-row" style="border:none;padding:4px 0">
+                    <div class="setting-label">UA 黑名单</div>
+                    <div class="setting-value">
+                      <textarea id="sec-ua-blacklist" class="ant-input" rows="3" style="max-width:400px;font-family:monospace;font-size:12px" placeholder="每行一个 User-Agent 字符串或正则"></textarea>
+                    </div>
+                  </div>
+                  <div class="setting-row" style="border:none;padding:4px 0">
+                    <div class="setting-label">拒绝提示语</div>
+                    <div class="setting-value">
+                      <input id="sec-ua-message" class="ant-input" style="max-width:360px" placeholder="留空则使用默认提示：Not allowed" />
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="protection-block">
+                <div class="sub-section-title">URI 阻断（对应 APISIX uri-blocker 插件）</div>
+                <div class="setting-row" style="border:none;padding:4px 0">
+                  <div class="setting-label">启用</div>
+                  <div class="setting-value">
+                    <div class="switch-wrap">
+                      <label class="switch"><input type="checkbox" id="sec-uri-blocker-enable" onchange="handleUriBlockerToggle()" /><span class="switch-slider"></span></label>
+                    </div>
+                  </div>
+                </div>
+                <div id="sec-uri-blocker-config" style="display:none">
+                  <div class="setting-row" style="border:none;padding:4px 0">
+                    <div class="setting-label">阻断 URI 规则</div>
+                    <div class="setting-value">
+                      <textarea id="sec-uri-block-rules" class="ant-input" rows="4" style="max-width:400px;font-family:monospace;font-size:12px" placeholder="每行一个正则表达式，如：&#10;\.php$&#10;/admin/.*"></textarea>
+                      <div class="form-hint">匹配规则的请求 URI 将被直接拒绝</div>
+                    </div>
+                  </div>
+                  <div class="setting-row" style="border:none;padding:4px 0">
+                    <div class="setting-label">拒绝状态码</div>
+                    <div class="setting-value">
+                      <input id="sec-uri-reject-code" class="ant-input" style="width:100px" type="number" value="403" />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
 
         <!-- Tab: 通信配置 -->
         <div id="tab-comm" style="display:none">
-          <div class="config-section">
-            <div class="config-section-title">协议支持</div>
-            <div class="setting-row">
-              <div class="setting-label">WebSocket 支持</div>
-              <div class="setting-value">
-                <div class="switch-wrap">
-                  <label class="switch"><input type="checkbox" id="comm-ws-enable" onchange="handleWsToggle()" /><span class="switch-slider"></span></label>
-                  <span id="comm-ws-label">已关闭</span>
+          <div style="display:flex;justify-content:flex-end;margin-bottom:16px">
+            <button id="edit-btn-comm" class="btn btn-primary" onclick="enterEditMode('comm')">编辑配置</button>
+            <div id="comm-edit-actions" style="display:none;gap:8px;align-items:center">
+              <button class="btn btn-default" onclick="cancelEditMode('comm')">取消</button>
+              <button class="btn btn-primary" onclick="saveCommConfig()">保存</button>
+            </div>
+          </div>
+          <div id="comm-display" class="cfg-display">
+            <div class="config-section">
+              <div class="config-section-title">协议支持</div>
+              <div class="setting-row">
+                <div class="setting-label">WebSocket 支持</div>
+                <div class="setting-value" id="comm-ws-display"></div>
+              </div>
+            </div>
+            <div class="config-section">
+              <div class="config-section-title">代理设置</div>
+              <div class="setting-row">
+                <div class="setting-label">Host 重写</div>
+                <div class="setting-value" id="comm-host-rewrite-display"></div>
+              </div>
+              <div class="setting-row">
+                <div class="setting-label">网关 Token</div>
+                <div class="setting-value" id="comm-gw-token-display"></div>
+              </div>
+            </div>
+          </div>
+          <div id="comm-edit" class="cfg-edit" style="display:none">
+            <div class="config-section">
+              <div class="config-section-title">协议支持</div>
+              <div class="setting-row">
+                <div class="setting-label">WebSocket 支持</div>
+                <div class="setting-value">
+                  <div class="switch-wrap">
+                    <label class="switch"><input type="checkbox" id="comm-ws-enable" onchange="handleWsToggle()" /><span class="switch-slider"></span></label>
+                    <span id="comm-ws-label">已关闭</span>
+                  </div>
+                  <div class="form-hint" style="margin-top:4px">启用后代理网关支持 WebSocket 协议升级</div>
                 </div>
-                <div class="form-hint" style="margin-top:4px">启用后代理网关支持 WebSocket 协议升级</div>
+              </div>
+            </div>
+            <div class="config-section">
+              <div class="config-section-title">代理设置</div>
+              <div class="setting-row">
+                <div class="setting-label">Host 重写</div>
+                <div class="setting-value">
+                  <input id="comm-host-rewrite" class="ant-input" style="max-width:380px" placeholder="留空表示不重写 Host Header" />
+                </div>
+              </div>
+              <div class="setting-row">
+                <div class="setting-label">网关 Token</div>
+                <div class="setting-value">
+                  <input id="comm-gw-token" class="ant-input" style="max-width:380px" placeholder="留空则不附加 Authorization Header" />
+                </div>
               </div>
             </div>
           </div>
-          <div class="config-section">
-            <div class="config-section-title">代理设置</div>
-            <div class="setting-row">
-              <div class="setting-label">Host 重写</div>
-              <div class="setting-value">
-                <input id="comm-host-rewrite" class="ant-input" style="max-width:380px" placeholder="留空表示不重写 Host Header" />
-              </div>
-            </div>
-            <div class="setting-row">
-              <div class="setting-label">网关 Token</div>
-              <div class="setting-value">
-                <input id="comm-gw-token" class="ant-input" style="max-width:380px" placeholder="留空则不附加 Authorization Header" />
-              </div>
-            </div>
-          </div>
-          <button class="btn btn-primary" onclick="saveCommConfig()">保存配置</button>
         </div>
 
         <!-- Tab: 日志收集 -->
         <div id="tab-log" style="display:none">
-          <div class="config-section">
-            <div class="config-section-title">Kafka 日志收集</div>
-            <div class="setting-row">
-              <div class="setting-label">启用</div>
-              <div class="setting-value">
-                <div class="switch-wrap">
-                  <label class="switch"><input type="checkbox" id="log-kafka-enable" onchange="handleKafkaToggle()" /><span class="switch-slider"></span></label>
-                  <span id="log-kafka-label">已关闭</span>
+          <div style="display:flex;justify-content:flex-end;margin-bottom:16px">
+            <button id="edit-btn-log" class="btn btn-primary" onclick="enterEditMode('log')">编辑配置</button>
+            <div id="log-edit-actions" style="display:none;gap:8px;align-items:center">
+              <button class="btn btn-default" onclick="cancelEditMode('log')">取消</button>
+              <button class="btn btn-primary" onclick="saveLogConfig()">保存</button>
+            </div>
+          </div>
+          <div id="log-display" class="cfg-display">
+            <div class="config-section">
+              <div class="config-section-title">Kafka 日志收集</div>
+              <div class="setting-row">
+                <div class="setting-label">启用</div>
+                <div class="setting-value" id="log-kafka-enable-display"></div>
+              </div>
+              <div id="kafka-display" style="display:none">
+                <div class="setting-row">
+                  <div class="setting-label">Broker 地址</div>
+                  <div class="setting-value" id="kafka-brokers-display"></div>
+                </div>
+                <div class="setting-row">
+                  <div class="setting-label">Topic</div>
+                  <div class="setting-value" id="kafka-topic-display"></div>
                 </div>
               </div>
             </div>
-            <div id="kafka-config" style="display:none">
+            <div class="config-section">
+              <div class="config-section-title">Loki 日志收集</div>
               <div class="setting-row">
-                <div class="setting-label">Broker 地址</div>
-                <div class="setting-value">
-                  <input id="kafka-brokers" class="ant-input" style="max-width:420px" placeholder="kafka01:9092,kafka02:9092" />
-                </div>
+                <div class="setting-label">启用</div>
+                <div class="setting-value" id="log-loki-enable-display"></div>
               </div>
-              <div class="setting-row">
-                <div class="setting-label">Topic</div>
-                <div class="setting-value">
-                  <input id="kafka-topic" class="ant-input" style="max-width:300px" placeholder="如 service-access-log" />
+              <div id="loki-display" style="display:none">
+                <div class="setting-row">
+                  <div class="setting-label">Loki 推送地址</div>
+                  <div class="setting-value" id="loki-url-display"></div>
+                </div>
+                <div class="setting-row">
+                  <div class="setting-label">租户 ID</div>
+                  <div class="setting-value" id="loki-tenant-id-display"></div>
                 </div>
               </div>
             </div>
           </div>
-          <div class="config-section">
-            <div class="config-section-title">Loki 日志收集</div>
-            <div class="setting-row">
-              <div class="setting-label">启用</div>
-              <div class="setting-value">
-                <div class="switch-wrap">
-                  <label class="switch"><input type="checkbox" id="log-loki-enable" onchange="handleLokiToggle()" /><span class="switch-slider"></span></label>
-                  <span id="log-loki-label">已关闭</span>
+          <div id="log-edit" class="cfg-edit" style="display:none">
+            <div class="config-section">
+              <div class="config-section-title">Kafka 日志收集</div>
+              <div class="setting-row">
+                <div class="setting-label">启用</div>
+                <div class="setting-value">
+                  <div class="switch-wrap">
+                    <label class="switch"><input type="checkbox" id="log-kafka-enable" onchange="handleKafkaToggle()" /><span class="switch-slider"></span></label>
+                    <span id="log-kafka-label">已关闭</span>
+                  </div>
+                </div>
+              </div>
+              <div id="kafka-config" style="display:none">
+                <div class="setting-row">
+                  <div class="setting-label">Broker 地址</div>
+                  <div class="setting-value">
+                    <input id="kafka-brokers" class="ant-input" style="max-width:420px" placeholder="kafka01:9092,kafka02:9092" />
+                  </div>
+                </div>
+                <div class="setting-row">
+                  <div class="setting-label">Topic</div>
+                  <div class="setting-value">
+                    <input id="kafka-topic" class="ant-input" style="max-width:300px" placeholder="如 service-access-log" />
+                  </div>
                 </div>
               </div>
             </div>
-            <div id="loki-config" style="display:none">
+            <div class="config-section">
+              <div class="config-section-title">Loki 日志收集</div>
               <div class="setting-row">
-                <div class="setting-label">Loki 推送地址</div>
+                <div class="setting-label">启用</div>
                 <div class="setting-value">
-                  <input id="loki-url" class="ant-input" style="max-width:420px" placeholder="http://loki:3100/loki/api/v1/push" />
+                  <div class="switch-wrap">
+                    <label class="switch"><input type="checkbox" id="log-loki-enable" onchange="handleLokiToggle()" /><span class="switch-slider"></span></label>
+                    <span id="log-loki-label">已关闭</span>
+                  </div>
                 </div>
               </div>
-              <div class="setting-row">
-                <div class="setting-label">租户 ID</div>
-                <div class="setting-value">
-                  <input id="loki-tenant-id" class="ant-input" style="max-width:220px" placeholder="如 prod 或命名空间名称" />
+              <div id="loki-config" style="display:none">
+                <div class="setting-row">
+                  <div class="setting-label">Loki 推送地址</div>
+                  <div class="setting-value">
+                    <input id="loki-url" class="ant-input" style="max-width:420px" placeholder="http://loki:3100/loki/api/v1/push" />
+                  </div>
+                </div>
+                <div class="setting-row">
+                  <div class="setting-label">租户 ID</div>
+                  <div class="setting-value">
+                    <input id="loki-tenant-id" class="ant-input" style="max-width:220px" placeholder="如 prod 或命名空间名称" />
+                  </div>
                 </div>
               </div>
             </div>
           </div>
-          <button class="btn btn-primary" onclick="saveLogConfig()">保存配置</button>
         </div>
 
         <!-- Tab: 操作记录 -->
@@ -713,13 +958,14 @@ function buildTabs() {
     tabs.push({ key: 'clients', label: '已授权客户端' });
   }
   tabs.push(
-    { key: 'access',   label: '可访问服务' },
-    { key: 'security', label: '安全配置' },
-    { key: 'comm',     label: '通信配置' },
-    { key: 'log',      label: '日志收集' },
-    { key: 'oplog',    label: '操作记录' },
-    { key: 'monitor',  label: '服务监控' },
-  );
+      { key: 'access',   label: '可访问服务' },
+      { key: 'security', label: '安全配置' },
+      { key: 'comm',     label: '通信配置' },
+      { key: 'health',   label: '健康管理' },
+      { key: 'log',      label: '日志收集' },
+      { key: 'oplog',    label: '操作记录' },
+      { key: 'monitor',  label: '服务监控' },
+    );
   return tabs;
 }
 
