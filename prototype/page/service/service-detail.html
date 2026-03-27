@@ -90,10 +90,55 @@
 
         <!-- Tab: 基本信息 -->
         <div id="tab-info">
-          <div style="display:flex;justify-content:flex-end;margin-bottom:16px">
-            <button class="btn btn-primary" onclick="openEditModal()">编辑基本信息</button>
+          <!-- 终态 -->
+          <div id="info-display">
+            <div style="display:flex;justify-content:flex-end;margin-bottom:16px">
+              <button class="btn btn-primary" onclick="enterInfoEditMode()">编辑基本信息</button>
+            </div>
+            <div id="svc-info-body" class="desc-list-2col"></div>
           </div>
-          <div id="svc-info-body" class="desc-list-2col"></div>
+          <!-- 编辑态 -->
+          <div id="info-edit" style="display:none">
+            <div style="display:flex;justify-content:flex-end;gap:8px;margin-bottom:16px">
+              <button class="btn btn-default" onclick="cancelInfoEditMode()">取消</button>
+              <button class="btn btn-primary" onclick="submitInfoEdit()">保存</button>
+            </div>
+            <div class="config-section">
+              <div class="form-item">
+                <label class="form-label">服务名称</label>
+                <div class="form-control">
+                  <input id="edit-name" class="ant-input" disabled />
+                  <div class="form-hint">服务名称创建后不可修改</div>
+                </div>
+              </div>
+              <div class="form-item">
+                <label class="form-label">协议类型</label>
+                <div class="form-control">
+                  <select id="edit-protocol" class="ant-select">
+                    <option value="http">HTTP</option>
+                    <option value="https">HTTPS</option>
+                    <option value="grpc">gRPC</option>
+                    <option value="tcp">TCP</option>
+                  </select>
+                </div>
+              </div>
+              <div class="form-item">
+                <label class="form-label">实例地址形式</label>
+                <div class="form-control">
+                  <select id="edit-addr-type" class="ant-select">
+                    <option value="ip">只包含IP地址</option>
+                    <option value="domain">包含IP地址和域名</option>
+                  </select>
+                </div>
+              </div>
+              <div class="form-item">
+                <label class="form-label">服务描述</label>
+                <div class="form-control">
+                  <textarea id="edit-desc" class="ant-input" rows="3" placeholder="建议对服务的主要功能、适用范围进行描述"></textarea>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
 
         <!-- Tab: 实例列表 -->
@@ -881,6 +926,7 @@
                 <div class="setting-label">启用主动检查</div>
                 <div class="setting-value" id="health-enable-display"></div>
               </div>
+              <div id="health-active-details">
               <div class="setting-row">
                 <div class="setting-label">检查类型</div>
                 <div class="setting-value" id="health-type-display"></div>
@@ -927,6 +973,7 @@
                 <div class="setting-label">超时次数</div>
                 <div class="setting-value" id="health-unhealthy-timeouts-display"></div>
               </div>
+              </div><!-- end #health-active-details -->
             </div>
 
             <div class="config-section">
@@ -1267,62 +1314,23 @@
   </div>
 </main>
 
-<!-- 编辑基本信息 Modal -->
-<div id="edit-modal" class="modal-overlay" style="display:none" onclick="if(event.target===this)closeEditModal()">
+<!-- 代理地址 Modal -->
+<div id="proxy-modal" class="modal-overlay" style="display:none" onclick="if(event.target===this)closeProxyModal()">
   <div class="ant-modal" style="width:560px">
     <div class="modal-header">
-      <span class="modal-title">编辑基本信息</span>
-      <button class="modal-close" onclick="closeEditModal()">×</button>
+      <span class="modal-title" id="proxy-modal-title">代理地址</span>
+      <button class="modal-close" onclick="closeProxyModal()">×</button>
     </div>
     <div class="modal-body">
-      <div class="form-item">
-        <label class="form-label">服务名称</label>
-        <div class="form-control">
-          <input id="edit-name" class="ant-input" disabled />
-          <div class="form-hint">服务名称创建后不可修改</div>
-        </div>
+      <div style="display:flex;border-bottom:1px solid #f0f0f0;margin-bottom:16px">
+        <div id="proxy-tab-http"  class="tab-item active" style="padding:6px 16px;cursor:pointer" onclick="switchProxyTab('http')">HTTP</div>
+        <div id="proxy-tab-https" class="tab-item"        style="padding:6px 16px;cursor:pointer" onclick="switchProxyTab('https')">HTTPS</div>
       </div>
-      <div class="form-item">
-        <label class="form-label required">业务线</label>
-        <div class="form-control">
-          <select id="edit-bizline" class="ant-select">
-            <option value="">请选择</option>
-            <option value="北京研发中心">北京研发中心</option>
-            <option value="大数据中心">大数据中心</option>
-            <option value="北京研发部">北京研发部</option>
-          </select>
-        </div>
-      </div>
-      <div class="form-item">
-        <label class="form-label">协议类型</label>
-        <div class="form-control">
-          <select id="edit-protocol" class="ant-select">
-            <option value="http">HTTP</option>
-            <option value="https">HTTPS</option>
-            <option value="grpc">gRPC</option>
-            <option value="tcp">TCP</option>
-          </select>
-        </div>
-      </div>
-      <div class="form-item">
-        <label class="form-label">实例地址形式</label>
-        <div class="form-control">
-          <select id="edit-addr-type" class="ant-select">
-            <option value="ip">只包含IP地址</option>
-            <option value="domain">包含IP地址和域名</option>
-          </select>
-        </div>
-      </div>
-      <div class="form-item">
-        <label class="form-label">服务描述</label>
-        <div class="form-control">
-          <textarea id="edit-desc" class="ant-input" rows="3" placeholder="建议对服务的主要功能、适用范围进行描述"></textarea>
-        </div>
-      </div>
+      <div id="proxy-panel-http"></div>
+      <div id="proxy-panel-https" style="display:none"></div>
     </div>
     <div class="modal-footer">
-      <button class="btn btn-default" onclick="closeEditModal()">取消</button>
-      <button class="btn btn-primary" onclick="submitEditModal()">保存</button>
+      <button class="btn btn-default" onclick="closeProxyModal()">关闭</button>
     </div>
   </div>
 </div>
@@ -1470,6 +1478,7 @@ function switchTab(key) {
   if (key === 'security') initSecurityTab();
   if (key === 'traffic')  initTrafficTab();
   if (key === 'comm')     initCommTab();
+  if (key === 'health')   initHealthTab();
 }
 
 /* ── 基本信息 ── */
@@ -1483,7 +1492,6 @@ function renderInfo() {
     { label: '实例地址形式',    value: ADDR_TYPE_MAP[svc.addrType] || svc.addrType },
     { label: '协议类型',        value: (svc.protocol || 'http').toUpperCase() },
     { label: '健康实例/总数',   value: `${healthy} / ${instances.length}` },
-    { label: '代理地址',        value: svc.proxy },
     { label: '服务描述',        value: svc.desc || '--' },
     { label: '创建时间',        value: formatTime(svc.createdAt) },
   ];
@@ -1492,30 +1500,89 @@ function renderInfo() {
       <div class="desc-label">${escHtml(r.label)}</div>
       <div class="desc-value">${escHtml(r.value)}</div>
     </div>
-  `).join('');
+  `).join('') + `
+    <div class="desc-item">
+      <div class="desc-label">代理地址</div>
+      <div class="desc-value"><button class="btn btn-default btn-sm" onclick="openProxyModal()">查看</button></div>
+    </div>
+  `;
 }
 
-/* ── 编辑基本信息 ── */
-function openEditModal() {
+/* ── 代理地址弹窗 ── */
+function buildProxyPanel(proto, domain, aliases) {
+  const defaultAddr = `${proto}://${domain}`;
+  let html = `
+    <div style="margin-bottom:16px">
+      <div style="font-size:12px;color:rgba(0,0,0,0.45);margin-bottom:6px">默认代理地址</div>
+      <div style="display:flex;align-items:center;gap:8px;background:#fafafa;border:1px solid #f0f0f0;padding:8px 12px">
+        <span style="font-family:monospace;font-size:13px;flex:1;word-break:break-all">${escHtml(defaultAddr)}</span>
+        <button class="btn btn-default btn-sm" onclick="copyProxyAddr('${escHtml(defaultAddr)}')">复制</button>
+      </div>
+    </div>`;
+  if (aliases && aliases.length > 0) {
+    html += `<div><div style="font-size:12px;color:rgba(0,0,0,0.45);margin-bottom:6px">别名代理地址</div>`;
+    aliases.forEach(alias => {
+      const aliasUrl = `${proto}://${alias}`;
+      html += `<div style="display:flex;align-items:center;gap:8px;background:#fafafa;border:1px solid #f0f0f0;padding:8px 12px;margin-bottom:4px">
+        <span style="font-family:monospace;font-size:13px;flex:1;word-break:break-all">${escHtml(aliasUrl)}</span>
+        <button class="btn btn-default btn-sm" onclick="copyProxyAddr('${escHtml(aliasUrl)}')">复制</button>
+      </div>`;
+    });
+    html += `</div>`;
+  } else {
+    html += `<div style="color:rgba(0,0,0,0.25);font-size:13px">暂无别名代理地址</div>`;
+  }
+  return html;
+}
+function switchProxyTab(proto) {
+  document.getElementById('proxy-tab-http').classList.toggle('active', proto === 'http');
+  document.getElementById('proxy-tab-https').classList.toggle('active', proto === 'https');
+  document.getElementById('proxy-panel-http').style.display  = proto === 'http'  ? '' : 'none';
+  document.getElementById('proxy-panel-https').style.display = proto === 'https' ? '' : 'none';
+}
+function openProxyModal(svcObj) {
+  const s = svcObj || svc;
+  const aliases = s.aliases || [];
+  document.getElementById('proxy-modal-title').textContent = `代理地址 — ${s.name}`;
+  document.getElementById('proxy-panel-http').innerHTML  = buildProxyPanel('http',  s.proxy, aliases);
+  document.getElementById('proxy-panel-https').innerHTML = buildProxyPanel('https', s.proxy, aliases);
+  const activeProto = (s.protocol === 'https') ? 'https' : 'http';
+  switchProxyTab(activeProto);
+  openModal(document.getElementById('proxy-modal'));
+}
+function closeProxyModal() { closeModal(document.getElementById('proxy-modal')); }
+function copyProxyAddr(addr) {
+  navigator.clipboard?.writeText(addr).then(() => showToast('已复制到剪贴板'))
+    .catch(() => showToast('复制失败', '❌'));
+}
+
+/* ── 编辑基本信息（inpage） ── */
+function enterInfoEditMode() {
   document.getElementById('edit-name').value = svc.name;
-  document.getElementById('edit-bizline').value = svc.bizline || '';
   document.getElementById('edit-protocol').value = svc.protocol || 'http';
   document.getElementById('edit-addr-type').value = svc.addrType || 'ip';
   document.getElementById('edit-desc').value = svc.desc || '';
-  openModal(document.getElementById('edit-modal'));
+  document.getElementById('info-display').style.display = 'none';
+  document.getElementById('info-edit').style.display = '';
 }
-function closeEditModal() { closeModal(document.getElementById('edit-modal')); }
-function submitEditModal() {
-  svc.bizline  = document.getElementById('edit-bizline').value;
+function cancelInfoEditMode() {
+  document.getElementById('info-edit').style.display = 'none';
+  document.getElementById('info-display').style.display = '';
+}
+function submitInfoEdit() {
   svc.protocol = document.getElementById('edit-protocol').value;
   svc.addrType = document.getElementById('edit-addr-type').value;
   svc.desc     = document.getElementById('edit-desc').value.trim();
   allSvcs = allSvcs.map(s => s.id === svc.id ? svc : s);
   saveSvcs(allSvcs);
   renderInfo();
-  closeEditModal();
+  cancelInfoEditMode();
   showToast('基本信息已更新');
 }
+/* 向下兼容旧调用 */
+function openEditModal()  { enterInfoEditMode(); }
+function closeEditModal() { cancelInfoEditMode(); }
+function submitEditModal(){ submitInfoEdit(); }
 
 /* ── 实例列表 ── */
 function renderInstTable() {
@@ -1635,7 +1702,7 @@ function renderAccessTable() {
     return `<tr>
       <td>${escHtml(s.name)}</td>
       <td>${escHtml(s.ns)}</td>
-      <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${escHtml(s.proxy)}">${escHtml(s.proxy)}</td>
+      <td><button class="btn btn-default btn-sm" onclick="openProxyModal(${JSON.stringify({name:s.name,proxy:s.proxy,protocol:s.protocol,aliases:s.aliases||[]})})">查看</button></td>
       <td><span class="tag ${authClass}">${escHtml(authLabel)}</span></td>
       <td>${op}</td>
     </tr>`;
@@ -1661,7 +1728,7 @@ function renderAccessPrivateList() {
     return `<tr>
       <td>${escHtml(r.name)}</td>
       <td>${escHtml(r.ns)}</td>
-      <td style="max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escHtml(r.proxy)}</td>
+      <td><button class="btn btn-default btn-sm" onclick="openProxyModal(${JSON.stringify({name:r.name,proxy:r.proxy,protocol:r.auth==='https'?'https':'http',aliases:[]})})">查看</button></td>
       <td><span class="tag ${authClass}">${escHtml(authLabel)}</span></td>
       <td><span class="tag tag-success">${escHtml(r.status)}</span></td>
       <td>${op}</td>
@@ -2327,24 +2394,25 @@ function renderHealthDisplay() {
   const health = svc.healthCheck || {};
   const enabled = health.enabled !== false;
   document.getElementById('health-enable-display').innerHTML = `<span class="tag ${enabled ? 'tag-success' : 'tag-default'}">${enabled ? '已开启' : '已关闭'}</span>`;
-  document.getElementById('health-type-display').textContent = health.type || 'http';
-  document.getElementById('health-path-display').textContent = health.path || '/health';
-  document.getElementById('health-port-display').textContent = health.port || '默认使用实例端口';
-  document.getElementById('health-interval-display').textContent = `${health.interval || 10} 秒`;
-  document.getElementById('health-timeout-display').textContent = `${health.timeout || 3} 秒`;
-  document.getElementById('health-healthy-threshold-display').textContent = health.healthyThreshold || 2;
-  document.getElementById('health-healthy-statuses-display').textContent = health.healthyStatuses || '200,302';
-  document.getElementById('health-unhealthy-threshold-display').textContent = health.unhealthyThreshold || 3;
-  document.getElementById('health-unhealthy-statuses-display').textContent = health.unhealthyStatuses || '429,500,501,502,503,504';
-  document.getElementById('health-unhealthy-tcp-display').textContent = health.unhealthyTcp || 2;
-  document.getElementById('health-unhealthy-timeouts-display').textContent = health.unhealthyTimeouts || 3;
-  
+  document.getElementById('health-active-details').style.display = enabled ? '' : 'none';
+  if (enabled) {
+    document.getElementById('health-type-display').textContent = health.type || 'http';
+    document.getElementById('health-path-display').textContent = health.path || '/health';
+    document.getElementById('health-port-display').textContent = health.port || '默认使用实例端口';
+    document.getElementById('health-interval-display').textContent = `${health.interval || 10} 秒`;
+    document.getElementById('health-timeout-display').textContent = `${health.timeout || 3} 秒`;
+    document.getElementById('health-healthy-threshold-display').textContent = health.healthyThreshold || 2;
+    document.getElementById('health-healthy-statuses-display').textContent = health.healthyStatuses || '200,302';
+    document.getElementById('health-unhealthy-threshold-display').textContent = health.unhealthyThreshold || 3;
+    document.getElementById('health-unhealthy-statuses-display').textContent = health.unhealthyStatuses || '429,500,501,502,503,504';
+    document.getElementById('health-unhealthy-tcp-display').textContent = health.unhealthyTcp || 2;
+    document.getElementById('health-unhealthy-timeouts-display').textContent = health.unhealthyTimeouts || 3;
+  }
   // 被动健康检查
   const passive = health.passive || {};
   const passiveEnabled = !!passive.enabled;
   document.getElementById('health-passive-enable-display').innerHTML = `<span class="tag ${passiveEnabled ? 'tag-success' : 'tag-default'}">${passiveEnabled ? '已开启' : '已关闭'}</span>`;
   document.getElementById('health-passive-display').style.display = passiveEnabled ? '' : 'none';
-  
   if (passiveEnabled) {
     document.getElementById('health-passive-fail-statuses-display').textContent = passive.failStatuses || '429,500,503';
     document.getElementById('health-passive-fail-count-display').textContent = passive.failCount || 3;

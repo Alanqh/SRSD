@@ -105,24 +105,78 @@
 
         <!-- Tab: 基本信息 -->
         <div id="tab-info">
-          <div style="display:flex;justify-content:flex-end;margin-bottom:16px">
-            <button class="btn btn-primary" onclick="openEditModal()">编辑基本信息</button>
+          <!-- 终态 -->
+          <div id="info-display">
+            <div style="display:flex;justify-content:flex-end;margin-bottom:16px">
+              <button class="btn btn-primary" onclick="enterInfoEditMode()">编辑基本信息</button>
+            </div>
+            <div id="vs-info-body" class="desc-list-2col"></div>
           </div>
-          <div id="vs-info-body" class="desc-list-2col"></div>
+          <!-- 编辑态 -->
+          <div id="info-edit" style="display:none">
+            <div style="display:flex;justify-content:flex-end;gap:8px;margin-bottom:16px">
+              <button class="btn btn-default" onclick="cancelInfoEditMode()">取消</button>
+              <button class="btn btn-primary" onclick="submitInfoEdit()">保存</button>
+            </div>
+            <div class="config-section">
+              <div class="form-item">
+                <label class="form-label">虚拟服务名称</label>
+                <div class="form-control">
+                  <input id="edit-name" class="ant-input" disabled />
+                  <div class="form-hint">服务名称创建后不可修改</div>
+                </div>
+              </div>
+              <div class="form-item">
+                <label class="form-label">描述</label>
+                <div class="form-control">
+                  <textarea id="edit-desc" class="ant-input" rows="3"></textarea>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
 
         <!-- Tab: 流量规则 -->
         <div id="tab-traffic-rules" style="display:none">
-          <div style="display:flex;justify-content:flex-end;margin-bottom:16px">
-            <button class="btn btn-primary" onclick="openTrafficModal()">编辑流量规则</button>
+          <!-- 终态 -->
+          <div id="traffic-rules-display">
+            <div style="display:flex;justify-content:flex-end;margin-bottom:16px">
+              <button class="btn btn-primary" onclick="enterTrafficEditMode()">编辑流量规则</button>
+            </div>
+            <div class="config-section">
+              <div class="config-section-title">默认后端</div>
+              <div id="default-backend-display"></div>
+            </div>
+            <div class="config-section">
+              <div class="config-section-title">条件路由规则</div>
+              <div id="route-rules-display"></div>
+            </div>
           </div>
-          <div class="config-section">
-            <div class="config-section-title">默认后端</div>
-            <div id="default-backend-display"></div>
-          </div>
-          <div class="config-section">
-            <div class="config-section-title">条件路由规则</div>
-            <div id="route-rules-display"></div>
+          <!-- 编辑态 -->
+          <div id="traffic-rules-edit" style="display:none">
+            <div style="display:flex;justify-content:flex-end;gap:8px;margin-bottom:16px">
+              <button class="btn btn-default" onclick="cancelTrafficEditMode()">取消</button>
+              <button class="btn btn-primary" onclick="submitTrafficEdit()">保存</button>
+            </div>
+            <div class="form-item" style="align-items:flex-start">
+              <label class="form-label required" style="padding-top:2px">默认后端</label>
+              <div class="form-control">
+                <div class="form-hint" style="margin-top:0;margin-bottom:8px">所有条件路由均不匹配时，流量转发到此服务。</div>
+                <select id="tm-default-backend" class="ant-select" style="width:280px">
+                  <option value="">请选择服务</option>
+                </select>
+                <div id="tm-error-default-backend" class="form-error-msg" style="display:none"></div>
+              </div>
+            </div>
+            <div class="form-item" style="align-items:flex-start">
+              <label class="form-label" style="padding-top:2px">条件路由</label>
+              <div class="form-control">
+                <div class="form-hint" style="margin-top:0;margin-bottom:8px">每条规则可配置多个后端服务及权重，权重之和须为 100。</div>
+                <div id="tm-route-list"></div>
+                <button class="btn btn-default btn-sm" onclick="tmAddRoute()">+ 添加路由规则</button>
+                <div id="tm-error-routes" class="form-error-msg" style="display:none;margin-top:4px"></div>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -818,77 +872,23 @@
   </div>
 </main>
 
-<!-- 编辑基本信息 Modal -->
-<div id="edit-modal" class="modal-overlay" style="display:none" onclick="if(event.target===this)closeEditModal()">
-  <div class="ant-modal" style="width:520px">
+<!-- 代理地址 Modal -->
+<div id="proxy-modal" class="modal-overlay" style="display:none" onclick="if(event.target===this)closeProxyModal()">
+  <div class="ant-modal" style="width:560px">
     <div class="modal-header">
-      <span class="modal-title">编辑基本信息</span>
-      <button class="modal-close" onclick="closeEditModal()">×</button>
+      <span class="modal-title" id="proxy-modal-title">代理地址</span>
+      <button class="modal-close" onclick="closeProxyModal()">×</button>
     </div>
     <div class="modal-body">
-      <div class="form-item">
-        <label class="form-label">虚拟服务名称</label>
-        <div class="form-control">
-          <input id="edit-name" class="ant-input" disabled />
-          <div class="form-hint">服务名称创建后不可修改</div>
-        </div>
+      <div style="display:flex;border-bottom:1px solid #f0f0f0;margin-bottom:16px">
+        <div id="proxy-tab-http" class="tab-item active" style="padding:6px 16px;cursor:pointer" onclick="switchProxyTab('http')">HTTP</div>
+        <div id="proxy-tab-https" class="tab-item" style="padding:6px 16px;cursor:pointer" onclick="switchProxyTab('https')">HTTPS</div>
       </div>
-      <div class="form-item">
-        <label class="form-label required">业务线</label>
-        <div class="form-control">
-          <select id="edit-bizline" class="ant-select">
-            <option value="">请选择</option>
-            <option value="北京研发中心">北京研发中心</option>
-            <option value="大数据中心">大数据中心</option>
-            <option value="北京研发部">北京研发部</option>
-          </select>
-        </div>
-      </div>
-      <div class="form-item">
-        <label class="form-label">描述</label>
-        <div class="form-control">
-          <textarea id="edit-desc" class="ant-input" rows="3"></textarea>
-        </div>
-      </div>
+      <div id="proxy-panel-http"></div>
+      <div id="proxy-panel-https" style="display:none"></div>
     </div>
     <div class="modal-footer">
-      <button class="btn btn-default" onclick="closeEditModal()">取消</button>
-      <button class="btn btn-primary" onclick="submitEditModal()">确定</button>
-    </div>
-  </div>
-</div>
-
-<!-- 编辑流量规则 Modal -->
-<div id="traffic-modal" class="modal-overlay" style="display:none" onclick="if(event.target===this)closeTrafficModal()">
-  <div class="ant-modal" style="width:700px">
-    <div class="modal-header">
-      <span class="modal-title">编辑流量规则</span>
-      <button class="modal-close" onclick="closeTrafficModal()">×</button>
-    </div>
-    <div class="modal-body modal-body-scroll">
-      <div class="form-item" style="align-items:flex-start">
-        <label class="form-label required" style="padding-top:2px">默认后端</label>
-        <div class="form-control">
-          <div class="form-hint" style="margin-top:0;margin-bottom:8px">所有条件路由均不匹配时，流量转发到此服务。</div>
-          <select id="tm-default-backend" class="ant-select" style="width:280px">
-            <option value="">请选择服务</option>
-          </select>
-          <div id="tm-error-default-backend" class="form-error-msg" style="display:none"></div>
-        </div>
-      </div>
-      <div class="form-item" style="align-items:flex-start">
-        <label class="form-label" style="padding-top:2px">条件路由</label>
-        <div class="form-control">
-          <div class="form-hint" style="margin-top:0;margin-bottom:8px">每条规则可配置多个后端服务及权重，权重之和须为 100。</div>
-          <div id="tm-route-list"></div>
-          <button class="btn btn-default btn-sm" onclick="tmAddRoute()">+ 添加路由规则</button>
-          <div id="tm-error-routes" class="form-error-msg" style="display:none;margin-top:4px"></div>
-        </div>
-      </div>
-    </div>
-    <div class="modal-footer">
-      <button class="btn btn-default" onclick="closeTrafficModal()">取消</button>
-      <button class="btn btn-primary" onclick="submitTrafficModal()">确定</button>
+      <button class="btn btn-default" onclick="closeProxyModal()">关闭</button>
     </div>
   </div>
 </div>
@@ -990,9 +990,9 @@ function switchTab(key) {
   if (key === 'clients')     renderClientsTable();
   if (key === 'access')      renderAccessTable();
   if (key === 'oplog')       renderOplog();
-  if (key === 'log')         initLogTab();
-  if (key === 'security')    initSecurityTab();
-  if (key === 'comm')        initCommTab();
+  if (key === 'log')         { renderLogDisplay(); initLogTab(); }
+  if (key === 'security')    { renderSecurityDisplay(); initSecurityTab(); }
+  if (key === 'comm')        { renderCommDisplay(); initCommTab(); }
   if (key === 'traffic-rules') renderTrafficRules();
 }
 
@@ -1004,7 +1004,6 @@ function renderInfo() {
     { label: '虚拟服务名称', value: vs.name },
     { label: '命名空间',     value: vs.ns },
     { label: '业务线',       value: vs.bizline || '--' },
-    { label: '代理地址',     value: vs.proxy },
     { label: '默认后端',     value: db.serviceName || db.serviceId || '--' },
     { label: '条件路由数',   value: String(routes.length) },
     { label: '创建人',       value: vs.createdBy || '--' },
@@ -1016,24 +1015,79 @@ function renderInfo() {
       <div class="desc-label">${escHtml(r.label)}</div>
       <div class="desc-value">${escHtml(r.value)}</div>
     </div>
-  `).join('');
+  `).join('') + `
+    <div class="desc-item">
+      <div class="desc-label">代理地址</div>
+      <div class="desc-value"><button class="btn btn-default btn-sm" onclick="openProxyModal()">查看</button></div>
+    </div>
+  `;
 }
 
-function openEditModal() {
-  document.getElementById('edit-name').value    = vs.name;
-  document.getElementById('edit-bizline').value = vs.bizline || '';
-  document.getElementById('edit-desc').value    = vs.desc || '';
-  openModal(document.getElementById('edit-modal'));
+function enterInfoEditMode() {
+  document.getElementById('edit-name').value = vs.name;
+  document.getElementById('edit-desc').value = vs.desc || '';
+  document.getElementById('info-display').style.display = 'none';
+  document.getElementById('info-edit').style.display = '';
 }
-function closeEditModal() { closeModal(document.getElementById('edit-modal')); }
-function submitEditModal() {
-  vs.bizline = document.getElementById('edit-bizline').value;
-  vs.desc    = document.getElementById('edit-desc').value.trim();
+function cancelInfoEditMode() {
+  document.getElementById('info-edit').style.display = 'none';
+  document.getElementById('info-display').style.display = '';
+}
+function submitInfoEdit() {
+  vs.desc = document.getElementById('edit-desc').value.trim();
   allVss = allVss.map(v => v.id === vs.id ? vs : v);
   saveVss(allVss);
   renderInfo();
-  closeEditModal();
+  cancelInfoEditMode();
   showToast('基本信息已更新');
+}
+
+/* ── 代理地址 Modal ── */
+function buildProxyPanel(proto, domain, aliases) {
+  const defaultAddr = `${proto}://${domain}`;
+  let html = `
+    <div style="margin-bottom:16px">
+      <div style="font-size:12px;color:rgba(0,0,0,0.45);margin-bottom:6px">默认代理地址</div>
+      <div style="display:flex;align-items:center;gap:8px;background:#fafafa;border:1px solid #f0f0f0;padding:8px 12px">
+        <span style="font-family:monospace;font-size:13px;flex:1;word-break:break-all">${escHtml(defaultAddr)}</span>
+        <button class="btn btn-default btn-sm" onclick="copyProxyAddr('${escHtml(defaultAddr)}')">复制</button>
+      </div>
+    </div>`;
+  if (aliases.length > 0) {
+    html += `<div><div style="font-size:12px;color:rgba(0,0,0,0.45);margin-bottom:6px">别名代理地址</div>`;
+    aliases.forEach(alias => {
+      const aliasUrl = `${proto}://${alias}`;
+      html += `<div style="display:flex;align-items:center;gap:8px;background:#fafafa;border:1px solid #f0f0f0;padding:8px 12px;margin-bottom:4px">
+        <span style="font-family:monospace;font-size:13px;flex:1;word-break:break-all">${escHtml(aliasUrl)}</span>
+        <button class="btn btn-default btn-sm" onclick="copyProxyAddr('${escHtml(aliasUrl)}')">复制</button>
+      </div>`;
+    });
+    html += `</div>`;
+  } else {
+    html += `<div style="color:rgba(0,0,0,0.25);font-size:13px">暂无别名代理地址</div>`;
+  }
+  return html;
+}
+function switchProxyTab(proto) {
+  document.getElementById('proxy-tab-http').classList.toggle('active', proto === 'http');
+  document.getElementById('proxy-tab-https').classList.toggle('active', proto === 'https');
+  document.getElementById('proxy-panel-http').style.display  = proto === 'http'  ? '' : 'none';
+  document.getElementById('proxy-panel-https').style.display = proto === 'https' ? '' : 'none';
+}
+function openProxyModal(svcObj) {
+  const s = svcObj || vs;
+  const aliases = s.aliases || [];
+  document.getElementById('proxy-modal-title').textContent = `代理地址 — ${s.name}`;
+  document.getElementById('proxy-panel-http').innerHTML  = buildProxyPanel('http',  s.proxy, aliases);
+  document.getElementById('proxy-panel-https').innerHTML = buildProxyPanel('https', s.proxy, aliases);
+  const activeProto = (s.protocol === 'https') ? 'https' : 'http';
+  switchProxyTab(activeProto);
+  openModal(document.getElementById('proxy-modal'));
+}
+function closeProxyModal() { closeModal(document.getElementById('proxy-modal')); }
+function copyProxyAddr(addr) {
+  navigator.clipboard?.writeText(addr).then(() => showToast('已复制到剪贴板'))
+    .catch(() => showToast('复制失败', '❌'));
 }
 
 /* ── 流量规则 ── */
@@ -1093,7 +1147,7 @@ const COND_TYPE_OPTS = [
   { v:'query',  l:'查询参数'   }, { v:'path',   l:'路径前缀' },
 ];
 
-function openTrafficModal() {
+function enterTrafficEditMode() {
   const nsSvcs = allSvcs.filter(s => s.ns === vs.ns);
   tmDefaultBackendId = vs.defaultBackend?.serviceId || '';
   tmRoutes = JSON.parse(JSON.stringify(vs.routes || [])).map(r => ({
@@ -1105,9 +1159,13 @@ function openTrafficModal() {
   document.getElementById('tm-error-routes').style.display = 'none';
   tmRefreshDefaultSelect(nsSvcs);
   tmRenderRouteList(nsSvcs);
-  openModal(document.getElementById('traffic-modal'));
+  document.getElementById('traffic-rules-display').style.display = 'none';
+  document.getElementById('traffic-rules-edit').style.display = '';
 }
-function closeTrafficModal() { closeModal(document.getElementById('traffic-modal')); }
+function cancelTrafficEditMode() {
+  document.getElementById('traffic-rules-edit').style.display = 'none';
+  document.getElementById('traffic-rules-display').style.display = '';
+}
 
 function tmRefreshDefaultSelect(nsSvcs) {
   document.getElementById('tm-default-backend').innerHTML =
@@ -1216,7 +1274,7 @@ function tmSyncAndAddUpstream(ri) { tmSyncFromDOM(); tmRoutes[ri].upstreams.push
 function tmSyncAndRemoveUpstream(ri, ui) { tmSyncFromDOM(); tmRoutes[ri].upstreams.splice(ui, 1); tmRenderRouteList(); }
 function tmHandleCondTypeChange(ri, ci, type) { tmSyncFromDOM(); tmRoutes[ri].conditions[ci].type = type; if (type === 'path') { tmRoutes[ri].conditions[ci].matchType = 'prefix'; tmRoutes[ri].conditions[ci].field = ''; } tmRenderRouteList(); }
 
-function submitTrafficModal() {
+function submitTrafficEdit() {
   tmSyncFromDOM();
   const dbSel = document.getElementById('tm-default-backend');
   const dbId  = dbSel.value;
@@ -1240,7 +1298,7 @@ function submitTrafficModal() {
   vs.routes = JSON.parse(JSON.stringify(tmRoutes));
   allVss = allVss.map(v => v.id === vs.id ? vs : v);
   saveVss(allVss);
-  closeTrafficModal();
+  cancelTrafficEditMode();
   renderTrafficRules();
   renderInfo();
   showToast('流量规则已保存');
@@ -1303,7 +1361,7 @@ function renderAccessTable() {
     return `<tr>
       <td>${escHtml(s.name)}</td>
       <td>${escHtml(s.ns)}</td>
-      <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escHtml(s.proxy)}</td>
+      <td><button class="btn btn-default btn-sm" onclick="openProxyModal(${JSON.stringify({name:s.name,proxy:s.proxy,protocol:s.protocol||'http',aliases:s.aliases||[]})})">查看</button></td>
       <td><span class="tag ${authClass}">${escHtml(authLabel)}</span></td>
       <td>${op}</td>
     </tr>`;
@@ -1321,6 +1379,99 @@ function viewCred(svcId) {
 }
 
 /* ── 安全配置 ── */
+function enterEditMode(tab) {
+  document.getElementById(`edit-btn-${tab}`).style.display = 'none';
+  document.getElementById(`${tab}-edit-actions`).style.display = 'flex';
+  document.getElementById(`${tab}-display`).style.display = 'none';
+  document.getElementById(`${tab}-edit`).style.display = '';
+  if (tab === 'security') initSecurityTab();
+  if (tab === 'comm')     initCommTab();
+  if (tab === 'log')      initLogTab();
+}
+function cancelEditMode(tab) {
+  document.getElementById(`edit-btn-${tab}`).style.display = '';
+  document.getElementById(`${tab}-edit-actions`).style.display = 'none';
+  document.getElementById(`${tab}-edit`).style.display = 'none';
+  document.getElementById(`${tab}-display`).style.display = '';
+}
+
+function renderSecurityDisplay() {
+  const enabled = vs.auth === 'basic' || vs.auth === 'forward';
+  document.getElementById('sec-auth-display').innerHTML =
+    `<span class="tag ${enabled ? 'tag-success' : 'tag-default'}">${enabled ? '已开启' : '已关闭'}</span>`;
+  const authCfgEl = document.getElementById('sec-auth-config-display');
+  authCfgEl.style.display = enabled ? '' : 'none';
+  if (enabled) {
+    document.getElementById('sec-auth-type-display').textContent = vs.auth === 'basic' ? 'Basic Auth' : 'Forward Auth';
+    const fwdEl = document.getElementById('sec-forward-fields-display');
+    fwdEl.style.display = vs.auth === 'forward' ? '' : 'none';
+    if (vs.auth === 'forward') {
+      const cfg = vs.authConfig || {};
+      document.getElementById('sec-forward-url-display').textContent    = cfg.forwardUrl || '--';
+      document.getElementById('sec-forward-method-display').textContent = cfg.method     || 'GET';
+      const fmtHdrs = arr => (arr || []).map(h => typeof h === 'object' ? `${h.field}${h.desc ? ' ('+h.desc+')' : ''}` : h).join('、') || '--';
+      document.getElementById('sec-forward-req-headers-display').textContent = fmtHdrs(cfg.reqHeaders);
+      document.getElementById('sec-forward-res-headers-display').textContent = fmtHdrs(cfg.resHeaders);
+    }
+  }
+  const yn = v => v ? '已启用' : '已关闭';
+  const ipCtrl  = vs.ipControl        || {};
+  const reqSize = vs.reqSizeConfig    || {};
+  const cors    = vs.corsConfig       || {};
+  const referer = vs.refererConfig    || {};
+  const ua      = vs.uaConfig         || {};
+  const uriB    = vs.uriBlockerConfig || {};
+  document.getElementById('sec-ip-ctrl-enable-display').innerHTML  = `<span class="tag ${ipCtrl.enabled  ? 'tag-success' : 'tag-default'}">${yn(ipCtrl.enabled)}</span>`;
+  document.getElementById('sec-ip-ctrl-display').style.display     = ipCtrl.enabled  ? '' : 'none';
+  document.getElementById('sec-ip-whitelist-display').textContent  = (ipCtrl.whitelist  || []).join('\n') || '--';
+  document.getElementById('sec-ip-blacklist-display').textContent  = (ipCtrl.blacklist  || []).join('\n') || '--';
+  document.getElementById('sec-ip-message-display').textContent    = ipCtrl.message    || '--';
+  document.getElementById('sec-req-size-enable-display').innerHTML = `<span class="tag ${reqSize.enabled ? 'tag-success' : 'tag-default'}">${yn(reqSize.enabled)}</span>`;
+  document.getElementById('sec-req-size-display').style.display    = reqSize.enabled   ? '' : 'none';
+  document.getElementById('sec-req-size-limit-display').textContent= reqSize.enabled   ? `${reqSize.limitMB || 10} MB` : '--';
+  document.getElementById('sec-cors-enable-display').innerHTML     = `<span class="tag ${cors.enabled    ? 'tag-success' : 'tag-default'}">${yn(cors.enabled)}</span>`;
+  document.getElementById('sec-cors-display').style.display        = cors.enabled      ? '' : 'none';
+  document.getElementById('sec-cors-origins-display').textContent  = cors.origins      || '--';
+  document.getElementById('sec-cors-methods-display').textContent  = (cors.methods     || []).join(', ') || '--';
+  document.getElementById('sec-cors-allow-headers-display').textContent   = cors.allowHeaders   || '--';
+  document.getElementById('sec-cors-expose-headers-display').textContent  = cors.exposeHeaders  || '--';
+  document.getElementById('sec-cors-max-age-display').textContent  = cors.enabled ? `${cors.maxAge || 3600} 秒` : '--';
+  document.getElementById('sec-cors-credential-display').textContent = cors.credential ? '已开启' : '已关闭';
+  document.getElementById('sec-referer-enable-display').innerHTML  = `<span class="tag ${referer.enabled ? 'tag-success' : 'tag-default'}">${yn(referer.enabled)}</span>`;
+  document.getElementById('sec-referer-display').style.display     = referer.enabled   ? '' : 'none';
+  document.getElementById('sec-referer-whitelist-display').textContent = (referer.whitelist || []).join('\n') || '--';
+  document.getElementById('sec-referer-blacklist-display').textContent = (referer.blacklist || []).join('\n') || '--';
+  document.getElementById('sec-referer-bypass-missing-display').textContent = referer.bypassMissing !== false ? '已开启' : '已关闭';
+  document.getElementById('sec-ua-enable-display').innerHTML       = `<span class="tag ${ua.enabled      ? 'tag-success' : 'tag-default'}">${yn(ua.enabled)}</span>`;
+  document.getElementById('sec-ua-display').style.display          = ua.enabled        ? '' : 'none';
+  document.getElementById('sec-ua-whitelist-display').textContent  = (ua.whitelist     || []).join('\n') || '--';
+  document.getElementById('sec-ua-blacklist-display').textContent  = (ua.blacklist     || []).join('\n') || '--';
+  document.getElementById('sec-ua-message-display').textContent    = ua.message        || '--';
+  document.getElementById('sec-uri-blocker-enable-display').innerHTML = `<span class="tag ${uriB.enabled ? 'tag-success' : 'tag-default'}">${yn(uriB.enabled)}</span>`;
+  document.getElementById('sec-uri-blocker-display').style.display = uriB.enabled      ? '' : 'none';
+  document.getElementById('sec-uri-block-rules-display').textContent = (uriB.blockRules || []).join('\n') || '--';
+  document.getElementById('sec-uri-reject-code-display').textContent = uriB.enabled ? (uriB.rejectedCode || 403) : '--';
+}
+
+function renderCommDisplay() {
+  const comm = vs.commConfig || {};
+  document.getElementById('comm-ws-display').innerHTML = `<span class="tag ${comm.wsEnabled ? 'tag-success' : 'tag-default'}">${comm.wsEnabled ? '已开启' : '已关闭'}</span>`;
+  document.getElementById('comm-host-rewrite-display').textContent = comm.hostRewrite || '--';
+  document.getElementById('comm-gw-token-display').textContent     = comm.gwToken     || '--';
+}
+
+function renderLogDisplay() {
+  const log = vs.logConfig || {};
+  document.getElementById('log-kafka-enable-display').innerHTML = `<span class="tag ${log.kafkaEnabled ? 'tag-success' : 'tag-default'}">${log.kafkaEnabled ? '已开启' : '已关闭'}</span>`;
+  document.getElementById('kafka-display').style.display        = log.kafkaEnabled ? '' : 'none';
+  document.getElementById('kafka-brokers-display').textContent  = log.kafkaBrokers  || '--';
+  document.getElementById('kafka-topic-display').textContent    = log.kafkaTopic    || '--';
+  document.getElementById('log-loki-enable-display').innerHTML  = `<span class="tag ${log.lokiEnabled  ? 'tag-success' : 'tag-default'}">${log.lokiEnabled  ? '已开启' : '已关闭'}</span>`;
+  document.getElementById('loki-display').style.display         = log.lokiEnabled   ? '' : 'none';
+  document.getElementById('loki-url-display').textContent       = log.lokiUrl       || '--';
+  document.getElementById('loki-tenant-id-display').textContent = log.lokiTenantId  || '--';
+}
+
 let fwdReqHeaders = [];
 let fwdResHeaders = [];
 let secAliases    = [];
@@ -1494,6 +1645,8 @@ function saveSecurityConfig() {
   };
   allVss = allVss.map(v => v.id === vs.id ? vs : v);
   saveVss(allVss);
+  cancelEditMode('security');
+  renderSecurityDisplay();
   renderTabs();
   showToast('安全配置已保存');
 }
@@ -1518,6 +1671,8 @@ function saveCommConfig() {
   };
   allVss = allVss.map(v => v.id === vs.id ? vs : v);
   saveVss(allVss);
+  cancelEditMode('comm');
+  renderCommDisplay();
   showToast('通信配置已保存');
 }
 
@@ -1556,6 +1711,8 @@ function saveLogConfig() {
   };
   allVss = allVss.map(v => v.id === vs.id ? vs : v);
   saveVss(allVss);
+  cancelEditMode('log');
+  renderLogDisplay();
   showToast('日志配置已保存');
 }
 
