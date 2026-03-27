@@ -90,55 +90,10 @@
 
         <!-- Tab: 基本信息 -->
         <div id="tab-info">
-          <!-- 终态 -->
-          <div id="info-display">
-            <div style="display:flex;justify-content:flex-end;margin-bottom:16px">
-              <button class="btn btn-primary" onclick="enterInfoEditMode()">编辑基本信息</button>
-            </div>
-            <div id="svc-info-body" class="desc-list-2col"></div>
+          <div style="display:flex;justify-content:flex-end;margin-bottom:16px">
+            <button class="btn btn-primary" onclick="openInfoEditModal()">编辑基本信息</button>
           </div>
-          <!-- 编辑态 -->
-          <div id="info-edit" style="display:none">
-            <div style="display:flex;justify-content:flex-end;gap:8px;margin-bottom:16px">
-              <button class="btn btn-default" onclick="cancelInfoEditMode()">取消</button>
-              <button class="btn btn-primary" onclick="submitInfoEdit()">保存</button>
-            </div>
-            <div class="config-section">
-              <div class="form-item">
-                <label class="form-label">服务名称</label>
-                <div class="form-control">
-                  <input id="edit-name" class="ant-input" disabled />
-                  <div class="form-hint">服务名称创建后不可修改</div>
-                </div>
-              </div>
-              <div class="form-item">
-                <label class="form-label">协议类型</label>
-                <div class="form-control">
-                  <select id="edit-protocol" class="ant-select">
-                    <option value="http">HTTP</option>
-                    <option value="https">HTTPS</option>
-                    <option value="grpc">gRPC</option>
-                    <option value="tcp">TCP</option>
-                  </select>
-                </div>
-              </div>
-              <div class="form-item">
-                <label class="form-label">实例地址形式</label>
-                <div class="form-control">
-                  <select id="edit-addr-type" class="ant-select">
-                    <option value="ip">只包含IP地址</option>
-                    <option value="domain">包含IP地址和域名</option>
-                  </select>
-                </div>
-              </div>
-              <div class="form-item">
-                <label class="form-label">服务描述</label>
-                <div class="form-control">
-                  <textarea id="edit-desc" class="ant-input" rows="3" placeholder="建议对服务的主要功能、适用范围进行描述"></textarea>
-                </div>
-              </div>
-            </div>
-          </div>
+          <div id="svc-info-body" class="desc-list-2col"></div>
         </div>
 
         <!-- Tab: 实例列表 -->
@@ -385,14 +340,14 @@
             </div>
 
             <div class="config-section">
-              <div class="config-section-title">服务别名</div>
-              <div class="alert alert-warning" style="margin-bottom:12px">
-                ⚠️ 添加服务别名后，需要在自己的 DNS 里配置 CNAME 记录，将别名指向此服务的代理地址（<span id="alias-proxy-hint" style="font-family:monospace;font-size:12px"></span>），否则别名无法正常解析。
-              </div>
-              <div class="setting-row">
-                <div class="setting-label">当前别名</div>
-                <div class="setting-value" id="alias-tags-display"></div>
-              </div>
+            <div class="config-section-title">服务别名</div>
+            <div class="alert alert-warning" style="margin-bottom:12px">
+            ⚠️ 添加服务别名后，需要在自己的 DNS 里配置 CNAME 记录，将别名指向此服务的代理地址（<span id="alias-proxy-hint-display" style="font-family:monospace;font-size:12px"></span>），否则别名无法正常解析。
+            </div>
+            <div class="setting-row">
+            <div class="setting-label">当前别名</div>
+            <div class="setting-value" id="alias-tags-display"></div>
+            </div>
             </div>
           </div>
           <div id="security-edit" class="cfg-edit" style="display:none">
@@ -1314,6 +1269,60 @@
   </div>
 </main>
 
+<!-- 编辑基本信息 Modal -->
+<div id="info-edit-modal" class="modal-overlay" style="display:none" onclick="if(event.target===this)closeInfoEditModal()">
+  <div class="ant-modal" style="width:540px">
+    <div class="modal-header">
+      <span class="modal-title">编辑基本信息</span>
+      <button class="modal-close" onclick="closeInfoEditModal()">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-item">
+        <label class="form-label">服务名称</label>
+        <div class="form-control">
+          <input id="edit-name" class="ant-input" disabled />
+          <div class="form-hint">服务名称创建后不可修改</div>
+        </div>
+      </div>
+      <div class="form-item">
+        <label class="form-label">命名空间</label>
+        <div class="form-control">
+          <input id="edit-ns" class="ant-input" disabled />
+          <div class="form-hint">命名空间创建后不可修改</div>
+        </div>
+      </div>
+      <div class="form-item">
+        <label class="form-label required">协议类型</label>
+        <div class="form-control">
+          <select id="edit-protocol" class="ant-select">
+            <option value="http">HTTP</option>
+            <option value="https">HTTPS</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-item">
+        <label class="form-label required">实例地址形式</label>
+        <div class="form-control">
+          <select id="edit-addr-type" class="ant-select">
+            <option value="ip">只包含IP地址</option>
+            <option value="domain">包含IP地址和域名</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-item">
+        <label class="form-label">服务描述</label>
+        <div class="form-control">
+          <textarea id="edit-desc" class="ant-input" rows="3" placeholder="建议对服务的主要功能、适用范围进行描述"></textarea>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-default" onclick="closeInfoEditModal()">取消</button>
+      <button class="btn btn-primary" onclick="submitInfoEdit()">确定</button>
+    </div>
+  </div>
+</div>
+
 <!-- 代理地址 Modal -->
 <div id="proxy-modal" class="modal-overlay" style="display:none" onclick="if(event.target===this)closeProxyModal()">
   <div class="ant-modal" style="width:560px">
@@ -1519,7 +1528,7 @@ function buildProxyPanel(proto, domain, aliases) {
         <button class="btn btn-default btn-sm" onclick="copyProxyAddr('${escHtml(defaultAddr)}')">复制</button>
       </div>
     </div>`;
-  if (aliases && aliases.length > 0) {
+  if (proto === 'http' && aliases && aliases.length > 0) {
     html += `<div><div style="font-size:12px;color:rgba(0,0,0,0.45);margin-bottom:6px">别名代理地址</div>`;
     aliases.forEach(alias => {
       const aliasUrl = `${proto}://${alias}`;
@@ -1556,19 +1565,16 @@ function copyProxyAddr(addr) {
     .catch(() => showToast('复制失败', '❌'));
 }
 
-/* ── 编辑基本信息（inpage） ── */
-function enterInfoEditMode() {
-  document.getElementById('edit-name').value = svc.name;
+/* ── 编辑基本信息 Modal ── */
+function openInfoEditModal() {
+  document.getElementById('edit-name').value     = svc.name;
+  document.getElementById('edit-ns').value       = svc.ns;
   document.getElementById('edit-protocol').value = svc.protocol || 'http';
-  document.getElementById('edit-addr-type').value = svc.addrType || 'ip';
-  document.getElementById('edit-desc').value = svc.desc || '';
-  document.getElementById('info-display').style.display = 'none';
-  document.getElementById('info-edit').style.display = '';
+  document.getElementById('edit-addr-type').value= svc.addrType || 'ip';
+  document.getElementById('edit-desc').value     = svc.desc || '';
+  openModal(document.getElementById('info-edit-modal'));
 }
-function cancelInfoEditMode() {
-  document.getElementById('info-edit').style.display = 'none';
-  document.getElementById('info-display').style.display = '';
-}
+function closeInfoEditModal() { closeModal(document.getElementById('info-edit-modal')); }
 function submitInfoEdit() {
   svc.protocol = document.getElementById('edit-protocol').value;
   svc.addrType = document.getElementById('edit-addr-type').value;
@@ -1576,12 +1582,12 @@ function submitInfoEdit() {
   allSvcs = allSvcs.map(s => s.id === svc.id ? svc : s);
   saveSvcs(allSvcs);
   renderInfo();
-  cancelInfoEditMode();
+  closeInfoEditModal();
   showToast('基本信息已更新');
 }
 /* 向下兼容旧调用 */
-function openEditModal()  { enterInfoEditMode(); }
-function closeEditModal() { cancelInfoEditMode(); }
+function openEditModal()  { openInfoEditModal(); }
+function closeEditModal() { closeInfoEditModal(); }
 function submitEditModal(){ submitInfoEdit(); }
 
 /* ── 实例列表 ── */
@@ -1903,8 +1909,8 @@ function initSecurityTab() {
   if (uriB.rejectedCode) document.getElementById('sec-uri-reject-code').value = uriB.rejectedCode;
   // Aliases
   secAliases = [...(svc.aliases || [])];
-  const proxyHint = document.getElementById('alias-proxy-hint');
-  if (proxyHint) proxyHint.textContent = svc.proxy || '';
+  const proxyHintEdit = document.getElementById('alias-proxy-hint');
+  if (proxyHintEdit) proxyHintEdit.textContent = svc.proxy || '';
   renderSecAliasTags();
   
   // 渲染终态展示
@@ -2021,6 +2027,8 @@ function renderSecurityDisplay() {
   }
   
   // 服务别名
+  const hintDisp = document.getElementById('alias-proxy-hint-display');
+  if (hintDisp) hintDisp.textContent = svc.proxy || '';
   document.getElementById('alias-tags-display').innerHTML = secAliases.length === 0
     ? '<span style="color:rgba(0,0,0,0.25)">暂未配置别名</span>'
     : secAliases.map(a => `<span class="alias-tag">${escHtml(a)}</span>`).join('');
@@ -2169,7 +2177,8 @@ function handleUriBlockerToggle() {
     document.getElementById('sec-uri-blocker-enable').checked ? '' : 'none';
 }
 function addSecAlias() {
-  const v = document.getElementById('alias-input').value.trim();
+  let v = document.getElementById('alias-input').value.trim();
+  v = v.replace(/^https?:\/\//i, '');
   if (!v) return;
   if (secAliases.length >= 5) { showToast('最多配置 5 个别名', '⚠️'); return; }
   if (!secAliases.includes(v)) secAliases.push(v);
@@ -2178,7 +2187,7 @@ function addSecAlias() {
 }
 function removeSecAlias(i) { secAliases.splice(i,1); renderSecAliasTags(); }
 function renderSecAliasTags() {
-  document.getElementById('alias-tags-display').innerHTML = secAliases.length === 0
+  document.getElementById('alias-tags-edit').innerHTML = secAliases.length === 0
     ? '<span style="color:rgba(0,0,0,0.25);font-size:13px">暂未配置别名</span>'
     : secAliases.map((a,i) => `<span class="alias-tag">${escHtml(a)}<span class="del" onclick="removeSecAlias(${i})">×</span></span>`).join('');
 }

@@ -381,7 +381,7 @@ function buildProxyPanel(proto, domain, aliases) {
         <button class="btn btn-default btn-sm" onclick="copyProxyAddr('${escHtml(defaultAddr)}')">复制</button>
       </div>
     </div>`;
-  if (aliases.length > 0) {
+  if (proto === 'http' && aliases.length > 0) {
     html += `<div>
       <div style="font-size:12px;color:rgba(0,0,0,0.45);margin-bottom:6px">别名代理地址</div>`;
     aliases.forEach(alias => {

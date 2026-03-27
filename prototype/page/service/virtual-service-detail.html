@@ -105,35 +105,10 @@
 
         <!-- Tab: 基本信息 -->
         <div id="tab-info">
-          <!-- 终态 -->
-          <div id="info-display">
-            <div style="display:flex;justify-content:flex-end;margin-bottom:16px">
-              <button class="btn btn-primary" onclick="enterInfoEditMode()">编辑基本信息</button>
-            </div>
-            <div id="vs-info-body" class="desc-list-2col"></div>
+          <div style="display:flex;justify-content:flex-end;margin-bottom:16px">
+            <button class="btn btn-primary" onclick="openInfoEditModal()">编辑基本信息</button>
           </div>
-          <!-- 编辑态 -->
-          <div id="info-edit" style="display:none">
-            <div style="display:flex;justify-content:flex-end;gap:8px;margin-bottom:16px">
-              <button class="btn btn-default" onclick="cancelInfoEditMode()">取消</button>
-              <button class="btn btn-primary" onclick="submitInfoEdit()">保存</button>
-            </div>
-            <div class="config-section">
-              <div class="form-item">
-                <label class="form-label">虚拟服务名称</label>
-                <div class="form-control">
-                  <input id="edit-name" class="ant-input" disabled />
-                  <div class="form-hint">服务名称创建后不可修改</div>
-                </div>
-              </div>
-              <div class="form-item">
-                <label class="form-label">描述</label>
-                <div class="form-control">
-                  <textarea id="edit-desc" class="ant-input" rows="3"></textarea>
-                </div>
-              </div>
-            </div>
-          </div>
+          <div id="vs-info-body" class="desc-list-2col"></div>
         </div>
 
         <!-- Tab: 流量规则 -->
@@ -397,6 +372,16 @@
                     <div class="setting-value" id="sec-uri-reject-code-display"></div>
                   </div>
                 </div>
+              </div>
+            </div>
+            <div class="config-section">
+              <div class="config-section-title">服务别名</div>
+              <div class="alert alert-warning" style="margin-bottom:12px">
+                ⚠️ 添加别名后，需要在自己的 DNS 里配置 CNAME 记录，将别名指向此服务的代理地址（<span id="alias-proxy-hint-display" style="font-family:monospace;font-size:12px"></span>），否则别名无法正常解析。
+              </div>
+              <div class="setting-row">
+                <div class="setting-label">当前别名</div>
+                <div class="setting-value" id="alias-tags-display"></div>
               </div>
             </div>
           </div>
@@ -678,6 +663,23 @@
                 </div>
               </div>
             </div>
+            <div class="config-section">
+              <div class="config-section-title">服务别名</div>
+              <div class="alert alert-warning" style="margin-bottom:12px">
+                ⚠️ 添加别名后，需要在自己的 DNS 里配置 CNAME 记录，将别名指向此服务的代理地址（<span id="alias-proxy-hint" style="font-family:monospace;font-size:12px"></span>），否则别名无法正常解析。
+              </div>
+              <div class="setting-row">
+                <div class="setting-label">当前别名</div>
+                <div class="setting-value">
+                  <div id="alias-tags-edit" style="margin-bottom:8px"></div>
+                  <div style="display:flex;gap:8px">
+                    <input id="alias-input" class="ant-input" style="max-width:320px" placeholder="输入自定义域名，如 myservice.example.com" onkeyup="if(event.key==='Enter')addSecAlias()" />
+                    <button class="btn btn-default" onclick="addSecAlias()">添加</button>
+                  </div>
+                  <div class="form-hint">每个服务最多配置 5 个别名，无需填写 http:// 前缀</div>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -885,6 +887,42 @@
   </div>
 </main>
 
+<!-- 编辑基本信息 Modal -->
+<div id="info-edit-modal" class="modal-overlay" style="display:none" onclick="if(event.target===this)closeInfoEditModal()">
+  <div class="ant-modal" style="width:480px">
+    <div class="modal-header">
+      <span class="modal-title">编辑基本信息</span>
+      <button class="modal-close" onclick="closeInfoEditModal()">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-item">
+        <label class="form-label">虚拟服务名称</label>
+        <div class="form-control">
+          <input id="edit-name" class="ant-input" disabled />
+          <div class="form-hint">虚拟服务名称创建后不可修改</div>
+        </div>
+      </div>
+      <div class="form-item">
+        <label class="form-label">命名空间</label>
+        <div class="form-control">
+          <input id="edit-ns" class="ant-input" disabled />
+          <div class="form-hint">命名空间创建后不可修改</div>
+        </div>
+      </div>
+      <div class="form-item">
+        <label class="form-label">描述</label>
+        <div class="form-control">
+          <textarea id="edit-desc" class="ant-input" rows="3" placeholder="对虚拟服务的功能和用途进行描述"></textarea>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-default" onclick="closeInfoEditModal()">取消</button>
+      <button class="btn btn-primary" onclick="submitInfoEdit()">确定</button>
+    </div>
+  </div>
+</div>
+
 <!-- 代理地址 Modal -->
 <div id="proxy-modal" class="modal-overlay" style="display:none" onclick="if(event.target===this)closeProxyModal()">
   <div class="ant-modal" style="width:560px">
@@ -1036,22 +1074,19 @@ function renderInfo() {
   `;
 }
 
-function enterInfoEditMode() {
+function openInfoEditModal() {
   document.getElementById('edit-name').value = vs.name;
+  document.getElementById('edit-ns').value   = vs.ns;
   document.getElementById('edit-desc').value = vs.desc || '';
-  document.getElementById('info-display').style.display = 'none';
-  document.getElementById('info-edit').style.display = '';
+  openModal(document.getElementById('info-edit-modal'));
 }
-function cancelInfoEditMode() {
-  document.getElementById('info-edit').style.display = 'none';
-  document.getElementById('info-display').style.display = '';
-}
+function closeInfoEditModal() { closeModal(document.getElementById('info-edit-modal')); }
 function submitInfoEdit() {
   vs.desc = document.getElementById('edit-desc').value.trim();
   allVss = allVss.map(v => v.id === vs.id ? vs : v);
   saveVss(allVss);
   renderInfo();
-  cancelInfoEditMode();
+  closeInfoEditModal();
   showToast('基本信息已更新');
 }
 
@@ -1066,7 +1101,7 @@ function buildProxyPanel(proto, domain, aliases) {
         <button class="btn btn-default btn-sm" onclick="copyProxyAddr('${escHtml(defaultAddr)}')">复制</button>
       </div>
     </div>`;
-  if (aliases.length > 0) {
+  if (proto === 'http' && aliases.length > 0) {
     html += `<div><div style="font-size:12px;color:rgba(0,0,0,0.45);margin-bottom:6px">别名代理地址</div>`;
     aliases.forEach(alias => {
       const aliasUrl = `${proto}://${alias}`;
@@ -1547,6 +1582,12 @@ function renderSecurityDisplay() {
   document.getElementById('sec-uri-blocker-display').style.display = uriB.enabled      ? '' : 'none';
   document.getElementById('sec-uri-block-rules-display').textContent = (uriB.blockRules || []).join('\n') || '--';
   document.getElementById('sec-uri-reject-code-display').textContent = uriB.enabled ? (uriB.rejectedCode || 403) : '--';
+  // 别名
+  const hintDisp = document.getElementById('alias-proxy-hint-display');
+  if (hintDisp) hintDisp.textContent = vs.proxy || '';
+  document.getElementById('alias-tags-display').innerHTML = (vs.aliases || []).length === 0
+    ? '<span style="color:rgba(0,0,0,0.25)">暂未配置别名</span>'
+    : (vs.aliases || []).map(a => `<span class="alias-tag">${escHtml(a)}</span>`).join('');
 }
 
 function renderCommDisplay() {
@@ -1595,6 +1636,11 @@ function initSecurityTab() {
     fwdReqHeaders = [];
     fwdResHeaders = [];
   }
+  // 别名
+  secAliases = [...(vs.aliases || [])];
+  const proxyHintEdit = document.getElementById('alias-proxy-hint');
+  if (proxyHintEdit) proxyHintEdit.textContent = vs.proxy || '';
+  renderSecAliasTags();
   renderFwdHeaders();
   const ipCtrl = vs.ipControl || {};
   document.getElementById('sec-ip-ctrl-enable').checked = !!ipCtrl.enabled;
@@ -1688,6 +1734,22 @@ function handleRefererToggle()   { document.getElementById('sec-referer-config')
 function handleUaToggle()        { document.getElementById('sec-ua-config').style.display         = document.getElementById('sec-ua-enable').checked         ? '' : 'none'; }
 function handleUriBlockerToggle(){ document.getElementById('sec-uri-blocker-config').style.display= document.getElementById('sec-uri-blocker-enable').checked? '' : 'none'; }
 
+function addSecAlias() {
+  let v = document.getElementById('alias-input').value.trim();
+  v = v.replace(/^https?:\/\//i, '');
+  if (!v) return;
+  if (secAliases.length >= 5) { showToast('最多配置 5 个别名', '⚠️'); return; }
+  if (!secAliases.includes(v)) secAliases.push(v);
+  document.getElementById('alias-input').value = '';
+  renderSecAliasTags();
+}
+function removeSecAlias(i) { secAliases.splice(i, 1); renderSecAliasTags(); }
+function renderSecAliasTags() {
+  document.getElementById('alias-tags-edit').innerHTML = secAliases.length === 0
+    ? '<span style="color:rgba(0,0,0,0.25);font-size:13px">暂未配置别名</span>'
+    : secAliases.map((a, i) => `<span class="alias-tag">${escHtml(a)}<span class="del" onclick="removeSecAlias(${i})">×</span></span>`).join('');
+}
+
 function saveSecurityConfig() {
   const enabled = document.getElementById('sec-auth-enable').checked;
   const type    = document.querySelector('input[name="sec-auth-type"]:checked')?.value || 'basic';
@@ -1739,6 +1801,7 @@ function saveSecurityConfig() {
     blockRules:   document.getElementById('sec-uri-block-rules').value.split('\n').map(s => s.trim()).filter(Boolean),
     rejectedCode: +document.getElementById('sec-uri-reject-code').value || 403,
   };
+  vs.aliases = [...secAliases];
   allVss = allVss.map(v => v.id === vs.id ? vs : v);
   saveVss(allVss);
   cancelEditMode('security');
