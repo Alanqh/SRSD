@@ -22,7 +22,7 @@
 # 二、服务配置能力增强+重新布局
 ## 2.1 新建服务移除部分字段，改为创建后再配置
 移除字段包括：hostRewrite、网关Token、鉴权、日志收集
-![[Pasted image 20260323173556.png]]
+![[attachments/images/Pasted image 20260323173556.png]]
 ## 2.2 服务详情页信息展示优化
 ### 基本信息
 只保留核心字段：
@@ -33,7 +33,7 @@
 - 代理地址
 - 服务描述
 以及修改服务基本信息的按钮
-![[Pasted image 20260323174303.png]]
+![[attachments/images/Pasted image 20260323174303.png]]
 ### 已授权客户端
 原本列表页展示字段包括客户端名称、客户端类型、所属空间、操作（删除）
 现在改为根据服务是否开启鉴权以及鉴权类型做一些改变：
@@ -45,21 +45,21 @@
 
 针对Basic鉴权的私有服务，在列表查询对应服务，弹窗中查看鉴权所需的新凭证
 针对Forward鉴权的服务，公共空间或同一空间下的服务，输入服务名称或代理地址查询器鉴权配置；已授权通过的其他私有空间的服务，列表页点击查看对应服务的鉴权配置
-![[Pasted image 20260323181226.png]]
+![[attachments/images/Pasted image 20260323181226.png]]
 
 ### 安全配置（新增Tab）
-![[Pasted image 20260323181313.png]]
+![[attachments/images/Pasted image 20260323181313.png]]
 ### 流量调度（新增Tab）
-![[Pasted image 20260323181350.png]]
+![[attachments/images/Pasted image 20260323181350.png]]
 
 ### 通信配置（新增Tab）
-![[Pasted image 20260323181418.png]]
+![[attachments/images/Pasted image 20260323181418.png]]
 
 ### 健康管理（新增Tab）
-![[Pasted image 20260323181446.png]]
+![[attachments/images/Pasted image 20260323181446.png]]
 ### 日志收集
 增加Loki日志收集方式
-![[Pasted image 20260323181525.png]]
+![[attachments/images/Pasted image 20260323181525.png]]
 
 ### 操作记录（新增Tab）
 待定，先自行设计
