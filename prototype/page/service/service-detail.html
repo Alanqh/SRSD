@@ -230,6 +230,10 @@
                     <div class="setting-label">拒绝提示语</div>
                     <div class="setting-value" id="sec-ip-message-display"></div>
                   </div>
+                  <div class="setting-row" style="border:none;padding:4px 0">
+                    <div class="setting-label">拒绝状态码</div>
+                    <div class="setting-value" id="sec-ip-response-code-display"></div>
+                  </div>
                 </div>
               </div>
               <div class="protection-block">
@@ -297,6 +301,10 @@
                     <div class="setting-label">允许无 Referer 请求</div>
                     <div class="setting-value" id="sec-referer-bypass-missing-display"></div>
                   </div>
+                  <div class="setting-row" style="border:none;padding:4px 0">
+                    <div class="setting-label">拒绝提示语</div>
+                    <div class="setting-value" id="sec-referer-message-display"></div>
+                  </div>
                 </div>
               </div>
               <div class="protection-block">
@@ -318,6 +326,10 @@
                     <div class="setting-label">拒绝提示语</div>
                     <div class="setting-value" id="sec-ua-message-display"></div>
                   </div>
+                  <div class="setting-row" style="border:none;padding:4px 0">
+                    <div class="setting-label">允许无 UA 请求</div>
+                    <div class="setting-value" id="sec-ua-bypass-missing-display"></div>
+                  </div>
                 </div>
               </div>
               <div class="protection-block">
@@ -334,6 +346,14 @@
                   <div class="setting-row" style="border:none;padding:4px 0">
                     <div class="setting-label">拒绝状态码</div>
                     <div class="setting-value" id="sec-uri-reject-code-display"></div>
+                  </div>
+                  <div class="setting-row" style="border:none;padding:4px 0">
+                    <div class="setting-label">拒绝响应体</div>
+                    <div class="setting-value" id="sec-uri-rejected-msg-display"></div>
+                  </div>
+                  <div class="setting-row" style="border:none;padding:4px 0">
+                    <div class="setting-label">大小写不敏感</div>
+                    <div class="setting-value" id="sec-uri-case-insensitive-display"></div>
                   </div>
                 </div>
               </div>
@@ -456,6 +476,13 @@
                       <div class="form-hint">IP 被拒绝时返回给客户端的提示信息（对应 APISIX ip-restriction 的 message 字段）</div>
                     </div>
                   </div>
+                  <div class="setting-row" style="border:none;padding:4px 0">
+                    <div class="setting-label">拒绝状态码</div>
+                    <div class="setting-value" style="display:flex;align-items:center;gap:8px">
+                      <input id="sec-ip-response-code" class="ant-input" style="width:100px" type="number" value="403" />
+                      <span style="color:rgba(0,0,0,0.45)">（对应 response_code，默认 403）</span>
+                    </div>
+                  </div>
                 </div>
               </div>
               <div class="protection-block">
@@ -576,6 +603,13 @@
                       </label>
                     </div>
                   </div>
+                  <div class="setting-row" style="border:none;padding:4px 0">
+                    <div class="setting-label">拒绝提示语</div>
+                    <div class="setting-value">
+                      <input id="sec-referer-message" class="ant-input" style="max-width:360px" placeholder="留空则使用默认提示：Your referer host is not allowed" />
+                      <div class="form-hint">Referer 被拒绝时返回给客户端的提示信息（对应 APISIX referer-restriction 的 message 字段）</div>
+                    </div>
+                  </div>
                 </div>
               </div>
               <div class="protection-block">
@@ -609,6 +643,15 @@
                       <input id="sec-ua-message" class="ant-input" style="max-width:360px" placeholder="留空则使用默认提示：Not allowed" />
                     </div>
                   </div>
+                  <div class="setting-row" style="border:none;padding:4px 0">
+                    <div class="setting-label">允许无 UA 请求</div>
+                    <div class="setting-value">
+                      <label style="display:flex;align-items:center;gap:6px;cursor:pointer">
+                        <input type="checkbox" id="sec-ua-bypass-missing" />
+                        <span>开启（bypass_missing = true，请求中无 User-Agent 头时直接放行）</span>
+                      </label>
+                    </div>
+                  </div>
                 </div>
               </div>
               <div class="protection-block">
@@ -634,6 +677,22 @@
                     <div class="setting-value" style="display:flex;align-items:center;gap:8px">
                       <input id="sec-uri-reject-code" class="ant-input" style="width:100px" type="number" value="403" />
                       <span style="color:rgba(0,0,0,0.45)">（对应 rejected_code，默认 403）</span>
+                    </div>
+                  </div>
+                  <div class="setting-row" style="border:none;padding:4px 0">
+                    <div class="setting-label">拒绝响应体</div>
+                    <div class="setting-value">
+                      <input id="sec-uri-rejected-msg" class="ant-input" style="max-width:360px" placeholder="留空则返回空响应体" />
+                      <div class="form-hint">URI 被阻断时返回给客户端的响应正文（对应 rejected_msg 字段）</div>
+                    </div>
+                  </div>
+                  <div class="setting-row" style="border:none;padding:4px 0">
+                    <div class="setting-label">大小写不敏感</div>
+                    <div class="setting-value">
+                      <label style="display:flex;align-items:center;gap:6px;cursor:pointer">
+                        <input type="checkbox" id="sec-uri-case-insensitive" />
+                        <span>开启（case_insensitive = true，URI 匹配时忽略大小写）</span>
+                      </label>
                     </div>
                   </div>
                 </div>
@@ -902,6 +961,18 @@
                 <div class="setting-label">超时时间<br><span style="font-size:11px;color:rgba(0,0,0,0.35);font-weight:400">timeout</span></div>
                 <div class="setting-value" id="health-timeout-display"></div>
               </div>
+              <div class="setting-row" id="health-active-verify-cert-display-row">
+                <div class="setting-label">验证 HTTPS 证书<br><span style="font-size:11px;color:rgba(0,0,0,0.35);font-weight:400">https_verify_certificate</span></div>
+                <div class="setting-value" id="health-verify-cert-display"></div>
+              </div>
+              <div class="setting-row">
+                <div class="setting-label">并发探测数<br><span style="font-size:11px;color:rgba(0,0,0,0.35);font-weight:400">concurrency</span></div>
+                <div class="setting-value" id="health-concurrency-display"></div>
+              </div>
+              <div class="setting-row" id="health-active-req-headers-display-row">
+                <div class="setting-label">自定义请求头<br><span style="font-size:11px;color:rgba(0,0,0,0.35);font-weight:400">req_headers</span></div>
+                <div class="setting-value" id="health-req-headers-display"></div>
+              </div>
               <div class="sub-section-title" style="margin:12px 0 8px">健康判定条件（healthy）</div>
               <div class="setting-row">
                 <div class="setting-label">探测间隔<br><span style="font-size:11px;color:rgba(0,0,0,0.35);font-weight:400">healthy.interval</span></div>
@@ -999,6 +1070,7 @@
                 <div class="setting-value">
                   <select id="health-type" class="ant-select" style="width:180px" onchange="handleActiveTypeChange()">
                     <option value="http">HTTP</option>
+                    <option value="https">HTTPS</option>
                     <option value="tcp">TCP</option>
                     <option value="grpc">gRPC</option>
                   </select>
@@ -1031,6 +1103,30 @@
                 <div class="setting-value" style="display:flex;align-items:center;gap:8px">
                   <input id="health-timeout" class="ant-input" style="width:100px" type="number" value="1" />
                   <span style="color:rgba(0,0,0,0.45)">秒（对应 timeout，默认 1）</span>
+                </div>
+              </div>
+              <div class="setting-row" id="health-active-verify-cert-edit-row">
+                <div class="setting-label">验证 HTTPS 证书</div>
+                <div class="setting-value">
+                  <label style="display:flex;align-items:center;gap:6px;cursor:pointer">
+                    <input type="checkbox" id="health-verify-cert" checked />
+                    <span>开启（https_verify_certificate = true，验证服务端 TLS 证书有效性）</span>
+                  </label>
+                  <div class="form-hint">仅在检查类型为 HTTPS 时有效</div>
+                </div>
+              </div>
+              <div class="setting-row">
+                <div class="setting-label">并发探测数</div>
+                <div class="setting-value" style="display:flex;align-items:center;gap:8px">
+                  <input id="health-concurrency" class="ant-input" style="width:100px" type="number" value="10" />
+                  <span style="color:rgba(0,0,0,0.45)">（对应 concurrency，默认 10）</span>
+                </div>
+              </div>
+              <div class="setting-row" id="health-active-req-headers-edit-row">
+                <div class="setting-label">自定义请求头</div>
+                <div class="setting-value">
+                  <textarea id="health-req-headers" class="ant-input" rows="3" style="max-width:400px;font-family:monospace;font-size:12px" placeholder="每行一个请求头，格式：Header-Name: value&#10;如：X-Custom-Header: health-check"></textarea>
+                  <div class="form-hint">对应 req_headers；仅 HTTP/HTTPS 类型有效，探测请求将携带这些请求头</div>
                 </div>
               </div>
               <div class="sub-section-title" style="margin:12px 0 8px">健康判定条件（healthy）</div>
@@ -1922,6 +2018,7 @@ function initSecurityTab() {
   document.getElementById('sec-ip-whitelist').value = (ipCtrl.whitelist || []).join('\n');
   document.getElementById('sec-ip-blacklist').value = (ipCtrl.blacklist || []).join('\n');
   document.getElementById('sec-ip-message').value   = ipCtrl.message || '';
+  if (ipCtrl.responseCode) document.getElementById('sec-ip-response-code').value = ipCtrl.responseCode;
   const reqSize = svc.reqSizeLimit || {};
   document.getElementById('sec-req-size-enable').checked = !!reqSize.enabled;
   document.getElementById('sec-req-size-config').style.display = reqSize.enabled ? '' : 'none';
@@ -1945,6 +2042,7 @@ function initSecurityTab() {
   document.getElementById('sec-referer-whitelist').value = (referer.whitelist || []).join('\n');
   document.getElementById('sec-referer-blacklist').value = (referer.blacklist || []).join('\n');
   document.getElementById('sec-referer-bypass-missing').checked = referer.bypassMissing !== false;
+  document.getElementById('sec-referer-message').value = referer.message || '';
   // UA restriction
   const ua = svc.uaConfig || {};
   document.getElementById('sec-ua-enable').checked = !!ua.enabled;
@@ -1952,12 +2050,15 @@ function initSecurityTab() {
   document.getElementById('sec-ua-whitelist').value = (ua.whitelist || []).join('\n');
   document.getElementById('sec-ua-blacklist').value = (ua.blacklist || []).join('\n');
   document.getElementById('sec-ua-message').value = ua.message || '';
+  document.getElementById('sec-ua-bypass-missing').checked = !!ua.bypassMissing;
   // URI blocker
   const uriB = svc.uriBlockerConfig || {};
   document.getElementById('sec-uri-blocker-enable').checked = !!uriB.enabled;
   document.getElementById('sec-uri-blocker-config').style.display = uriB.enabled ? '' : 'none';
   document.getElementById('sec-uri-block-rules').value = (uriB.blockRules || []).join('\n');
   if (uriB.rejectedCode) document.getElementById('sec-uri-reject-code').value = uriB.rejectedCode;
+  document.getElementById('sec-uri-rejected-msg').value = uriB.rejectedMsg || '';
+  document.getElementById('sec-uri-case-insensitive').checked = !!uriB.caseInsensitive;
   // Aliases
   secAliases = [...(svc.aliases || [])];
   const proxyHintEdit = document.getElementById('alias-proxy-hint');
@@ -2010,6 +2111,7 @@ function renderSecurityDisplay() {
     document.getElementById('sec-ip-blacklist-display').innerHTML = blacklist ? `<pre style="font-family:monospace;font-size:12px;white-space:pre-wrap;margin:0">${escHtml(blacklist)}</pre>` : '<span style="color:rgba(0,0,0,0.25)">未配置</span>';
     
     document.getElementById('sec-ip-message-display').textContent = ipCtrl.message || '使用默认提示';
+    document.getElementById('sec-ip-response-code-display').textContent = ipCtrl.responseCode || 403;
   }
   
   // 请求体大小限制
@@ -2048,6 +2150,7 @@ function renderSecurityDisplay() {
     document.getElementById('sec-referer-blacklist-display').innerHTML = blacklist ? `<pre style="font-family:monospace;font-size:12px;white-space:pre-wrap;margin:0">${escHtml(blacklist)}</pre>` : '<span style="color:rgba(0,0,0,0.25)">未配置</span>';
     
     document.getElementById('sec-referer-bypass-missing-display').textContent = referer.bypassMissing !== false ? '是' : '否';
+    document.getElementById('sec-referer-message-display').textContent = referer.message || '使用默认提示';
   }
   
   // User-Agent 限制
@@ -2063,6 +2166,7 @@ function renderSecurityDisplay() {
     document.getElementById('sec-ua-blacklist-display').innerHTML = blacklist ? `<pre style="font-family:monospace;font-size:12px;white-space:pre-wrap;margin:0">${escHtml(blacklist)}</pre>` : '<span style="color:rgba(0,0,0,0.25)">未配置</span>';
     
     document.getElementById('sec-ua-message-display').textContent = ua.message || '使用默认提示';
+    document.getElementById('sec-ua-bypass-missing-display').textContent = ua.bypassMissing ? '是' : '否';
   }
   
   // URI 阻断
@@ -2075,6 +2179,8 @@ function renderSecurityDisplay() {
     document.getElementById('sec-uri-block-rules-display').innerHTML = blockRules ? `<pre style="font-family:monospace;font-size:12px;white-space:pre-wrap;margin:0">${escHtml(blockRules)}</pre>` : '<span style="color:rgba(0,0,0,0.25)">未配置</span>';
     
     document.getElementById('sec-uri-reject-code-display').textContent = uriB.rejectedCode || 403;
+    document.getElementById('sec-uri-rejected-msg-display').textContent = uriB.rejectedMsg || '（空响应体）';
+    document.getElementById('sec-uri-case-insensitive-display').textContent = uriB.caseInsensitive ? '是' : '否';
   }
   
   // 服务别名
@@ -2260,10 +2366,11 @@ function saveSecurityConfig() {
     svc.authConfig = null;
   }
   svc.ipControl = {
-    enabled:   document.getElementById('sec-ip-ctrl-enable').checked,
-    whitelist: document.getElementById('sec-ip-whitelist').value.split('\n').map(s => s.trim()).filter(Boolean),
-    blacklist: document.getElementById('sec-ip-blacklist').value.split('\n').map(s => s.trim()).filter(Boolean),
-    message:   document.getElementById('sec-ip-message').value.trim(),
+    enabled:      document.getElementById('sec-ip-ctrl-enable').checked,
+    whitelist:    document.getElementById('sec-ip-whitelist').value.split('\n').map(s => s.trim()).filter(Boolean),
+    blacklist:    document.getElementById('sec-ip-blacklist').value.split('\n').map(s => s.trim()).filter(Boolean),
+    message:      document.getElementById('sec-ip-message').value.trim(),
+    responseCode: +document.getElementById('sec-ip-response-code').value || 403,
   };
   svc.reqSizeLimit = {
     enabled: document.getElementById('sec-req-size-enable').checked,
@@ -2283,17 +2390,21 @@ function saveSecurityConfig() {
     whitelist:     document.getElementById('sec-referer-whitelist').value.split('\n').map(s => s.trim()).filter(Boolean),
     blacklist:     document.getElementById('sec-referer-blacklist').value.split('\n').map(s => s.trim()).filter(Boolean),
     bypassMissing: document.getElementById('sec-referer-bypass-missing').checked,
+    message:       document.getElementById('sec-referer-message').value.trim(),
   };
   svc.uaConfig = {
-    enabled:   document.getElementById('sec-ua-enable').checked,
-    whitelist: document.getElementById('sec-ua-whitelist').value.split('\n').map(s => s.trim()).filter(Boolean),
-    blacklist: document.getElementById('sec-ua-blacklist').value.split('\n').map(s => s.trim()).filter(Boolean),
-    message:   document.getElementById('sec-ua-message').value.trim(),
+    enabled:       document.getElementById('sec-ua-enable').checked,
+    whitelist:     document.getElementById('sec-ua-whitelist').value.split('\n').map(s => s.trim()).filter(Boolean),
+    blacklist:     document.getElementById('sec-ua-blacklist').value.split('\n').map(s => s.trim()).filter(Boolean),
+    message:       document.getElementById('sec-ua-message').value.trim(),
+    bypassMissing: document.getElementById('sec-ua-bypass-missing').checked,
   };
   svc.uriBlockerConfig = {
-    enabled:      document.getElementById('sec-uri-blocker-enable').checked,
-    blockRules:   document.getElementById('sec-uri-block-rules').value.split('\n').map(s => s.trim()).filter(Boolean),
-    rejectedCode: +document.getElementById('sec-uri-reject-code').value || 403,
+    enabled:         document.getElementById('sec-uri-blocker-enable').checked,
+    blockRules:      document.getElementById('sec-uri-block-rules').value.split('\n').map(s => s.trim()).filter(Boolean),
+    rejectedCode:    +document.getElementById('sec-uri-reject-code').value || 403,
+    rejectedMsg:     document.getElementById('sec-uri-rejected-msg').value.trim(),
+    caseInsensitive: document.getElementById('sec-uri-case-insensitive').checked,
   };
   svc.aliases = [...secAliases];
   allSvcs = allSvcs.map(s => s.id === svc.id ? svc : s);
@@ -2427,6 +2538,9 @@ function initHealthTab() {
   document.getElementById('health-host').value = health.host || '';
   if (health.port) document.getElementById('health-port').value = health.port;
   document.getElementById('health-timeout').value = health.timeout || 1;
+  document.getElementById('health-verify-cert').checked = health.verifyCert !== false;
+  document.getElementById('health-concurrency').value = health.concurrency || 10;
+  document.getElementById('health-req-headers').value = (health.reqHeaders || []).join('\n');
   document.getElementById('health-healthy-interval').value = health.healthyInterval || 10;
   document.getElementById('health-healthy-threshold').value = health.healthyThreshold || 2;
   document.getElementById('health-healthy-statuses').value = health.healthyStatuses || '200,302';
@@ -2459,16 +2573,25 @@ function renderHealthDisplay() {
   document.getElementById('health-active-details').style.display = enabled ? '' : 'none';
   if (enabled) {
     const type = health.type || 'http';
-    const activeIsHttp = type !== 'tcp';
+    const activeIsHttp = type === 'http' || type === 'https';
+    const activeIsHttps = type === 'https';
     document.getElementById('health-type-display').textContent = type.toUpperCase();
     document.getElementById('health-active-path-display-row').style.display = activeIsHttp ? '' : 'none';
     document.getElementById('health-active-healthy-statuses-display-row').style.display = activeIsHttp ? '' : 'none';
     document.getElementById('health-active-http-failures-display-row').style.display = activeIsHttp ? '' : 'none';
     document.getElementById('health-active-unhealthy-statuses-display-row').style.display = activeIsHttp ? '' : 'none';
+    document.getElementById('health-active-verify-cert-display-row').style.display = activeIsHttps ? '' : 'none';
+    document.getElementById('health-active-req-headers-display-row').style.display = activeIsHttp ? '' : 'none';
     document.getElementById('health-path-display').textContent = health.path || '/health';
     document.getElementById('health-host-display').textContent = health.host || '（默认使用实例地址）';
     document.getElementById('health-port-display').textContent = health.port || '（默认使用实例端口）';
     document.getElementById('health-timeout-display').textContent = `${health.timeout || 1} 秒`;
+    document.getElementById('health-verify-cert-display').textContent = health.verifyCert !== false ? '是' : '否';
+    document.getElementById('health-concurrency-display').textContent = health.concurrency || 10;
+    const reqHeaders = health.reqHeaders || [];
+    document.getElementById('health-req-headers-display').innerHTML = reqHeaders.length
+      ? `<pre style="font-family:monospace;font-size:12px;white-space:pre-wrap;margin:0">${escHtml(reqHeaders.join('\n'))}</pre>`
+      : '<span style="color:rgba(0,0,0,0.25)">未配置</span>';
     document.getElementById('health-healthy-interval-display').textContent = `${health.healthyInterval || 10} 秒`;
     document.getElementById('health-healthy-threshold-display').textContent = health.healthyThreshold || 2;
     document.getElementById('health-healthy-statuses-display').textContent = health.healthyStatuses || '200,302';
@@ -2500,11 +2623,14 @@ function renderHealthDisplay() {
 }
 function handleActiveTypeChange() {
   const type = document.getElementById('health-type').value;
-  const isHttp = type !== 'tcp';
+  const isHttp = type === 'http' || type === 'https';
+  const isHttps = type === 'https';
   document.getElementById('health-active-path-edit-row').style.display = isHttp ? '' : 'none';
   document.getElementById('health-active-healthy-statuses-edit-row').style.display = isHttp ? '' : 'none';
   document.getElementById('health-active-http-failures-edit-row').style.display = isHttp ? '' : 'none';
   document.getElementById('health-active-unhealthy-statuses-edit-row').style.display = isHttp ? '' : 'none';
+  document.getElementById('health-active-verify-cert-edit-row').style.display = isHttps ? '' : 'none';
+  document.getElementById('health-active-req-headers-edit-row').style.display = isHttp ? '' : 'none';
 }
 function handlePassiveTypeChange() {
   const type = document.getElementById('health-passive-type').value;
@@ -2532,6 +2658,9 @@ function saveHealthConfig() {
     host: document.getElementById('health-host').value.trim() || null,
     port: document.getElementById('health-port').value || null,
     timeout: +document.getElementById('health-timeout').value,
+    verifyCert: document.getElementById('health-verify-cert').checked,
+    concurrency: +document.getElementById('health-concurrency').value || 10,
+    reqHeaders: document.getElementById('health-req-headers').value.split('\n').map(s => s.trim()).filter(Boolean),
     healthyInterval: +document.getElementById('health-healthy-interval').value,
     healthyThreshold: +document.getElementById('health-healthy-threshold').value,
     healthyStatuses: document.getElementById('health-healthy-statuses').value,
