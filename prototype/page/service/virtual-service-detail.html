@@ -269,52 +269,6 @@
                 </div>
               </div>
               <div class="protection-block">
-                <div class="sub-section-title">请求体大小限制（对应 APISIX client-control 插件）</div>
-                <div class="setting-row" style="border:none;padding:4px 0">
-                  <div class="setting-label">启用</div>
-                  <div class="setting-value" id="sec-req-size-enable-display"></div>
-                </div>
-                <div id="sec-req-size-display" style="display:none">
-                  <div class="setting-row" style="border:none;padding:4px 0">
-                    <div class="setting-label">最大请求体</div>
-                    <div class="setting-value" id="sec-req-size-limit-display"></div>
-                  </div>
-                </div>
-              </div>
-              <div class="protection-block">
-                <div class="sub-section-title">CORS 跨域配置（对应 APISIX cors 插件）</div>
-                <div class="setting-row" style="border:none;padding:4px 0">
-                  <div class="setting-label">启用</div>
-                  <div class="setting-value" id="sec-cors-enable-display"></div>
-                </div>
-                <div id="sec-cors-display" style="display:none">
-                  <div class="setting-row" style="border:none;padding:4px 0">
-                    <div class="setting-label">允许来源</div>
-                    <div class="setting-value" id="sec-cors-origins-display"></div>
-                  </div>
-                  <div class="setting-row" style="border:none;padding:4px 0">
-                    <div class="setting-label">允许方法</div>
-                    <div class="setting-value" id="sec-cors-methods-display"></div>
-                  </div>
-                  <div class="setting-row" style="border:none;padding:4px 0">
-                    <div class="setting-label">允许请求头</div>
-                    <div class="setting-value" id="sec-cors-allow-headers-display"></div>
-                  </div>
-                  <div class="setting-row" style="border:none;padding:4px 0">
-                    <div class="setting-label">暴露响应头</div>
-                    <div class="setting-value" id="sec-cors-expose-headers-display"></div>
-                  </div>
-                  <div class="setting-row" style="border:none;padding:4px 0">
-                    <div class="setting-label">预检缓存时长</div>
-                    <div class="setting-value" id="sec-cors-max-age-display"></div>
-                  </div>
-                  <div class="setting-row" style="border:none;padding:4px 0">
-                    <div class="setting-label">允许携带凭证</div>
-                    <div class="setting-value" id="sec-cors-credential-display"></div>
-                  </div>
-                </div>
-              </div>
-              <div class="protection-block">
                 <div class="sub-section-title">Referer 访问限制（对应 APISIX referer-restriction 插件）</div>
                 <div class="setting-row" style="border:none;padding:4px 0">
                   <div class="setting-label">启用</div>
@@ -373,11 +327,57 @@
                   </div>
                 </div>
               </div>
+              <div class="protection-block">
+                <div class="sub-section-title">请求体大小限制（对应 APISIX client-control 插件）</div>
+                <div class="setting-row" style="border:none;padding:4px 0">
+                  <div class="setting-label">启用</div>
+                  <div class="setting-value" id="sec-req-size-enable-display"></div>
+                </div>
+                <div id="sec-req-size-display" style="display:none">
+                  <div class="setting-row" style="border:none;padding:4px 0">
+                    <div class="setting-label">最大请求体</div>
+                    <div class="setting-value" id="sec-req-size-limit-display"></div>
+                  </div>
+                </div>
+              </div>
+              <div class="protection-block">
+                <div class="sub-section-title">CORS 跨域配置（对应 APISIX cors 插件）</div>
+                <div class="setting-row" style="border:none;padding:4px 0">
+                  <div class="setting-label">启用</div>
+                  <div class="setting-value" id="sec-cors-enable-display"></div>
+                </div>
+                <div id="sec-cors-display" style="display:none">
+                  <div class="setting-row" style="border:none;padding:4px 0">
+                    <div class="setting-label">允许来源</div>
+                    <div class="setting-value" id="sec-cors-origins-display"></div>
+                  </div>
+                  <div class="setting-row" style="border:none;padding:4px 0">
+                    <div class="setting-label">允许方法</div>
+                    <div class="setting-value" id="sec-cors-methods-display"></div>
+                  </div>
+                  <div class="setting-row" style="border:none;padding:4px 0">
+                    <div class="setting-label">允许请求头</div>
+                    <div class="setting-value" id="sec-cors-allow-headers-display"></div>
+                  </div>
+                  <div class="setting-row" style="border:none;padding:4px 0">
+                    <div class="setting-label">暴露响应头</div>
+                    <div class="setting-value" id="sec-cors-expose-headers-display"></div>
+                  </div>
+                  <div class="setting-row" style="border:none;padding:4px 0">
+                    <div class="setting-label">预检缓存时长</div>
+                    <div class="setting-value" id="sec-cors-max-age-display"></div>
+                  </div>
+                  <div class="setting-row" style="border:none;padding:4px 0">
+                    <div class="setting-label">允许携带凭证</div>
+                    <div class="setting-value" id="sec-cors-credential-display"></div>
+                  </div>
+                </div>
+              </div>
             </div>
             <div class="config-section">
               <div class="config-section-title">服务别名</div>
               <div class="alert alert-warning" style="margin-bottom:12px">
-                ⚠️ 添加别名后，需要在自己的 DNS 里配置 CNAME 记录，将别名指向此服务的代理地址（<span id="alias-proxy-hint-display" style="font-family:monospace;font-size:12px"></span>），否则别名无法正常解析。
+                ⚠️ 服务别名不支持 HTTPS，仅支持 HTTP。添加别名后，需要在自己的 DNS 里配置 CNAME 记录，将别名指向此服务的代理地址，否则别名无法正常解析。
               </div>
               <div class="setting-row">
                 <div class="setting-label">当前别名</div>

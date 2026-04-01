@@ -133,26 +133,7 @@
           <textarea id="form-desc" class="ant-input" rows="3" placeholder="说明该 Token 的用途（选填）"></textarea>
         </div>
       </div>
-      <div class="form-item" style="align-items:flex-start">
-        <label class="form-label" style="padding-top:4px">关联服务</label>
-        <div class="form-control">
-          <div class="form-hint" style="margin-top:0;margin-bottom:8px">可关联当前命名空间下的真实服务（虚拟服务不支持关联 Token）。创建后也可在列表页"管理服务"中修改。</div>
-          <input id="form-svc-search" class="ant-input" placeholder="输入服务名搜索" style="margin-bottom:6px" oninput="renderCreateSvcTable()" />
-          <div class="link-table-wrap" id="create-link-table-wrap" style="display:none">
-            <table>
-              <thead>
-                <tr>
-                  <th style="width:36px"><input type="checkbox" id="create-check-all" onchange="toggleCreateCheckAll(this)" /></th>
-                  <th>服务名称</th>
-                  <th>Consul 服务名称</th>
-                </tr>
-              </thead>
-              <tbody id="create-svc-tbody"></tbody>
-            </table>
-          </div>
-          <div style="margin-top:4px;font-size:12px;color:rgba(0,0,0,0.45)">已选 <span id="create-selected-count">0</span> 个服务</div>
-        </div>
-      </div>
+
     </div>
     <div class="modal-footer">
       <button class="btn btn-default" onclick="closeTokenModal()">取消</button>
@@ -215,7 +196,6 @@ let currentPage = 1;
 let linkingId = null;
 let linkingNsSvcs = [];
 let selectedSvcIds = new Set();
-let createSelectedSvcIds = new Set();
 let activeFilter = { ns: '', kw: '' };
 
 const { load, save } = useStorage('srsd_tokens', SEED_TOKENS);
@@ -310,64 +290,12 @@ function openCreateModal() {
   document.getElementById('form-name').value = '';
   document.getElementById('form-ns').value   = '';
   document.getElementById('form-desc').value = '';
-  document.getElementById('form-svc-search').value = '';
   document.getElementById('error-name').style.display = 'none';
   document.getElementById('error-ns').style.display   = 'none';
-  createSelectedSvcIds = new Set();
-  renderCreateSvcTable();
   openModal(document.getElementById('token-modal'));
 }
 
-function renderCreateSvcTable() {
-  const ns = document.getElementById('form-ns').value;
-  const wrap = document.getElementById('create-link-table-wrap');
-  const kw = document.getElementById('form-svc-search').value.trim().toLowerCase();
-  if (!ns) { wrap.style.display = 'none'; updateCreateCount(); return; }
-  wrap.style.display = '';
-  const nsSvcs = allSvcs.filter(s => s.ns === ns);
-  const filtered = kw ? nsSvcs.filter(s => s.name.toLowerCase().includes(kw)) : nsSvcs;
-  const tbody = document.getElementById('create-svc-tbody');
-  if (filtered.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="3" style="text-align:center;color:rgba(0,0,0,0.25);padding:16px">${kw ? '未找到匹配服务' : '该命名空间下暂无真实服务'}</td></tr>`;
-  } else {
-    tbody.innerHTML = filtered.map(s => `
-      <tr>
-        <td><input type="checkbox" data-svc-id="${escHtml(s.id)}" ${createSelectedSvcIds.has(s.id) ? 'checked' : ''} onchange="toggleCreateSvcCheck(this)" /></td>
-        <td>${escHtml(s.name)}</td>
-        <td style="font-size:12px;font-family:monospace;color:rgba(0,0,0,0.65)">${escHtml(s.consulName || '--')}</td>
-      </tr>`).join('');
-  }
-  updateCreateCount();
-  const allChk = document.getElementById('create-check-all');
-  const total = nsSvcs.length;
-  allChk.checked       = total > 0 && createSelectedSvcIds.size === total;
-  allChk.indeterminate = createSelectedSvcIds.size > 0 && createSelectedSvcIds.size < total;
-}
 
-function toggleCreateSvcCheck(cb) {
-  const id = cb.dataset.svcId;
-  if (cb.checked) createSelectedSvcIds.add(id); else createSelectedSvcIds.delete(id);
-  updateCreateCount();
-  const ns = document.getElementById('form-ns').value;
-  const nsSvcs = allSvcs.filter(s => s.ns === ns);
-  const allChk = document.getElementById('create-check-all');
-  allChk.checked       = createSelectedSvcIds.size === nsSvcs.length && nsSvcs.length > 0;
-  allChk.indeterminate = createSelectedSvcIds.size > 0 && createSelectedSvcIds.size < nsSvcs.length;
-}
-
-function toggleCreateCheckAll(cb) {
-  const ns = document.getElementById('form-ns').value;
-  const kw = document.getElementById('form-svc-search').value.trim().toLowerCase();
-  const nsSvcs = allSvcs.filter(s => s.ns === ns);
-  const filtered = kw ? nsSvcs.filter(s => s.name.toLowerCase().includes(kw)) : nsSvcs;
-  if (cb.checked) filtered.forEach(s => createSelectedSvcIds.add(s.id));
-  else filtered.forEach(s => createSelectedSvcIds.delete(s.id));
-  renderCreateSvcTable();
-}
-
-function updateCreateCount() {
-  document.getElementById('create-selected-count').textContent = createSelectedSvcIds.size;
-}
 
 function closeTokenModal() { closeModal(document.getElementById('token-modal')); }
 
@@ -389,7 +317,7 @@ function submitTokenModal() {
   const consulToken = genId(); // system auto-generate
   list.unshift({
     id: genId(), name, nsId: ns, ns, consulToken, desc,
-    linkedServices: [...createSelectedSvcIds], status: 'active', createdBy: '吕青华', createdAt: now(),
+    linkedServices: [], status: 'active', createdBy: '吕青华', createdAt: now(),
   });
   save(list);
   closeTokenModal();

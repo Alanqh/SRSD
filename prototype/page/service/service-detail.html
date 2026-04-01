@@ -237,6 +237,81 @@
                 </div>
               </div>
               <div class="protection-block">
+                <div class="sub-section-title">Referer 访问限制（对应 APISIX referer-restriction 插件）</div>
+                <div class="setting-row" style="border:none;padding:4px 0">
+                  <div class="setting-label">启用</div>
+                  <div class="setting-value" id="sec-referer-enable-display"></div>
+                </div>
+                <div id="sec-referer-config-display" style="display:none">
+                  <div class="setting-row" style="border:none;padding:4px 0">
+                    <div class="setting-label">白名单</div>
+                    <div class="setting-value" id="sec-referer-whitelist-display"></div>
+                  </div>
+                  <div class="setting-row" style="border:none;padding:4px 0">
+                    <div class="setting-label">黑名单</div>
+                    <div class="setting-value" id="sec-referer-blacklist-display"></div>
+                  </div>
+                  <div class="setting-row" style="border:none;padding:4px 0">
+                    <div class="setting-label">拒绝提示语</div>
+                    <div class="setting-value" id="sec-referer-message-display"></div>
+                  </div>
+                  <div class="setting-row" style="border:none;padding:4px 0">
+                    <div class="setting-label">允许无 Referer 请求</div>
+                    <div class="setting-value" id="sec-referer-bypass-missing-display"></div>
+                  </div>
+                </div>
+              </div>
+              <div class="protection-block">
+                <div class="sub-section-title">User-Agent 限制（对应 APISIX ua-restriction 插件）</div>
+                <div class="setting-row" style="border:none;padding:4px 0">
+                  <div class="setting-label">启用</div>
+                  <div class="setting-value" id="sec-ua-enable-display"></div>
+                </div>
+                <div id="sec-ua-config-display" style="display:none">
+                  <div class="setting-row" style="border:none;padding:4px 0">
+                    <div class="setting-label">UA 白名单</div>
+                    <div class="setting-value" id="sec-ua-whitelist-display"></div>
+                  </div>
+                  <div class="setting-row" style="border:none;padding:4px 0">
+                    <div class="setting-label">UA 黑名单</div>
+                    <div class="setting-value" id="sec-ua-blacklist-display"></div>
+                  </div>
+                  <div class="setting-row" style="border:none;padding:4px 0">
+                    <div class="setting-label">允许无 UA 请求</div>
+                    <div class="setting-value" id="sec-ua-bypass-missing-display"></div>
+                  </div>
+                  <div class="setting-row" style="border:none;padding:4px 0">
+                    <div class="setting-label">拒绝提示语</div>
+                    <div class="setting-value" id="sec-ua-message-display"></div>
+                  </div>
+                </div>
+              </div>
+              <div class="protection-block">
+                <div class="sub-section-title">URI 阻断（对应 APISIX uri-blocker 插件）</div>
+                <div class="setting-row" style="border:none;padding:4px 0">
+                  <div class="setting-label">启用</div>
+                  <div class="setting-value" id="sec-uri-blocker-enable-display"></div>
+                </div>
+                <div id="sec-uri-blocker-config-display" style="display:none">
+                  <div class="setting-row" style="border:none;padding:4px 0">
+                    <div class="setting-label">阻断 URI 规则</div>
+                    <div class="setting-value" id="sec-uri-block-rules-display"></div>
+                  </div>
+                  <div class="setting-row" style="border:none;padding:4px 0">
+                    <div class="setting-label">拒绝状态码</div>
+                    <div class="setting-value" id="sec-uri-reject-code-display"></div>
+                  </div>
+                  <div class="setting-row" style="border:none;padding:4px 0">
+                    <div class="setting-label">拒绝响应体</div>
+                    <div class="setting-value" id="sec-uri-rejected-msg-display"></div>
+                  </div>
+                  <div class="setting-row" style="border:none;padding:4px 0">
+                    <div class="setting-label">大小写不敏感</div>
+                    <div class="setting-value" id="sec-uri-case-insensitive-display"></div>
+                  </div>
+                </div>
+              </div>
+              <div class="protection-block">
                 <div class="sub-section-title">请求体大小限制（对应 APISIX client-control 插件）</div>
                 <div class="setting-row" style="border:none;padding:4px 0">
                   <div class="setting-label">启用</div>
@@ -282,87 +357,13 @@
                   </div>
                 </div>
               </div>
-              <div class="protection-block">
-                <div class="sub-section-title">Referer 访问限制（对应 APISIX referer-restriction 插件）</div>
-                <div class="setting-row" style="border:none;padding:4px 0">
-                  <div class="setting-label">启用</div>
-                  <div class="setting-value" id="sec-referer-enable-display"></div>
-                </div>
-                <div id="sec-referer-config-display" style="display:none">
-                  <div class="setting-row" style="border:none;padding:4px 0">
-                    <div class="setting-label">白名单</div>
-                    <div class="setting-value" id="sec-referer-whitelist-display"></div>
-                  </div>
-                  <div class="setting-row" style="border:none;padding:4px 0">
-                    <div class="setting-label">黑名单</div>
-                    <div class="setting-value" id="sec-referer-blacklist-display"></div>
-                  </div>
-                  <div class="setting-row" style="border:none;padding:4px 0">
-                    <div class="setting-label">允许无 Referer 请求</div>
-                    <div class="setting-value" id="sec-referer-bypass-missing-display"></div>
-                  </div>
-                  <div class="setting-row" style="border:none;padding:4px 0">
-                    <div class="setting-label">拒绝提示语</div>
-                    <div class="setting-value" id="sec-referer-message-display"></div>
-                  </div>
-                </div>
-              </div>
-              <div class="protection-block">
-                <div class="sub-section-title">User-Agent 限制（对应 APISIX ua-restriction 插件）</div>
-                <div class="setting-row" style="border:none;padding:4px 0">
-                  <div class="setting-label">启用</div>
-                  <div class="setting-value" id="sec-ua-enable-display"></div>
-                </div>
-                <div id="sec-ua-config-display" style="display:none">
-                  <div class="setting-row" style="border:none;padding:4px 0">
-                    <div class="setting-label">UA 白名单</div>
-                    <div class="setting-value" id="sec-ua-whitelist-display"></div>
-                  </div>
-                  <div class="setting-row" style="border:none;padding:4px 0">
-                    <div class="setting-label">UA 黑名单</div>
-                    <div class="setting-value" id="sec-ua-blacklist-display"></div>
-                  </div>
-                  <div class="setting-row" style="border:none;padding:4px 0">
-                    <div class="setting-label">拒绝提示语</div>
-                    <div class="setting-value" id="sec-ua-message-display"></div>
-                  </div>
-                  <div class="setting-row" style="border:none;padding:4px 0">
-                    <div class="setting-label">允许无 UA 请求</div>
-                    <div class="setting-value" id="sec-ua-bypass-missing-display"></div>
-                  </div>
-                </div>
-              </div>
-              <div class="protection-block">
-                <div class="sub-section-title">URI 阻断（对应 APISIX uri-blocker 插件）</div>
-                <div class="setting-row" style="border:none;padding:4px 0">
-                  <div class="setting-label">启用</div>
-                  <div class="setting-value" id="sec-uri-blocker-enable-display"></div>
-                </div>
-                <div id="sec-uri-blocker-config-display" style="display:none">
-                  <div class="setting-row" style="border:none;padding:4px 0">
-                    <div class="setting-label">阻断 URI 规则</div>
-                    <div class="setting-value" id="sec-uri-block-rules-display"></div>
-                  </div>
-                  <div class="setting-row" style="border:none;padding:4px 0">
-                    <div class="setting-label">拒绝状态码</div>
-                    <div class="setting-value" id="sec-uri-reject-code-display"></div>
-                  </div>
-                  <div class="setting-row" style="border:none;padding:4px 0">
-                    <div class="setting-label">拒绝响应体</div>
-                    <div class="setting-value" id="sec-uri-rejected-msg-display"></div>
-                  </div>
-                  <div class="setting-row" style="border:none;padding:4px 0">
-                    <div class="setting-label">大小写不敏感</div>
-                    <div class="setting-value" id="sec-uri-case-insensitive-display"></div>
-                  </div>
-                </div>
-              </div>
             </div>
 
             <div class="config-section">
             <div class="config-section-title">服务别名</div>
             <div class="alert alert-warning" style="margin-bottom:12px">
             ⚠️ 添加服务别名后，需要在自己的 DNS 里配置 CNAME 记录，将别名指向此服务的代理地址（<span id="alias-proxy-hint-display" style="font-family:monospace;font-size:12px"></span>），否则别名无法正常解析。
+            <br>⚠️ 服务别名不支持 HTTPS，仅支持 HTTP。
             </div>
             <div class="setting-row">
             <div class="setting-label">当前别名</div>
@@ -595,19 +596,19 @@
                     </div>
                   </div>
                   <div class="setting-row" style="border:none;padding:4px 0">
+                    <div class="setting-label">拒绝提示语</div>
+                    <div class="setting-value">
+                      <input id="sec-referer-message" class="ant-input" style="max-width:360px" placeholder="留空则使用默认提示：Your referer host is not allowed" />
+                      <div class="form-hint">Referer 被拒绝时返回给客户端的提示信息（对应 APISIX referer-restriction 的 message 字段）</div>
+                    </div>
+                  </div>
+                  <div class="setting-row" style="border:none;padding:4px 0">
                     <div class="setting-label">允许无 Referer 请求</div>
                     <div class="setting-value">
                       <label style="display:flex;align-items:center;gap:6px;cursor:pointer">
                         <input type="checkbox" id="sec-referer-bypass-missing" checked />
                         <span>开启（bypass_missing = true，直接访问时通常无 Referer）</span>
                       </label>
-                    </div>
-                  </div>
-                  <div class="setting-row" style="border:none;padding:4px 0">
-                    <div class="setting-label">拒绝提示语</div>
-                    <div class="setting-value">
-                      <input id="sec-referer-message" class="ant-input" style="max-width:360px" placeholder="留空则使用默认提示：Your referer host is not allowed" />
-                      <div class="form-hint">Referer 被拒绝时返回给客户端的提示信息（对应 APISIX referer-restriction 的 message 字段）</div>
                     </div>
                   </div>
                 </div>
@@ -1106,13 +1107,13 @@
                 </div>
               </div>
               <div class="setting-row" id="health-active-verify-cert-edit-row">
-                <div class="setting-label">验证 HTTPS 证书</div>
+                <div class="setting-label">验证 HTTPS 证书<br><span style="font-size:11px;color:rgba(0,0,0,0.35);font-weight:400">https_verify_certificate</span></div>
                 <div class="setting-value">
                   <label style="display:flex;align-items:center;gap:6px;cursor:pointer">
                     <input type="checkbox" id="health-verify-cert" checked />
                     <span>开启（https_verify_certificate = true，验证服务端 TLS 证书有效性）</span>
                   </label>
-                  <div class="form-hint">仅在检查类型为 HTTPS 时有效</div>
+                  <div class="form-hint">主动检查使用 HTTPS 类型检查时，是否检查远程主机的 SSL 证书。仅在检查类型为 HTTPS 时有效</div>
                 </div>
               </div>
               <div class="setting-row">
