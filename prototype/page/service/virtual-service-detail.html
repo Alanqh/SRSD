@@ -111,6 +111,29 @@
           <div id="vs-info-body" class="desc-list-2col"></div>
         </div>
 
+        <!-- Tab: 实例列表 -->
+        <div id="tab-instances" style="display:none">
+          <div class="alert alert-info" style="margin-bottom:16px">
+            ℹ️ 通过代理地址访问服务时，流量将按负载均衡策略分配到各健康实例
+          </div>
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+            <div style="display:flex;gap:8px">
+              <select id="inst-search-status" class="ant-select" style="width:160px">
+                <option value="">全部健康状态</option>
+                <option value="healthy">健康</option>
+                <option value="unhealthy">不健康</option>
+              </select>
+              <input id="inst-search-kw" class="ant-input" style="width:220px" placeholder="搜索实例地址、实例ID" onkeyup="if(event.key==='Enter')renderInstTable()" />
+              <button class="btn btn-default" onclick="renderInstTable()">查询</button>
+            </div>
+            <button class="btn btn-primary" onclick="openAddInstModal()">+ 新增实例</button>
+          </div>
+          <table class="ant-table" style="width:100%">
+            <thead><tr><th>实例ID</th><th>实例地址</th><th>端口</th><th>所在机房</th><th>健康状态</th><th>操作</th></tr></thead>
+            <tbody id="inst-table-body"></tbody>
+          </table>
+        </div>
+
         <!-- Tab: 流量规则 -->
         <div id="tab-traffic-rules" style="display:none">
           <!-- 终态 -->
@@ -209,15 +232,16 @@
 
         <!-- Tab: 安全配置 -->
         <div id="tab-security" style="display:none">
-          <div style="display:flex;justify-content:flex-end;margin-bottom:16px">
-            <button id="edit-btn-security" class="btn btn-primary" onclick="enterEditMode('security')">编辑配置</button>
-            <div id="security-edit-actions" style="display:none;gap:8px;align-items:center">
-              <button class="btn btn-default" onclick="cancelEditMode('security')">取消</button>
-              <button class="btn btn-primary" onclick="saveSecurityConfig()">保存</button>
+          <!-- 鉴权配置 -->
+          <div class="config-section">
+            <div style="display:flex;justify-content:flex-end;margin-bottom:16px">
+              <button id="edit-btn-auth" class="btn btn-primary" onclick="enterEditMode('auth')">编辑鉴权配置</button>
+              <div id="auth-edit-actions" style="display:none;gap:8px;align-items:center">
+                <button class="btn btn-default" onclick="cancelEditMode('auth')">取消</button>
+                <button class="btn btn-primary" onclick="saveAuthConfig()">保存</button>
+              </div>
             </div>
-          </div>
-          <div id="security-display" class="cfg-display">
-            <div class="config-section">
+            <div id="auth-display">
               <div class="config-section-title">鉴权设置</div>
               <div class="setting-row">
                 <div class="setting-label">鉴权状态</div>
@@ -250,8 +274,157 @@
                 </div>
               </div>
             </div>
+            <div id="auth-edit" style="display:none">
+              <div class="config-section-title">鉴权设置</div>
+              <div class="setting-row">
+                <div class="setting-label">鉴权状态</div>
+                <div class="setting-value">
+                  <div class="switch-wrap">
+                    <label class="switch"><input type="checkbox" id="sec-auth-enable" onchange="handleAuthToggle()" /><span class="switch-slider"></span></label>
+                    <span id="sec-auth-label">已关闭</span>
+                  </div>
+                </div>
+              </div>
+              <div id="sec-auth-config" style="display:none">
+              <div class="protection-block">
+                <div class="sub-section-title">IP 访问控制（对应 APISIX ip-restriction 插件）</div>
+                <div class="setting-row" style="border:none;padding:4px 0">
+                  <div class="setting-label">启用</div>
+                  <div class="setting-value" id="sec-ip-ctrl-enable-display"></div>
+                </div>
+                <div id="sec-ip-ctrl-display" style="display:none">
+                  <div class="setting-row" style="border:none;padding:4px 0">
+                    <div class="setting-label">白名单</div>
+                    <div class="setting-value" id="sec-ip-whitelist-display"></div>
+                  </div>
+                  <div class="setting-row" style="border:none;padding:4px 0">
+                    <div class="setting-label">黑名单</div>
+                    <div class="setting-value" id="sec-ip-blacklist-display"></div>
+                  </div>
+                  <div class="setting-row" style="border:none;padding:4px 0">
+                    <div class="setting-label">拒绝提示语</div>
+                    <div class="setting-value" id="sec-ip-message-display"></div>
+                  </div>
+                </div>
+              </div>
+              <div class="protection-block">
+                <div class="sub-section-title">Referer 访问限制（对应 APISIX referer-restriction 插件）</div>
+                <div class="setting-row" style="border:none;padding:4px 0">
+                  <div class="setting-label">启用</div>
+                  <div class="setting-value" id="sec-referer-enable-display"></div>
+                </div>
+                <div id="sec-referer-display" style="display:none">
+                  <div class="setting-row" style="border:none;padding:4px 0">
+                    <div class="setting-label">白名单</div>
+                    <div class="setting-value" id="sec-referer-whitelist-display"></div>
+                  </div>
+                  <div class="setting-row" style="border:none;padding:4px 0">
+                    <div class="setting-label">黑名单</div>
+                    <div class="setting-value" id="sec-referer-blacklist-display"></div>
+                  </div>
+                  <div class="setting-row" style="border:none;padding:4px 0">
+                    <div class="setting-label">允许无 Referer 请求</div>
+                    <div class="setting-value" id="sec-referer-bypass-missing-display"></div>
+                  </div>
+                </div>
+              </div>
+              <div class="protection-block">
+                <div class="sub-section-title">User-Agent 限制（对应 APISIX ua-restriction 插件）</div>
+                <div class="setting-row" style="border:none;padding:4px 0">
+                  <div class="setting-label">启用</div>
+                  <div class="setting-value" id="sec-ua-enable-display"></div>
+                </div>
+                <div id="sec-ua-display" style="display:none">
+                  <div class="setting-row" style="border:none;padding:4px 0">
+                    <div class="setting-label">UA 白名单</div>
+                    <div class="setting-value" id="sec-ua-whitelist-display"></div>
+                  </div>
+                  <div class="setting-row" style="border:none;padding:4px 0">
+                    <div class="setting-label">UA 黑名单</div>
+                    <div class="setting-value" id="sec-ua-blacklist-display"></div>
+                  </div>
+                  <div class="setting-row" style="border:none;padding:4px 0">
+                    <div class="setting-label">拒绝提示语</div>
+                    <div class="setting-value" id="sec-ua-message-display"></div>
+                  </div>
+                </div>
+              </div>
+              <div class="protection-block">
+                <div class="sub-section-title">URI 阻断（对应 APISIX uri-blocker 插件）</div>
+                <div class="setting-row" style="border:none;padding:4px 0">
+                  <div class="setting-label">启用</div>
+                  <div class="setting-value" id="sec-uri-blocker-enable-display"></div>
+                </div>
+                <div id="sec-uri-blocker-display" style="display:none">
+                  <div class="setting-row" style="border:none;padding:4px 0">
+                    <div class="setting-label">阻断 URI 规则</div>
+                    <div class="setting-value" id="sec-uri-block-rules-display"></div>
+                  </div>
+                  <div class="setting-row" style="border:none;padding:4px 0">
+                    <div class="setting-label">拒绝状态码</div>
+                    <div class="setting-value" id="sec-uri-reject-code-display"></div>
+                  </div>
+                </div>
+              </div>
+              <div class="protection-block">
+                <div class="sub-section-title">请求体大小限制（对应 APISIX client-control 插件）</div>
+                <div class="setting-row" style="border:none;padding:4px 0">
+                  <div class="setting-label">启用</div>
+                  <div class="setting-value" id="sec-req-size-enable-display"></div>
+                </div>
+                <div id="sec-req-size-display" style="display:none">
+                  <div class="setting-row" style="border:none;padding:4px 0">
+                    <div class="setting-label">最大请求体</div>
+                    <div class="setting-value" id="sec-req-size-limit-display"></div>
+                  </div>
+                </div>
+              </div>
+              <div class="protection-block">
+                <div class="sub-section-title">CORS 跨域配置（对应 APISIX cors 插件）</div>
+                <div class="setting-row" style="border:none;padding:4px 0">
+                  <div class="setting-label">启用</div>
+                  <div class="setting-value" id="sec-cors-enable-display"></div>
+                </div>
+                <div id="sec-cors-display" style="display:none">
+                  <div class="setting-row" style="border:none;padding:4px 0">
+                    <div class="setting-label">允许来源</div>
+                    <div class="setting-value" id="sec-cors-origins-display"></div>
+                  </div>
+                  <div class="setting-row" style="border:none;padding:4px 0">
+                    <div class="setting-label">允许方法</div>
+                    <div class="setting-value" id="sec-cors-methods-display"></div>
+                  </div>
+                  <div class="setting-row" style="border:none;padding:4px 0">
+                    <div class="setting-label">允许请求头</div>
+                    <div class="setting-value" id="sec-cors-allow-headers-display"></div>
+                  </div>
+                  <div class="setting-row" style="border:none;padding:4px 0">
+                    <div class="setting-label">暴露响应头</div>
+                    <div class="setting-value" id="sec-cors-expose-headers-display"></div>
+                  </div>
+                  <div class="setting-row" style="border:none;padding:4px 0">
+                    <div class="setting-label">预检缓存时长</div>
+                    <div class="setting-value" id="sec-cors-max-age-display"></div>
+                  </div>
+                  <div class="setting-row" style="border:none;padding:4px 0">
+                    <div class="setting-label">允许携带凭证</div>
+                    <div class="setting-value" id="sec-cors-credential-display"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
 
-            <div class="config-section">
+          <!-- 服务保护规则 -->
+          <div class="config-section">
+            <div style="display:flex;justify-content:flex-end;margin-bottom:16px">
+              <button id="edit-btn-protection" class="btn btn-primary" onclick="enterEditMode('protection')">编辑服务保护规则</button>
+              <div id="protection-edit-actions" style="display:none;gap:8px;align-items:center">
+                <button class="btn btn-default" onclick="cancelEditMode('protection')">取消</button>
+                <button class="btn btn-primary" onclick="saveProtectionConfig()">保存</button>
+              </div>
+            </div>
+            <div id="protection-display">
               <div class="config-section-title">服务保护规则</div>
               <div class="protection-block">
                 <div class="sub-section-title">IP 访问控制（对应 APISIX ip-restriction 插件）</div>
@@ -380,90 +553,7 @@
                 </div>
               </div>
             </div>
-            <div class="config-section">
-              <div class="config-section-title">服务别名</div>
-              <div class="alert alert-warning" style="margin-bottom:12px">
-                ⚠️ 服务别名不支持 HTTPS，仅支持 HTTP。添加别名后，需要在自己的 DNS 里配置 CNAME 记录，将别名指向此服务的代理地址，否则别名无法正常解析。
-              </div>
-              <div class="setting-row">
-                <div class="setting-label">当前别名</div>
-                <div class="setting-value" id="alias-tags-display"></div>
-              </div>
-            </div>
-          </div>
-          <div id="security-edit" class="cfg-edit" style="display:none">
-            <div class="config-section">
-              <div class="config-section-title">鉴权设置</div>
-              <div class="setting-row">
-                <div class="setting-label">鉴权状态</div>
-                <div class="setting-value">
-                  <div class="switch-wrap">
-                    <label class="switch"><input type="checkbox" id="sec-auth-enable" onchange="handleAuthToggle()" /><span class="switch-slider"></span></label>
-                    <span id="sec-auth-label">已关闭</span>
-                  </div>
-                </div>
-              </div>
-              <div id="sec-auth-config" style="display:none">
-                <div class="setting-row">
-                  <div class="setting-label">鉴权类型</div>
-                  <div class="setting-value">
-                    <div style="display:flex;gap:20px">
-                      <label style="display:flex;align-items:center;gap:6px;cursor:pointer">
-                        <input type="radio" name="sec-auth-type" value="basic" onchange="handleAuthTypeChange()" /> Basic Auth
-                      </label>
-                      <label style="display:flex;align-items:center;gap:6px;cursor:pointer">
-                        <input type="radio" name="sec-auth-type" value="forward" onchange="handleAuthTypeChange()" /> Forward Auth
-                      </label>
-                    </div>
-                  </div>
-                </div>
-                <div id="sec-forward-fields" style="display:none">
-                  <div class="setting-row">
-                    <div class="setting-label">鉴权服务地址 <span style="color:#ff4d4f">*</span></div>
-                    <div class="setting-value">
-                      <input id="sec-forward-url" class="ant-input" style="max-width:420px" placeholder="http://your-auth-service/verify" />
-                      <div class="form-hint">代理网关收到请求后转发到此地址进行鉴权，鉴权通过则放行</div>
-                    </div>
-                  </div>
-                  <div class="setting-row">
-                    <div class="setting-label">请求方法</div>
-                    <div class="setting-value">
-                      <select id="sec-forward-method" class="ant-select" style="width:120px">
-                        <option value="GET">GET</option>
-                        <option value="POST">POST</option>
-                        <option value="HEAD">HEAD</option>
-                      </select>
-                    </div>
-                  </div>
-                  <div class="setting-row">
-                    <div class="setting-label">转发请求头</div>
-                    <div class="setting-value">
-                      <div class="form-hint" style="margin-top:0;margin-bottom:8px">转发鉴权请求时携带的原始请求头，填写字段名和字段说明，可添加多组</div>
-                      <div id="sec-forward-req-headers" style="margin-bottom:8px"></div>
-                      <div style="display:flex;gap:8px;align-items:center">
-                        <input id="sec-fwd-req-field" class="ant-input" style="width:160px" placeholder="字段名，如 Cookie" />
-                        <input id="sec-fwd-req-desc" class="ant-input" style="width:200px" placeholder="字段说明，如 登录凭证" />
-                        <button class="btn btn-default btn-sm" onclick="addFwdReqHeader()">+ 添加</button>
-                      </div>
-                    </div>
-                  </div>
-                  <div class="setting-row">
-                    <div class="setting-label">响应头回写</div>
-                    <div class="setting-value">
-                      <div class="form-hint" style="margin-top:0;margin-bottom:8px">鉴权成功后将鉴权响应中的指定头回写到原始请求，填写字段名和字段说明，可添加多组</div>
-                      <div id="sec-forward-res-headers" style="margin-bottom:8px"></div>
-                      <div style="display:flex;gap:8px;align-items:center">
-                        <input id="sec-fwd-res-field" class="ant-input" style="width:160px" placeholder="字段名，如 X-Auth-User" />
-                        <input id="sec-fwd-res-desc" class="ant-input" style="width:200px" placeholder="字段说明，如 用户ID" />
-                        <button class="btn btn-default btn-sm" onclick="addFwdResHeader()">+ 添加</button>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div class="config-section">
+            <div id="protection-edit" style="display:none">
               <div class="config-section-title">服务保护规则</div>
               <div class="protection-block">
                 <div class="sub-section-title">IP 访问控制（对应 APISIX ip-restriction 插件）</div>
@@ -669,7 +759,28 @@
                 </div>
               </div>
             </div>
-            <div class="config-section">
+          </div>
+
+          <!-- 服务别名 -->
+          <div class="config-section">
+            <div style="display:flex;justify-content:flex-end;margin-bottom:16px">
+              <button id="edit-btn-alias" class="btn btn-primary" onclick="enterEditMode('alias')">编辑别名</button>
+              <div id="alias-edit-actions" style="display:none;gap:8px;align-items:center">
+                <button class="btn btn-default" onclick="cancelEditMode('alias')">取消</button>
+                <button class="btn btn-primary" onclick="saveAliasConfig()">保存</button>
+              </div>
+            </div>
+            <div id="alias-display">
+              <div class="config-section-title">服务别名</div>
+              <div class="alert alert-warning" style="margin-bottom:12px">
+                ⚠️ 服务别名不支持 HTTPS，仅支持 HTTP。添加别名后，需要在自己的 DNS 里配置 CNAME 记录，将别名指向此服务的代理地址，否则别名无法正常解析。
+              </div>
+              <div class="setting-row">
+                <div class="setting-label">当前别名</div>
+                <div class="setting-value" id="alias-tags-display"></div>
+              </div>
+            </div>
+            <div id="alias-edit" style="display:none">
               <div class="config-section-title">服务别名</div>
               <div class="alert alert-warning" style="margin-bottom:12px">
                 ⚠️ 添加别名后，需要在自己的 DNS 里配置 CNAME 记录，将别名指向此服务的代理地址（<span id="alias-proxy-hint" style="font-family:monospace;font-size:12px"></span>），否则别名无法正常解析。
@@ -689,37 +800,365 @@
           </div>
         </div>
 
-        <!-- Tab: 通信配置 -->
-        <div id="tab-comm" style="display:none">
+        <!-- Tab: 健康检查 -->
+        <div id="tab-health" style="display:none">
           <div style="display:flex;justify-content:flex-end;margin-bottom:16px">
-            <button id="edit-btn-comm" class="btn btn-primary" onclick="enterEditMode('comm')">编辑配置</button>
-            <div id="comm-edit-actions" style="display:none;gap:8px;align-items:center">
-              <button class="btn btn-default" onclick="cancelEditMode('comm')">取消</button>
-              <button class="btn btn-primary" onclick="saveCommConfig()">保存</button>
+            <button id="edit-btn-health" class="btn btn-primary" onclick="enterEditMode('health')">编辑配置</button>
+            <div id="health-edit-actions" style="display:none;gap:8px;align-items:center">
+              <button class="btn btn-default" onclick="cancelEditMode('health')">取消</button>
+              <button class="btn btn-primary" onclick="saveHealthConfig()">保存</button>
             </div>
           </div>
-          <div id="comm-display" class="cfg-display">
+          <div id="health-display" class="cfg-display">
             <div class="config-section">
+              <div class="config-section-title">主动健康检查（对应 APISIX checks.active）</div>
+              <div class="setting-row">
+                <div class="setting-label">启用主动检查</div>
+                <div class="setting-value" id="health-enable-display"></div>
+              </div>
+              <div id="health-active-details">
+              <div class="setting-row">
+                <div class="setting-label">检查类型</div>
+                <div class="setting-value" id="health-type-display"></div>
+              </div>
+              <div class="setting-row" id="health-active-path-display-row">
+                <div class="setting-label">检查路径<br><span style="font-size:11px;color:rgba(0,0,0,0.35);font-weight:400">http_path</span></div>
+                <div class="setting-value" id="health-path-display"></div>
+              </div>
+              <div class="setting-row">
+                <div class="setting-label">检查主机名<br><span style="font-size:11px;color:rgba(0,0,0,0.35);font-weight:400">host</span></div>
+                <div class="setting-value" id="health-host-display"></div>
+              </div>
+              <div class="setting-row">
+                <div class="setting-label">检查端口<br><span style="font-size:11px;color:rgba(0,0,0,0.35);font-weight:400">port</span></div>
+                <div class="setting-value" id="health-port-display"></div>
+              </div>
+              <div class="setting-row">
+                <div class="setting-label">超时时间<br><span style="font-size:11px;color:rgba(0,0,0,0.35);font-weight:400">timeout</span></div>
+                <div class="setting-value" id="health-timeout-display"></div>
+              </div>
+              <div class="setting-row" id="health-active-verify-cert-display-row">
+                <div class="setting-label">验证 HTTPS 证书<br><span style="font-size:11px;color:rgba(0,0,0,0.35);font-weight:400">https_verify_certificate</span></div>
+                <div class="setting-value" id="health-verify-cert-display"></div>
+              </div>
+              <div class="setting-row">
+                <div class="setting-label">并发探测数<br><span style="font-size:11px;color:rgba(0,0,0,0.35);font-weight:400">concurrency</span></div>
+                <div class="setting-value" id="health-concurrency-display"></div>
+              </div>
+              <div class="setting-row" id="health-active-req-headers-display-row">
+                <div class="setting-label">自定义请求头<br><span style="font-size:11px;color:rgba(0,0,0,0.35);font-weight:400">req_headers</span></div>
+                <div class="setting-value" id="health-req-headers-display"></div>
+              </div>
+              <div class="sub-section-title" style="margin:12px 0 8px">健康判定条件（healthy）</div>
+              <div class="setting-row">
+                <div class="setting-label">探测间隔<br><span style="font-size:11px;color:rgba(0,0,0,0.35);font-weight:400">healthy.interval</span></div>
+                <div class="setting-value" id="health-healthy-interval-display"></div>
+              </div>
+              <div class="setting-row">
+                <div class="setting-label">连续成功次数<br><span style="font-size:11px;color:rgba(0,0,0,0.35);font-weight:400">healthy.successes</span></div>
+                <div class="setting-value" id="health-healthy-threshold-display"></div>
+              </div>
+              <div class="setting-row" id="health-active-healthy-statuses-display-row">
+                <div class="setting-label">健康 HTTP 状态码<br><span style="font-size:11px;color:rgba(0,0,0,0.35);font-weight:400">healthy.http_statuses</span></div>
+                <div class="setting-value" id="health-healthy-statuses-display"></div>
+              </div>
+              <div class="sub-section-title" style="margin:12px 0 8px">故障判定条件（unhealthy）</div>
+              <div class="setting-row">
+                <div class="setting-label">探测间隔<br><span style="font-size:11px;color:rgba(0,0,0,0.35);font-weight:400">unhealthy.interval</span></div>
+                <div class="setting-value" id="health-unhealthy-interval-display"></div>
+              </div>
+              <div class="setting-row" id="health-active-http-failures-display-row">
+                <div class="setting-label">连续 HTTP 失败次数<br><span style="font-size:11px;color:rgba(0,0,0,0.35);font-weight:400">unhealthy.http_failures</span></div>
+                <div class="setting-value" id="health-unhealthy-threshold-display"></div>
+              </div>
+              <div class="setting-row" id="health-active-unhealthy-statuses-display-row">
+                <div class="setting-label">故障 HTTP 状态码<br><span style="font-size:11px;color:rgba(0,0,0,0.35);font-weight:400">unhealthy.http_statuses</span></div>
+                <div class="setting-value" id="health-unhealthy-statuses-display"></div>
+              </div>
+              <div class="setting-row">
+                <div class="setting-label">TCP 连接失败次数<br><span style="font-size:11px;color:rgba(0,0,0,0.35);font-weight:400">unhealthy.tcp_failures</span></div>
+                <div class="setting-value" id="health-unhealthy-tcp-display"></div>
+              </div>
+              <div class="setting-row">
+                <div class="setting-label">超时次数<br><span style="font-size:11px;color:rgba(0,0,0,0.35);font-weight:400">unhealthy.timeouts</span></div>
+                <div class="setting-value" id="health-unhealthy-timeouts-display"></div>
+              </div>
+              </div><!-- end #health-active-details -->
+            </div>
+
+            <div class="config-section">
+              <div class="config-section-title">被动健康检查（对应 APISIX checks.passive）</div>
+              <div class="alert alert-info" style="margin-bottom:12px">
+                ℹ️ 被动检查基于实际请求响应判断实例健康状态，与主动检查互补，无需主动发起探测请求。因不健康节点无法收到请求，建议同时启用主动检查以完成健康状态恢复
+              </div>
+              <div class="setting-row">
+                <div class="setting-label">启用被动检查</div>
+                <div class="setting-value" id="health-passive-enable-display"></div>
+              </div>
+              <div id="health-passive-display" style="display:none">
+                <div class="setting-row">
+                  <div class="setting-label">检查类型</div>
+                  <div class="setting-value" id="health-passive-type-display"></div>
+                </div>
+                <div class="sub-section-title" style="margin:12px 0 8px">不健康条件（unhealthy）</div>
+                <div class="setting-row" id="health-passive-fail-statuses-display-row">
+                  <div class="setting-label">故障 HTTP 状态码<br><span style="font-size:11px;color:rgba(0,0,0,0.35);font-weight:400">unhealthy.http_statuses</span></div>
+                  <div class="setting-value" id="health-passive-fail-statuses-display"></div>
+                </div>
+                <div class="setting-row" id="health-passive-http-failures-display-row">
+                  <div class="setting-label">连续 HTTP 失败次数<br><span style="font-size:11px;color:rgba(0,0,0,0.35);font-weight:400">unhealthy.http_failures</span></div>
+                  <div class="setting-value" id="health-passive-fail-count-display"></div>
+                </div>
+                <div class="setting-row">
+                  <div class="setting-label">TCP 连接失败次数<br><span style="font-size:11px;color:rgba(0,0,0,0.35);font-weight:400">unhealthy.tcp_failures</span></div>
+                  <div class="setting-value" id="health-passive-tcp-fail-display"></div>
+                </div>
+                <div class="setting-row">
+                  <div class="setting-label">超时次数<br><span style="font-size:11px;color:rgba(0,0,0,0.35);font-weight:400">unhealthy.timeouts</span></div>
+                  <div class="setting-value" id="health-passive-timeout-count-display"></div>
+                </div>
+                <div class="sub-section-title" style="margin:12px 0 8px">恢复条件（healthy）</div>
+                <div class="setting-row" id="health-passive-ok-statuses-display-row">
+                  <div class="setting-label">健康 HTTP 状态码<br><span style="font-size:11px;color:rgba(0,0,0,0.35);font-weight:400">healthy.http_statuses</span></div>
+                  <div class="setting-value" id="health-passive-ok-statuses-display"></div>
+                </div>
+                <div class="setting-row">
+                  <div class="setting-label">连续成功次数<br><span style="font-size:11px;color:rgba(0,0,0,0.35);font-weight:400">healthy.successes</span></div>
+                  <div class="setting-value" id="health-passive-ok-count-display"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div id="health-edit" class="cfg-edit" style="display:none">
+            <div class="config-section">
+              <div class="config-section-title">主动健康检查（对应 APISIX checks.active）</div>
+              <div class="setting-row">
+                <div class="setting-label">启用主动检查</div>
+                <div class="setting-value">
+                  <div class="switch-wrap">
+                    <label class="switch"><input type="checkbox" id="health-enable" onchange="handleHealthEnableToggle()" /><span class="switch-slider"></span></label>
+                    <span id="health-enable-label">已开启</span>
+                  </div>
+                </div>
+              </div>
+              <div class="setting-row">
+                <div class="setting-label">检查类型</div>
+                <div class="setting-value">
+                  <select id="health-type" class="ant-select" style="width:180px" onchange="handleActiveTypeChange()">
+                    <option value="http">HTTP</option>
+                    <option value="https">HTTPS</option>
+                    <option value="tcp">TCP</option>
+                    <option value="grpc">gRPC</option>
+                  </select>
+                  <div class="form-hint">对应 type 字段；选 TCP/gRPC 时检查路径无效</div>
+                </div>
+              </div>
+              <div class="setting-row" id="health-active-path-edit-row">
+                <div class="setting-label">检查路径</div>
+                <div class="setting-value">
+                  <input id="health-path" class="ant-input" style="max-width:360px" value="/health" placeholder="/health" />
+                  <div class="form-hint">对应 http_path；HTTP/HTTPS 类型时有效，Gateway 将发送 GET 请求到此路径</div>
+                </div>
+              </div>
+              <div class="setting-row">
+                <div class="setting-label">检查主机名</div>
+                <div class="setting-value">
+                  <input id="health-host" class="ant-input" style="max-width:360px" placeholder="留空则使用实例地址" />
+                  <div class="form-hint">对应 host；用于 SNI 或 HTTP Host 请求头，多实例共享同一虚拟主机时填写</div>
+                </div>
+              </div>
+              <div class="setting-row">
+                <div class="setting-label">检查端口</div>
+                <div class="setting-value">
+                  <input id="health-port" class="ant-input" style="width:100px" type="number" placeholder="默认使用实例端口" />
+                  <div class="form-hint">对应 port；留空则使用实例注册端口</div>
+                </div>
+              </div>
+              <div class="setting-row">
+                <div class="setting-label">超时时间</div>
+                <div class="setting-value" style="display:flex;align-items:center;gap:8px">
+                  <input id="health-timeout" class="ant-input" style="width:100px" type="number" value="1" />
+                  <span style="color:rgba(0,0,0,0.45)">秒（对应 timeout，默认 1）</span>
+                </div>
+              </div>
+              <div class="setting-row" id="health-active-verify-cert-edit-row">
+                <div class="setting-label">验证 HTTPS 证书<br><span style="font-size:11px;color:rgba(0,0,0,0.35);font-weight:400">https_verify_certificate</span></div>
+                <div class="setting-value">
+                  <label style="display:flex;align-items:center;gap:6px;cursor:pointer">
+                    <input type="checkbox" id="health-verify-cert" checked />
+                    <span>开启（https_verify_certificate = true，验证服务端 TLS 证书有效性）</span>
+                  </label>
+                  <div class="form-hint">主动检查使用 HTTPS 类型检查时，是否检查远程主机的 SSL 证书。仅在检查类型为 HTTPS 时有效</div>
+                </div>
+              </div>
+              <div class="setting-row">
+                <div class="setting-label">并发探测数</div>
+                <div class="setting-value" style="display:flex;align-items:center;gap:8px">
+                  <input id="health-concurrency" class="ant-input" style="width:100px" type="number" value="10" />
+                  <span style="color:rgba(0,0,0,0.45)">（对应 concurrency，默认 10）</span>
+                </div>
+              </div>
+              <div class="setting-row" id="health-active-req-headers-edit-row">
+                <div class="setting-label">自定义请求头</div>
+                <div class="setting-value">
+                  <textarea id="health-req-headers" class="ant-input" rows="3" style="max-width:400px;font-family:monospace;font-size:12px" placeholder="每行一个请求头，格式：Header-Name: value&#10;如：X-Custom-Header: health-check"></textarea>
+                  <div class="form-hint">对应 req_headers；仅 HTTP/HTTPS 类型有效，探测请求将携带这些请求头</div>
+                </div>
+              </div>
+              <div class="sub-section-title" style="margin:12px 0 8px">健康判定条件（healthy）</div>
+              <div class="setting-row">
+                <div class="setting-label">探测间隔</div>
+                <div class="setting-value" style="display:flex;align-items:center;gap:8px">
+                  <input id="health-healthy-interval" class="ant-input" style="width:100px" type="number" value="10" />
+                  <span style="color:rgba(0,0,0,0.45)">秒（对应 healthy.interval）；对已健康节点的探测频率</span>
+                </div>
+              </div>
+              <div class="setting-row">
+                <div class="setting-label">连续成功次数</div>
+                <div class="setting-value">
+                  <input id="health-healthy-threshold" class="ant-input" style="width:100px" type="number" value="2" />
+                  <div class="form-hint">对应 healthy.successes；连续成功达到此值后将不健康节点标记为健康</div>
+                </div>
+              </div>
+              <div class="setting-row" id="health-active-healthy-statuses-edit-row">
+                <div class="setting-label">健康 HTTP 状态码</div>
+                <div class="setting-value">
+                  <input id="health-healthy-statuses" class="ant-input" style="max-width:300px" value="200,302" placeholder="多个状态码用英文逗号分隔" />
+                  <div class="form-hint">对应 healthy.http_statuses；响应状态码在此列表内则视为一次成功探测</div>
+                </div>
+              </div>
+              <div class="sub-section-title" style="margin:12px 0 8px">故障判定条件（unhealthy）</div>
+              <div class="setting-row">
+                <div class="setting-label">探测间隔</div>
+                <div class="setting-value" style="display:flex;align-items:center;gap:8px">
+                  <input id="health-unhealthy-interval" class="ant-input" style="width:100px" type="number" value="1" />
+                  <span style="color:rgba(0,0,0,0.45)">秒（对应 unhealthy.interval）；对已不健康节点的探测频率，通常设小以快速恢复</span>
+                </div>
+              </div>
+              <div class="setting-row" id="health-active-http-failures-edit-row">
+                <div class="setting-label">连续 HTTP 失败次数</div>
+                <div class="setting-value">
+                  <input id="health-unhealthy-threshold" class="ant-input" style="width:100px" type="number" value="3" />
+                  <div class="form-hint">对应 unhealthy.http_failures；连续 HTTP 失败达到此值后将节点标记为不健康</div>
+                </div>
+              </div>
+              <div class="setting-row" id="health-active-unhealthy-statuses-edit-row">
+                <div class="setting-label">故障 HTTP 状态码</div>
+                <div class="setting-value">
+                  <input id="health-unhealthy-statuses" class="ant-input" style="max-width:300px" value="429,500,501,502,503,504" placeholder="多个状态码用英文逗号分隔" />
+                  <div class="form-hint">对应 unhealthy.http_statuses；响应状态码在此列表内则视为一次失败探测</div>
+                </div>
+              </div>
+              <div class="setting-row">
+                <div class="setting-label">TCP 连接失败次数</div>
+                <div class="setting-value">
+                  <input id="health-unhealthy-tcp" class="ant-input" style="width:100px" type="number" value="2" />
+                  <div class="form-hint">对应 unhealthy.tcp_failures；连续 TCP 连接失败达到此值则标为不健康</div>
+                </div>
+              </div>
+              <div class="setting-row">
+                <div class="setting-label">超时次数</div>
+                <div class="setting-value">
+                  <input id="health-unhealthy-timeouts" class="ant-input" style="width:100px" type="number" value="3" />
+                  <div class="form-hint">对应 unhealthy.timeouts；连续超时达到此值则标为不健康</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="config-section">
+              <div class="config-section-title">被动健康检查（对应 APISIX checks.passive）</div>
+              <div class="alert alert-info" style="margin-bottom:12px">
+                ℹ️ 被动检查基于实际请求响应判断实例健康状态，与主动检查互补，无需主动发起探测请求。因不健康节点无法收到请求，建议同时启用主动检查以完成健康状态恢复
+              </div>
+              <div class="setting-row">
+                <div class="setting-label">启用被动检查</div>
+                <div class="setting-value">
+                  <div class="switch-wrap">
+                    <label class="switch"><input type="checkbox" id="health-passive-enable" onchange="handlePassiveToggle()" /><span class="switch-slider"></span></label>
+                    <span id="health-passive-label">已关闭</span>
+                  </div>
+                </div>
+              </div>
+              <div id="health-passive-config" style="display:none">
+                <div class="setting-row">
+                  <div class="setting-label">检查类型</div>
+                  <div class="setting-value">
+                    <select id="health-passive-type" class="ant-select" style="width:180px" onchange="handlePassiveTypeChange()">
+                      <option value="http">HTTP</option>
+                      <option value="https">HTTPS</option>
+                      <option value="tcp">TCP</option>
+                    </select>
+                    <div class="form-hint">对应 type 字段；TCP 模式下不关注 HTTP 状态码</div>
+                  </div>
+                </div>
+                <div class="sub-section-title" style="margin:12px 0 8px">不健康条件（unhealthy）</div>
+                <div class="setting-row" id="health-passive-fail-statuses-edit-row">
+                  <div class="setting-label">故障 HTTP 状态码</div>
+                  <div class="setting-value">
+                    <input id="health-passive-fail-statuses" class="ant-input" style="max-width:300px" value="429,500,503" placeholder="多个状态码用英文逗号分隔" />
+                    <div class="form-hint">对应 unhealthy.http_statuses；实际响应中出现此类状态码则计入失败</div>
+                  </div>
+                </div>
+                <div class="setting-row" id="health-passive-http-failures-edit-row">
+                  <div class="setting-label">连续 HTTP 失败次数</div>
+                  <div class="setting-value">
+                    <input id="health-passive-fail-count" class="ant-input" style="width:100px" type="number" value="3" />
+                    <div class="form-hint">对应 unhealthy.http_failures；连续失败达到此值则标为不健康</div>
+                  </div>
+                </div>
+                <div class="setting-row">
+                  <div class="setting-label">TCP 连接失败次数</div>
+                  <div class="setting-value">
+                    <input id="health-passive-tcp-fail" class="ant-input" style="width:100px" type="number" value="2" />
+                    <div class="form-hint">对应 unhealthy.tcp_failures；连续 TCP 失败达到此值则标为不健康</div>
+                  </div>
+                </div>
+                <div class="setting-row">
+                  <div class="setting-label">超时次数</div>
+                  <div class="setting-value">
+                    <input id="health-passive-timeout-count" class="ant-input" style="width:100px" type="number" value="3" />
+                    <div class="form-hint">对应 unhealthy.timeouts；连续超时达到此值则标为不健康</div>
+                  </div>
+                </div>
+                <div class="sub-section-title" style="margin:12px 0 8px">恢复条件（healthy）</div>
+                <div class="setting-row" id="health-passive-ok-statuses-edit-row">
+                  <div class="setting-label">健康 HTTP 状态码</div>
+                  <div class="setting-value">
+                    <input id="health-passive-ok-statuses" class="ant-input" style="max-width:300px" value="200,201,202,204,301,302" placeholder="多个状态码用英文逗号分隔" />
+                    <div class="form-hint">对应 healthy.http_statuses；响应此类状态码则计入恢复成功次数</div>
+                  </div>
+                </div>
+                <div class="setting-row">
+                  <div class="setting-label">连续成功次数</div>
+                  <div class="setting-value">
+                    <input id="health-passive-ok-count" class="ant-input" style="width:100px" type="number" value="2" />
+                    <div class="form-hint">对应 healthy.successes；连续成功达到此值则从不健康恢复为健康</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tab: 通信配置 -->
+        <div id="tab-comm" style="display:none">
+          <!-- 协议支持 -->
+          <div class="config-section">
+            <div style="display:flex;justify-content:flex-end;margin-bottom:16px">
+              <button id="edit-btn-comm-protocol" class="btn btn-primary" onclick="enterEditMode('comm-protocol')">编辑协议支持</button>
+              <div id="comm-protocol-edit-actions" style="display:none;gap:8px;align-items:center">
+                <button class="btn btn-default" onclick="cancelEditMode('comm-protocol')">取消</button>
+                <button class="btn btn-primary" onclick="saveCommProtocolConfig()">保存</button>
+              </div>
+            </div>
+            <div id="comm-protocol-display">
               <div class="config-section-title">协议支持</div>
               <div class="setting-row">
                 <div class="setting-label">WebSocket 支持</div>
                 <div class="setting-value" id="comm-ws-display"></div>
               </div>
             </div>
-            <div class="config-section">
-              <div class="config-section-title">代理设置</div>
-              <div class="setting-row">
-                <div class="setting-label">Host 重写</div>
-                <div class="setting-value" id="comm-host-rewrite-display"></div>
-              </div>
-              <div class="setting-row">
-                <div class="setting-label">网关 Token</div>
-                <div class="setting-value" id="comm-gw-token-display"></div>
-              </div>
-            </div>
-          </div>
-          <div id="comm-edit" class="cfg-edit" style="display:none">
-            <div class="config-section">
+            <div id="comm-protocol-edit" style="display:none">
               <div class="config-section-title">协议支持</div>
               <div class="setting-row">
                 <div class="setting-label">WebSocket 支持</div>
@@ -732,7 +1171,28 @@
                 </div>
               </div>
             </div>
-            <div class="config-section">
+          </div>
+          <!-- 代理设置 -->
+          <div class="config-section">
+            <div style="display:flex;justify-content:flex-end;margin-bottom:16px">
+              <button id="edit-btn-comm-proxy" class="btn btn-primary" onclick="enterEditMode('comm-proxy')">编辑代理设置</button>
+              <div id="comm-proxy-edit-actions" style="display:none;gap:8px;align-items:center">
+                <button class="btn btn-default" onclick="cancelEditMode('comm-proxy')">取消</button>
+                <button class="btn btn-primary" onclick="saveCommProxyConfig()">保存</button>
+              </div>
+            </div>
+            <div id="comm-proxy-display">
+              <div class="config-section-title">代理设置</div>
+              <div class="setting-row">
+                <div class="setting-label">Host 重写</div>
+                <div class="setting-value" id="comm-host-rewrite-display"></div>
+              </div>
+              <div class="setting-row">
+                <div class="setting-label">网关 Token</div>
+                <div class="setting-value" id="comm-gw-token-display"></div>
+              </div>
+            </div>
+            <div id="comm-proxy-edit" style="display:none">
               <div class="config-section-title">代理设置</div>
               <div class="setting-row">
                 <div class="setting-label">Host 重写</div>
@@ -752,15 +1212,16 @@
 
         <!-- Tab: 日志收集 -->
         <div id="tab-log" style="display:none">
-          <div style="display:flex;justify-content:flex-end;margin-bottom:16px">
-            <button id="edit-btn-log" class="btn btn-primary" onclick="enterEditMode('log')">编辑配置</button>
-            <div id="log-edit-actions" style="display:none;gap:8px;align-items:center">
-              <button class="btn btn-default" onclick="cancelEditMode('log')">取消</button>
-              <button class="btn btn-primary" onclick="saveLogConfig()">保存</button>
+          <!-- Kafka 日志收集 -->
+          <div class="config-section">
+            <div style="display:flex;justify-content:flex-end;margin-bottom:16px">
+              <button id="edit-btn-log-kafka" class="btn btn-primary" onclick="enterEditMode('log-kafka')">编辑Kafka配置</button>
+              <div id="log-kafka-edit-actions" style="display:none;gap:8px;align-items:center">
+                <button class="btn btn-default" onclick="cancelEditMode('log-kafka')">取消</button>
+                <button class="btn btn-primary" onclick="saveLogKafkaConfig()">保存</button>
+              </div>
             </div>
-          </div>
-          <div id="log-display" class="cfg-display">
-            <div class="config-section">
+            <div id="log-kafka-display">
               <div class="config-section-title">Kafka 日志收集</div>
               <div class="setting-row">
                 <div class="setting-label">启用</div>
@@ -777,26 +1238,7 @@
                 </div>
               </div>
             </div>
-            <div class="config-section">
-              <div class="config-section-title">Loki 日志收集</div>
-              <div class="setting-row">
-                <div class="setting-label">启用</div>
-                <div class="setting-value" id="log-loki-enable-display"></div>
-              </div>
-              <div id="loki-display" style="display:none">
-                <div class="setting-row">
-                  <div class="setting-label">Loki 推送地址</div>
-                  <div class="setting-value" id="loki-url-display"></div>
-                </div>
-                <div class="setting-row">
-                  <div class="setting-label">租户 ID</div>
-                  <div class="setting-value" id="loki-tenant-id-display"></div>
-                </div>
-              </div>
-            </div>
-          </div>
-          <div id="log-edit" class="cfg-edit" style="display:none">
-            <div class="config-section">
+            <div id="log-kafka-edit" style="display:none">
               <div class="config-section-title">Kafka 日志收集</div>
               <div class="setting-row">
                 <div class="setting-label">启用</div>
@@ -822,7 +1264,34 @@
                 </div>
               </div>
             </div>
-            <div class="config-section">
+          </div>
+          <!-- Loki 日志收集 -->
+          <div class="config-section">
+            <div style="display:flex;justify-content:flex-end;margin-bottom:16px">
+              <button id="edit-btn-log-loki" class="btn btn-primary" onclick="enterEditMode('log-loki')">编辑Loki配置</button>
+              <div id="log-loki-edit-actions" style="display:none;gap:8px;align-items:center">
+                <button class="btn btn-default" onclick="cancelEditMode('log-loki')">取消</button>
+                <button class="btn btn-primary" onclick="saveLogLokiConfig()">保存</button>
+              </div>
+            </div>
+            <div id="log-loki-display">
+              <div class="config-section-title">Loki 日志收集</div>
+              <div class="setting-row">
+                <div class="setting-label">启用</div>
+                <div class="setting-value" id="log-loki-enable-display"></div>
+              </div>
+              <div id="loki-display" style="display:none">
+                <div class="setting-row">
+                  <div class="setting-label">Loki 推送地址</div>
+                  <div class="setting-value" id="loki-url-display"></div>
+                </div>
+                <div class="setting-row">
+                  <div class="setting-label">租户 ID</div>
+                  <div class="setting-value" id="loki-tenant-id-display"></div>
+                </div>
+              </div>
+            </div>
+            <div id="log-loki-edit" style="display:none">
               <div class="config-section-title">Loki 日志收集</div>
               <div class="setting-row">
                 <div class="setting-label">启用</div>
@@ -950,6 +1419,46 @@
   </div>
 </div>
 
+<!-- 新增实例 Modal -->
+<div id="inst-modal" class="modal-overlay" style="display:none" onclick="if(event.target===this)closeInstModal()">
+  <div class="ant-modal">
+    <div class="modal-header">
+      <span class="modal-title">新增实例</span>
+      <button class="modal-close" onclick="closeInstModal()">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-item">
+        <label class="form-label required">实例地址</label>
+        <div class="form-control">
+          <input id="form-inst-addr" class="ant-input" placeholder="请输入 IP 地址，如 10.1.2.3" />
+          <div id="error-inst-addr" class="form-error-msg" style="display:none"></div>
+        </div>
+      </div>
+      <div class="form-item">
+        <label class="form-label required">端口</label>
+        <div class="form-control">
+          <input id="form-inst-port" class="ant-input" type="number" placeholder="1-65535" />
+          <div id="error-inst-port" class="form-error-msg" style="display:none"></div>
+        </div>
+      </div>
+      <div class="form-item">
+        <label class="form-label">所在机房</label>
+        <div class="form-control">
+          <select id="form-inst-dc" class="ant-select">
+            <option value="办公">办公</option>
+            <option value="生产-北京">生产-北京</option>
+            <option value="生产-上海">生产-上海</option>
+          </select>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-default" onclick="closeInstModal()">取消</button>
+      <button class="btn btn-primary" onclick="submitInstModal()">确定</button>
+    </div>
+  </div>
+</div>
+
 <!-- 查看凭证 Modal -->
 <div id="cred-modal" class="modal-overlay" style="display:none" onclick="if(event.target===this)closeModal(document.getElementById('cred-modal'))">
   <div class="ant-modal" style="width:480px">
@@ -1021,6 +1530,7 @@ function buildTabs() {
       { key: 'access',   label: '可访问服务' },
       { key: 'security', label: '安全配置' },
       { key: 'comm',     label: '通信配置' },
+      { key: 'health',   label: '健康检查' },
       { key: 'log',      label: '日志收集' },
       { key: 'oplog',    label: '操作记录' },
       { key: 'monitor',  label: '服务监控' },
@@ -1053,6 +1563,7 @@ function switchTab(key) {
   if (key === 'log')         { renderLogDisplay(); initLogTab(); }
   if (key === 'security')    { renderSecurityDisplay(); initSecurityTab(); }
   if (key === 'comm')        { renderCommDisplay(); initCommTab(); }
+  if (key === 'health')      { renderHealthDisplay(); initHealthTab(); }
   if (key === 'traffic-rules') renderTrafficRules();
 }
 
@@ -1569,19 +2080,50 @@ function viewFwdConfig(id) {
 
 /* ── 安全配置 ── */
 function enterEditMode(tab) {
-  document.getElementById(`edit-btn-${tab}`).style.display = 'none';
-  document.getElementById(`${tab}-edit-actions`).style.display = 'flex';
-  document.getElementById(`${tab}-display`).style.display = 'none';
-  document.getElementById(`${tab}-edit`).style.display = '';
-  if (tab === 'security') initSecurityTab();
-  if (tab === 'comm')     initCommTab();
-  if (tab === 'log')      initLogTab();
+  if (tab === 'auth' || tab === 'protection' || tab === 'alias' || tab === 'health') {
+    document.getElementById(`edit-btn-${tab}`).style.display = 'none';
+    document.getElementById(`${tab}-edit-actions`).style.display = 'flex';
+    document.getElementById(`${tab}-display`).style.display = 'none';
+    document.getElementById(`${tab}-edit`).style.display = '';
+    if (tab === 'health') initHealthTab();
+    else initSecurityTab();
+  } else if (tab === 'comm-protocol' || tab === 'comm-proxy' || tab === 'log-kafka' || tab === 'log-loki') {
+    document.getElementById(`edit-btn-${tab}`).style.display = 'none';
+    document.getElementById(`${tab}-edit-actions`).style.display = 'flex';
+    document.getElementById(`${tab}-display`).style.display = 'none';
+    document.getElementById(`${tab}-edit`).style.display = '';
+    if (tab === 'comm-protocol' || tab === 'comm-proxy') initCommTab();
+    if (tab === 'log-kafka' || tab === 'log-loki') initLogTab();
+  } else {
+    document.getElementById(`edit-btn-${tab}`).style.display = 'none';
+    document.getElementById(`${tab}-edit-actions`).style.display = 'flex';
+    document.getElementById(`${tab}-display`).style.display = 'none';
+    document.getElementById(`${tab}-edit`).style.display = '';
+    if (tab === 'comm')     initCommTab();
+    if (tab === 'log')      initLogTab();
+  }
 }
 function cancelEditMode(tab) {
-  document.getElementById(`edit-btn-${tab}`).style.display = '';
-  document.getElementById(`${tab}-edit-actions`).style.display = 'none';
-  document.getElementById(`${tab}-edit`).style.display = 'none';
-  document.getElementById(`${tab}-display`).style.display = '';
+  if (tab === 'auth' || tab === 'protection' || tab === 'alias' || tab === 'health') {
+    document.getElementById(`edit-btn-${tab}`).style.display = '';
+    document.getElementById(`${tab}-edit-actions`).style.display = 'none';
+    document.getElementById(`${tab}-edit`).style.display = 'none';
+    document.getElementById(`${tab}-display`).style.display = '';
+    if (tab === 'health') renderHealthDisplay();
+    else renderSecurityDisplay();
+  } else if (tab === 'comm-protocol' || tab === 'comm-proxy' || tab === 'log-kafka' || tab === 'log-loki') {
+    document.getElementById(`edit-btn-${tab}`).style.display = '';
+    document.getElementById(`${tab}-edit-actions`).style.display = 'none';
+    document.getElementById(`${tab}-edit`).style.display = 'none';
+    document.getElementById(`${tab}-display`).style.display = '';
+    renderCommDisplay();
+    renderLogDisplay();
+  } else {
+    document.getElementById(`edit-btn-${tab}`).style.display = '';
+    document.getElementById(`${tab}-edit-actions`).style.display = 'none';
+    document.getElementById(`${tab}-edit`).style.display = 'none';
+    document.getElementById(`${tab}-display`).style.display = '';
+  }
 }
 
 function renderSecurityDisplay() {
@@ -1808,7 +2350,7 @@ function renderSecAliasTags() {
     : secAliases.map((a, i) => `<span class="alias-tag">${escHtml(a)}<span class="del" onclick="removeSecAlias(${i})">×</span></span>`).join('');
 }
 
-function saveSecurityConfig() {
+function saveAuthConfig() {
   const enabled = document.getElementById('sec-auth-enable').checked;
   const type    = document.querySelector('input[name="sec-auth-type"]:checked')?.value || 'basic';
   vs.auth = enabled ? type : 'disabled';
@@ -1822,7 +2364,18 @@ function saveSecurityConfig() {
     };
   } else if (enabled && type === 'basic') {
     vs.authConfig = { type: 'basic' };
+  } else {
+    vs.authConfig = null;
   }
+  allVss = allVss.map(v => v.id === vs.id ? vs : v);
+  saveVss(allVss);
+  cancelEditMode('auth');
+  renderSecurityDisplay();
+  renderTabs();
+  showToast('鉴权配置已保存');
+}
+
+function saveProtectionConfig() {
   vs.ipControl = {
     enabled:   document.getElementById('sec-ip-ctrl-enable').checked,
     whitelist: document.getElementById('sec-ip-whitelist').value.split('\n').map(s => s.trim()).filter(Boolean),
@@ -1859,13 +2412,22 @@ function saveSecurityConfig() {
     blockRules:   document.getElementById('sec-uri-block-rules').value.split('\n').map(s => s.trim()).filter(Boolean),
     rejectedCode: +document.getElementById('sec-uri-reject-code').value || 403,
   };
+  allVss = allVss.map(v => v.id === vs.id ? vs : v);
+  saveVss(allVss);
+  cancelEditMode('protection');
+  renderSecurityDisplay();
+  renderTabs();
+  showToast('服务保护规则已保存');
+}
+
+function saveAliasConfig() {
   vs.aliases = [...secAliases];
   allVss = allVss.map(v => v.id === vs.id ? vs : v);
   saveVss(allVss);
-  cancelEditMode('security');
+  cancelEditMode('alias');
   renderSecurityDisplay();
   renderTabs();
-  showToast('安全配置已保存');
+  showToast('服务别名已保存');
 }
 
 /* ── 通信配置 ── */
@@ -1880,17 +2442,25 @@ function initCommTab() {
 function handleWsToggle() {
   document.getElementById('comm-ws-label').textContent = document.getElementById('comm-ws-enable').checked ? '已开启' : '已关闭';
 }
-function saveCommConfig() {
-  vs.commConfig = {
-    wsEnabled:   document.getElementById('comm-ws-enable').checked,
-    hostRewrite: document.getElementById('comm-host-rewrite').value.trim(),
-    gwToken:     document.getElementById('comm-gw-token').value.trim(),
-  };
+function saveCommProtocolConfig() {
+  vs.commConfig = vs.commConfig || {};
+  vs.commConfig.wsEnabled = document.getElementById('comm-ws-enable').checked;
   allVss = allVss.map(v => v.id === vs.id ? vs : v);
   saveVss(allVss);
-  cancelEditMode('comm');
+  cancelEditMode('comm-protocol');
   renderCommDisplay();
-  showToast('通信配置已保存');
+  showToast('协议支持配置已保存');
+}
+
+function saveCommProxyConfig() {
+  vs.commConfig = vs.commConfig || {};
+  vs.commConfig.hostRewrite = document.getElementById('comm-host-rewrite').value.trim();
+  vs.commConfig.gwToken = document.getElementById('comm-gw-token').value.trim();
+  allVss = allVss.map(v => v.id === vs.id ? vs : v);
+  saveVss(allVss);
+  cancelEditMode('comm-proxy');
+  renderCommDisplay();
+  showToast('代理设置已保存');
 }
 
 /* ── 日志收集 ── */
@@ -1917,20 +2487,228 @@ function handleLokiToggle() {
   document.getElementById('log-loki-label').textContent = en ? '已开启' : '已关闭';
   document.getElementById('loki-config').style.display = en ? '' : 'none';
 }
-function saveLogConfig() {
-  vs.logConfig = {
-    kafkaEnabled: document.getElementById('log-kafka-enable').checked,
-    kafkaBrokers: document.getElementById('kafka-brokers').value.trim(),
-    kafkaTopic:   document.getElementById('kafka-topic').value.trim(),
-    lokiEnabled:  document.getElementById('log-loki-enable').checked,
-    lokiUrl:      document.getElementById('loki-url').value.trim(),
-    lokiTenantId: document.getElementById('loki-tenant-id').value.trim(),
+function saveLogKafkaConfig() {
+  vs.kafkaLog = {
+    enabled: document.getElementById('log-kafka-enable').checked,
+    brokers:  document.getElementById('kafka-brokers').value,
+    topic:    document.getElementById('kafka-topic').value,
   };
   allVss = allVss.map(v => v.id === vs.id ? vs : v);
   saveVss(allVss);
-  cancelEditMode('log');
   renderLogDisplay();
-  showToast('日志配置已保存');
+  cancelEditMode('log-kafka');
+  showToast('Kafka日志配置已保存');
+}
+
+function saveLogLokiConfig() {
+  vs.lokiLog = {
+    enabled:  document.getElementById('log-loki-enable').checked,
+    url:      document.getElementById('loki-url').value,
+    tenantId: document.getElementById('loki-tenant-id').value,
+  };
+  allVss = allVss.map(v => v.id === vs.id ? vs : v);
+  saveVss(allVss);
+  renderLogDisplay();
+  cancelEditMode('log-loki');
+  showToast('Loki日志配置已保存');
+}
+
+/* ── 实例列表 ── */
+// 模拟实例数据（虚拟服务的实例实际来自默认后端服务）
+function renderInstTable() {
+  const status = document.getElementById('inst-search-status')?.value || '';
+  const kw     = document.getElementById('inst-search-kw')?.value.trim() || '';
+  // 虚拟服务的实例来自默认后端服务，这里显示提示
+  const tbody = document.getElementById('inst-table-body');
+  const db = vs.defaultBackend || {};
+  if (!db.serviceId) {
+    tbody.innerHTML = '<tr><td colspan="6"><div class="empty-table">请先配置默认后端服务</div></td></tr>';
+    return;
+  }
+  tbody.innerHTML = `<tr><td colspan="6"><div class="alert alert-info" style="margin:20px">
+    ℹ️ 虚拟服务的实例来自默认后端服务「${escHtml(db.serviceName || db.serviceId)}」。
+    <a href="service-detail.html?id=${escHtml(db.serviceId)}&tab=instances" style="color:#1890ff;text-decoration:none;margin-left:8px">点击跳转到该服务的实例列表</a>
+  </div></td></tr>`;
+}
+
+function openAddInstModal() {
+  const db = vs.defaultBackend || {};
+  if (!db.serviceId) {
+    showToast('请先配置默认后端服务');
+    return;
+  }
+  showToast('请在默认后端服务中添加实例');
+}
+
+function closeInstModal() { /* no-op for virtual service */ }
+function submitInstModal() { /* no-op for virtual service */ }
+
+/* ── 健康检查 ── */
+function initHealthTab() {
+  // 初始化编辑态数据
+  const health = vs.healthCheck || {};
+  document.getElementById('health-enable').checked = health.enabled !== false;
+  document.getElementById('health-enable-label').textContent = health.enabled !== false ? '已开启' : '已关闭';
+  document.getElementById('health-enable-label').style.color = health.enabled !== false ? '#1890ff' : 'rgba(0,0,0,0.45)';
+  document.getElementById('health-type').value = health.type || 'http';
+  handleActiveTypeChange();
+  document.getElementById('health-path').value = health.path || '/health';
+  document.getElementById('health-host').value = health.host || '';
+  if (health.port) document.getElementById('health-port').value = health.port;
+  document.getElementById('health-timeout').value = health.timeout || 1;
+  document.getElementById('health-verify-cert').checked = health.verifyCert !== false;
+  document.getElementById('health-concurrency').value = health.concurrency || 10;
+  document.getElementById('health-req-headers').value = (health.reqHeaders || []).join('\n');
+  document.getElementById('health-healthy-interval').value = health.healthyInterval || 10;
+  document.getElementById('health-healthy-threshold').value = health.healthyThreshold || 2;
+  document.getElementById('health-healthy-statuses').value = health.healthyStatuses || '200,302';
+  document.getElementById('health-unhealthy-interval').value = health.unhealthyInterval || 1;
+  document.getElementById('health-unhealthy-threshold').value = health.unhealthyThreshold || 3;
+  document.getElementById('health-unhealthy-statuses').value = health.unhealthyStatuses || '429,500,501,502,503,504';
+  document.getElementById('health-unhealthy-tcp').value = health.unhealthyTcp || 2;
+  document.getElementById('health-unhealthy-timeouts').value = health.unhealthyTimeouts || 3;
+
+  // 被动健康检查
+  const passive = health.passive || {};
+  document.getElementById('health-passive-enable').checked = !!passive.enabled;
+  handlePassiveToggle();
+  document.getElementById('health-passive-type').value = passive.type || 'http';
+  handlePassiveTypeChange();
+  document.getElementById('health-passive-fail-statuses').value = passive.failStatuses || '429,500,503';
+  document.getElementById('health-passive-fail-count').value = passive.failCount || 3;
+  document.getElementById('health-passive-tcp-fail').value = passive.tcpFail || 2;
+  document.getElementById('health-passive-timeout-count').value = passive.timeoutCount || 3;
+  document.getElementById('health-passive-ok-statuses').value = passive.okStatuses || '200,201,202,204,301,302';
+  document.getElementById('health-passive-ok-count').value = passive.okCount || 2;
+
+  // 渲染终态展示
+  renderHealthDisplay();
+}
+
+function renderHealthDisplay() {
+  const health = vs.healthCheck || {};
+  const enabled = health.enabled !== false;
+  document.getElementById('health-enable-display').innerHTML = `<span class="tag ${enabled ? 'tag-success' : 'tag-default'}">${enabled ? '已开启' : '已关闭'}</span>`;
+  document.getElementById('health-active-details').style.display = enabled ? '' : 'none';
+  if (enabled) {
+    const type = health.type || 'http';
+    const activeIsHttp = type === 'http' || type === 'https';
+    const activeIsHttps = type === 'https';
+    document.getElementById('health-type-display').textContent = type.toUpperCase();
+    document.getElementById('health-active-path-display-row').style.display = activeIsHttp ? '' : 'none';
+    document.getElementById('health-active-healthy-statuses-display-row').style.display = activeIsHttp ? '' : 'none';
+    document.getElementById('health-active-http-failures-display-row').style.display = activeIsHttp ? '' : 'none';
+    document.getElementById('health-active-unhealthy-statuses-display-row').style.display = activeIsHttp ? '' : 'none';
+    document.getElementById('health-active-verify-cert-display-row').style.display = activeIsHttps ? '' : 'none';
+    document.getElementById('health-active-req-headers-display-row').style.display = activeIsHttp ? '' : 'none';
+    document.getElementById('health-path-display').textContent = health.path || '/health';
+    document.getElementById('health-host-display').textContent = health.host || '（默认使用实例地址）';
+    document.getElementById('health-port-display').textContent = health.port || '（默认使用实例端口）';
+    document.getElementById('health-timeout-display').textContent = `${health.timeout || 1} 秒`;
+    document.getElementById('health-verify-cert-display').textContent = health.verifyCert !== false ? '是' : '否';
+    document.getElementById('health-concurrency-display').textContent = health.concurrency || 10;
+    const reqHeaders = health.reqHeaders || [];
+    document.getElementById('health-req-headers-display').innerHTML = reqHeaders.length
+      ? `<pre style="font-family:monospace;font-size:12px;white-space:pre-wrap;margin:0">${escHtml(reqHeaders.join('\n'))}</pre>`
+      : '<span style="color:rgba(0,0,0,0.25)">未配置</span>';
+    document.getElementById('health-healthy-interval-display').textContent = `${health.healthyInterval || 10} 秒`;
+    document.getElementById('health-healthy-threshold-display').textContent = health.healthyThreshold || 2;
+    document.getElementById('health-healthy-statuses-display').textContent = health.healthyStatuses || '200,302';
+    document.getElementById('health-unhealthy-interval-display').textContent = `${health.unhealthyInterval || 1} 秒`;
+    document.getElementById('health-unhealthy-threshold-display').textContent = health.unhealthyThreshold || 3;
+    document.getElementById('health-unhealthy-statuses-display').textContent = health.unhealthyStatuses || '429,500,501,502,503,504';
+    document.getElementById('health-unhealthy-tcp-display').textContent = health.unhealthyTcp || 2;
+    document.getElementById('health-unhealthy-timeouts-display').textContent = health.unhealthyTimeouts || 3;
+  }
+  // 被动健康检查
+  const passive = health.passive || {};
+  const passiveEnabled = !!passive.enabled;
+  document.getElementById('health-passive-enable-display').innerHTML = `<span class="tag ${passiveEnabled ? 'tag-success' : 'tag-default'}">${passiveEnabled ? '已开启' : '已关闭'}</span>`;
+  document.getElementById('health-passive-display').style.display = passiveEnabled ? '' : 'none';
+  if (passiveEnabled) {
+    const passiveType = passive.type || 'http';
+    const passiveIsHttp = passiveType !== 'tcp';
+    document.getElementById('health-passive-type-display').textContent = passiveType.toUpperCase();
+    document.getElementById('health-passive-fail-statuses-display-row').style.display = passiveIsHttp ? '' : 'none';
+    document.getElementById('health-passive-http-failures-display-row').style.display = passiveIsHttp ? '' : 'none';
+    document.getElementById('health-passive-ok-statuses-display-row').style.display = passiveIsHttp ? '' : 'none';
+    document.getElementById('health-passive-fail-statuses-display').textContent = passive.failStatuses || '429,500,503';
+    document.getElementById('health-passive-fail-count-display').textContent = passive.failCount || 3;
+    document.getElementById('health-passive-tcp-fail-display').textContent = passive.tcpFail || 2;
+    document.getElementById('health-passive-timeout-count-display').textContent = passive.timeoutCount || 3;
+    document.getElementById('health-passive-ok-statuses-display').textContent = passive.okStatuses || '200,201,202,204,301,302';
+    document.getElementById('health-passive-ok-count-display').textContent = passive.okCount || 2;
+  }
+}
+
+function handleActiveTypeChange() {
+  const type = document.getElementById('health-type').value;
+  const isHttp = type === 'http' || type === 'https';
+  const isHttps = type === 'https';
+  document.getElementById('health-active-path-edit-row').style.display = isHttp ? '' : 'none';
+  document.getElementById('health-active-healthy-statuses-edit-row').style.display = isHttp ? '' : 'none';
+  document.getElementById('health-active-http-failures-edit-row').style.display = isHttp ? '' : 'none';
+  document.getElementById('health-active-unhealthy-statuses-edit-row').style.display = isHttp ? '' : 'none';
+  document.getElementById('health-active-verify-cert-edit-row').style.display = isHttps ? '' : 'none';
+  document.getElementById('health-active-req-headers-edit-row').style.display = isHttp ? '' : 'none';
+}
+
+function handlePassiveTypeChange() {
+  const type = document.getElementById('health-passive-type').value;
+  const isHttp = type !== 'tcp';
+  document.getElementById('health-passive-fail-statuses-edit-row').style.display = isHttp ? '' : 'none';
+  document.getElementById('health-passive-http-failures-edit-row').style.display = isHttp ? '' : 'none';
+  document.getElementById('health-passive-ok-statuses-edit-row').style.display = isHttp ? '' : 'none';
+}
+
+function handlePassiveToggle() {
+  const enabled = document.getElementById('health-passive-enable').checked;
+  document.getElementById('health-passive-label').textContent = enabled ? '已开启' : '已关闭';
+  document.getElementById('health-passive-label').style.color = enabled ? '#1890ff' : 'rgba(0,0,0,0.45)';
+  document.getElementById('health-passive-config').style.display = enabled ? '' : 'none';
+}
+
+function handleHealthEnableToggle() {
+  const enabled = document.getElementById('health-enable').checked;
+  document.getElementById('health-enable-label').textContent = enabled ? '已开启' : '已关闭';
+  document.getElementById('health-enable-label').style.color = enabled ? '#1890ff' : 'rgba(0,0,0,0.45)';
+}
+
+function saveHealthConfig() {
+  vs.healthCheck = {
+    enabled: document.getElementById('health-enable').checked,
+    type: document.getElementById('health-type').value,
+    path: document.getElementById('health-path').value,
+    host: document.getElementById('health-host').value.trim() || null,
+    port: document.getElementById('health-port').value || null,
+    timeout: +document.getElementById('health-timeout').value,
+    verifyCert: document.getElementById('health-verify-cert').checked,
+    concurrency: +document.getElementById('health-concurrency').value || 10,
+    reqHeaders: document.getElementById('health-req-headers').value.split('\n').map(s => s.trim()).filter(Boolean),
+    healthyInterval: +document.getElementById('health-healthy-interval').value,
+    healthyThreshold: +document.getElementById('health-healthy-threshold').value,
+    healthyStatuses: document.getElementById('health-healthy-statuses').value,
+    unhealthyInterval: +document.getElementById('health-unhealthy-interval').value,
+    unhealthyThreshold: +document.getElementById('health-unhealthy-threshold').value,
+    unhealthyStatuses: document.getElementById('health-unhealthy-statuses').value,
+    unhealthyTcp: +document.getElementById('health-unhealthy-tcp').value,
+    unhealthyTimeouts: +document.getElementById('health-unhealthy-timeouts').value,
+    passive: {
+      enabled: document.getElementById('health-passive-enable').checked,
+      type: document.getElementById('health-passive-type').value,
+      failStatuses: document.getElementById('health-passive-fail-statuses').value,
+      failCount: +document.getElementById('health-passive-fail-count').value,
+      tcpFail: +document.getElementById('health-passive-tcp-fail').value,
+      timeoutCount: +document.getElementById('health-passive-timeout-count').value,
+      okStatuses: document.getElementById('health-passive-ok-statuses').value,
+      okCount: +document.getElementById('health-passive-ok-count').value,
+    }
+  };
+  allVss = allVss.map(v => v.id === vs.id ? vs : v);
+  saveVss(allVss);
+  renderHealthDisplay();
+  cancelEditMode('health');
+  showToast('健康检查配置已保存');
 }
 
 /* ── 操作记录 ── */

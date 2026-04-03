@@ -173,15 +173,16 @@
 
         <!-- Tab: 安全配置 -->
         <div id="tab-security" style="display:none">
-          <div style="display:flex;justify-content:flex-end;margin-bottom:16px">
-            <button id="edit-btn-security" class="btn btn-primary" onclick="enterEditMode('security')">编辑配置</button>
-            <div id="security-edit-actions" style="display:none;gap:8px;align-items:center">
-              <button class="btn btn-default" onclick="cancelEditMode('security')">取消</button>
-              <button class="btn btn-primary" onclick="saveSecurityConfig()">保存</button>
+          <!-- 鉴权配置 -->
+          <div class="config-section">
+            <div style="display:flex;justify-content:flex-end;margin-bottom:16px">
+              <button id="edit-btn-auth" class="btn btn-primary" onclick="enterEditMode('auth')">编辑鉴权配置</button>
+              <div id="auth-edit-actions" style="display:none;gap:8px;align-items:center">
+                <button class="btn btn-default" onclick="cancelEditMode('auth')">取消</button>
+                <button class="btn btn-primary" onclick="saveAuthConfig()">保存</button>
+              </div>
             </div>
-          </div>
-          <div id="security-display" class="cfg-display">
-            <div class="config-section">
+            <div id="auth-display">
               <div class="config-section-title">鉴权设置</div>
               <div class="setting-row">
                 <div class="setting-label">鉴权状态</div>
@@ -214,8 +215,88 @@
                 </div>
               </div>
             </div>
+            <div id="auth-edit" style="display:none">
+              <div class="config-section-title">鉴权设置</div>
+              <div class="setting-row">
+                <div class="setting-label">鉴权状态</div>
+                <div class="setting-value">
+                  <div class="switch-wrap">
+                    <label class="switch"><input type="checkbox" id="sec-auth-enable" onchange="handleAuthToggle()" /><span class="switch-slider"></span></label>
+                    <span id="sec-auth-label">已关闭</span>
+                  </div>
+                </div>
+              </div>
+              <div id="sec-auth-config" style="display:none">
+                <div class="setting-row">
+                  <div class="setting-label">鉴权类型</div>
+                  <div class="setting-value">
+                    <div style="display:flex;gap:20px">
+                      <label style="display:flex;align-items:center;gap:6px;cursor:pointer">
+                        <input type="radio" name="sec-auth-type" value="basic" onchange="handleAuthTypeChange()" /> Basic Auth
+                      </label>
+                      <label style="display:flex;align-items:center;gap:6px;cursor:pointer">
+                        <input type="radio" name="sec-auth-type" value="forward" onchange="handleAuthTypeChange()" /> Forward Auth
+                      </label>
+                    </div>
+                  </div>
+                </div>
+                <div id="sec-forward-fields" style="display:none">
+                  <div class="setting-row">
+                    <div class="setting-label">鉴权服务地址 <span style="color:#ff4d4f">*</span></div>
+                    <div class="setting-value">
+                      <input id="sec-forward-url" class="ant-input" style="max-width:420px" placeholder="http://your-auth-service/verify" />
+                      <div class="form-hint">代理网关收到请求后转发到此地址进行鉴权，鉴权通过则放行</div>
+                    </div>
+                  </div>
+                  <div class="setting-row">
+                    <div class="setting-label">请求方法</div>
+                    <div class="setting-value">
+                      <select id="sec-forward-method" class="ant-select" style="width:120px">
+                        <option value="GET">GET</option>
+                        <option value="POST">POST</option>
+                        <option value="HEAD">HEAD</option>
+                      </select>
+                    </div>
+                  </div>
+                  <div class="setting-row">
+                    <div class="setting-label">转发请求头</div>
+                    <div class="setting-value">
+                      <div class="form-hint" style="margin-top:0;margin-bottom:8px">转发鉴权请求时携带的原始请求头，填写字段名和字段说明，可添加多组</div>
+                      <div id="sec-forward-req-headers" style="margin-bottom:8px"></div>
+                      <div style="display:flex;gap:8px;align-items:center">
+                        <input id="sec-fwd-req-field" class="ant-input" style="width:160px" placeholder="字段名，如 Cookie" />
+                        <input id="sec-fwd-req-desc" class="ant-input" style="width:200px" placeholder="字段说明，如 登录凭证" />
+                        <button class="btn btn-default btn-sm" onclick="addFwdReqHeader()">+ 添加</button>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="setting-row">
+                    <div class="setting-label">响应头回写</div>
+                    <div class="setting-value">
+                      <div class="form-hint" style="margin-top:0;margin-bottom:8px">鉴权成功后将鉴权响应中的指定头回写到原始请求，填写字段名和字段说明，可添加多组</div>
+                      <div id="sec-forward-res-headers" style="margin-bottom:8px"></div>
+                      <div style="display:flex;gap:8px;align-items:center">
+                        <input id="sec-fwd-res-field" class="ant-input" style="width:160px" placeholder="字段名，如 X-Auth-User" />
+                        <input id="sec-fwd-res-desc" class="ant-input" style="width:200px" placeholder="字段说明，如 用户ID" />
+                        <button class="btn btn-default btn-sm" onclick="addFwdResHeader()">+ 添加</button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
 
-            <div class="config-section">
+          <!-- 服务保护规则 -->
+          <div class="config-section">
+            <div style="display:flex;justify-content:flex-end;margin-bottom:16px">
+              <button id="edit-btn-protection" class="btn btn-primary" onclick="enterEditMode('protection')">编辑服务保护规则</button>
+              <div id="protection-edit-actions" style="display:none;gap:8px;align-items:center">
+                <button class="btn btn-default" onclick="cancelEditMode('protection')">取消</button>
+                <button class="btn btn-primary" onclick="saveProtectionConfig()">保存</button>
+              </div>
+            </div>
+            <div id="protection-display">
               <div class="config-section-title">服务保护规则</div>
               <div class="protection-block">
                 <div class="sub-section-title">IP 访问控制（对应 APISIX ip-restriction 插件）</div>
@@ -364,92 +445,7 @@
                 </div>
               </div>
             </div>
-
-            <div class="config-section">
-            <div class="config-section-title">服务别名</div>
-            <div class="alert alert-warning" style="margin-bottom:12px">
-            ⚠️ 添加服务别名后，需要在自己的 DNS 里配置 CNAME 记录，将别名指向此服务的代理地址（<span id="alias-proxy-hint-display" style="font-family:monospace;font-size:12px"></span>），否则别名无法正常解析。
-            <br>⚠️ 服务别名不支持 HTTPS，仅支持 HTTP。
-            </div>
-            <div class="setting-row">
-            <div class="setting-label">当前别名</div>
-            <div class="setting-value" id="alias-tags-display"></div>
-            </div>
-            </div>
-          </div>
-          <div id="security-edit" class="cfg-edit" style="display:none">
-            <div class="config-section">
-              <div class="config-section-title">鉴权设置</div>
-              <div class="setting-row">
-                <div class="setting-label">鉴权状态</div>
-                <div class="setting-value">
-                  <div class="switch-wrap">
-                    <label class="switch"><input type="checkbox" id="sec-auth-enable" onchange="handleAuthToggle()" /><span class="switch-slider"></span></label>
-                    <span id="sec-auth-label">已关闭</span>
-                  </div>
-                </div>
-              </div>
-              <div id="sec-auth-config" style="display:none">
-                <div class="setting-row">
-                  <div class="setting-label">鉴权类型</div>
-                  <div class="setting-value">
-                    <div style="display:flex;gap:20px">
-                      <label style="display:flex;align-items:center;gap:6px;cursor:pointer">
-                        <input type="radio" name="sec-auth-type" value="basic" onchange="handleAuthTypeChange()" /> Basic Auth
-                      </label>
-                      <label style="display:flex;align-items:center;gap:6px;cursor:pointer">
-                        <input type="radio" name="sec-auth-type" value="forward" onchange="handleAuthTypeChange()" /> Forward Auth
-                      </label>
-                    </div>
-                  </div>
-                </div>
-                <div id="sec-forward-fields" style="display:none">
-                  <div class="setting-row">
-                    <div class="setting-label">鉴权服务地址 <span style="color:#ff4d4f">*</span></div>
-                    <div class="setting-value">
-                      <input id="sec-forward-url" class="ant-input" style="max-width:420px" placeholder="http://your-auth-service/verify" />
-                      <div class="form-hint">代理网关收到请求后转发到此地址进行鉴权，鉴权通过则放行</div>
-                    </div>
-                  </div>
-                  <div class="setting-row">
-                    <div class="setting-label">请求方法</div>
-                    <div class="setting-value">
-                      <select id="sec-forward-method" class="ant-select" style="width:120px">
-                        <option value="GET">GET</option>
-                        <option value="POST">POST</option>
-                        <option value="HEAD">HEAD</option>
-                      </select>
-                    </div>
-                  </div>
-                  <div class="setting-row">
-                    <div class="setting-label">转发请求头</div>
-                    <div class="setting-value">
-                      <div class="form-hint" style="margin-top:0;margin-bottom:8px">转发鉴权请求时携带的原始请求头，填写字段名和字段说明，可添加多组</div>
-                      <div id="sec-forward-req-headers" style="margin-bottom:8px"></div>
-                      <div style="display:flex;gap:8px;align-items:center">
-                        <input id="sec-fwd-req-field" class="ant-input" style="width:160px" placeholder="字段名，如 Cookie" />
-                        <input id="sec-fwd-req-desc" class="ant-input" style="width:200px" placeholder="字段说明，如 登录凭证" />
-                        <button class="btn btn-default btn-sm" onclick="addFwdReqHeader()">+ 添加</button>
-                      </div>
-                    </div>
-                  </div>
-                  <div class="setting-row">
-                    <div class="setting-label">响应头回写</div>
-                    <div class="setting-value">
-                      <div class="form-hint" style="margin-top:0;margin-bottom:8px">鉴权成功后将鉴权响应中的指定头回写到原始请求，填写字段名和字段说明，可添加多组</div>
-                      <div id="sec-forward-res-headers" style="margin-bottom:8px"></div>
-                      <div style="display:flex;gap:8px;align-items:center">
-                        <input id="sec-fwd-res-field" class="ant-input" style="width:160px" placeholder="字段名，如 X-Auth-User" />
-                        <input id="sec-fwd-res-desc" class="ant-input" style="width:200px" placeholder="字段说明，如 用户ID" />
-                        <button class="btn btn-default btn-sm" onclick="addFwdResHeader()">+ 添加</button>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div class="config-section">
+            <div id="protection-edit" style="display:none">
               <div class="config-section-title">服务保护规则</div>
               <div class="protection-block">
                 <div class="sub-section-title">IP 访问控制（对应 APISIX ip-restriction 插件）</div>
@@ -705,8 +701,29 @@
                 </div>
               </div>
             </div>
+          </div>
 
-            <div class="config-section">
+          <!-- 服务别名 -->
+          <div class="config-section">
+            <div style="display:flex;justify-content:flex-end;margin-bottom:16px">
+              <button id="edit-btn-alias" class="btn btn-primary" onclick="enterEditMode('alias')">编辑别名</button>
+              <div id="alias-edit-actions" style="display:none;gap:8px;align-items:center">
+                <button class="btn btn-default" onclick="cancelEditMode('alias')">取消</button>
+                <button class="btn btn-primary" onclick="saveAliasConfig()">保存</button>
+              </div>
+            </div>
+            <div id="alias-display">
+              <div class="config-section-title">服务别名</div>
+              <div class="alert alert-warning" style="margin-bottom:12px">
+                ⚠️ 添加服务别名后，需要在自己的 DNS 里配置 CNAME 记录，将别名指向此服务的代理地址（<span id="alias-proxy-hint-display" style="font-family:monospace;font-size:12px"></span>），否则别名无法正常解析。
+                <br>⚠️ 服务别名不支持 HTTPS，仅支持 HTTP。
+              </div>
+              <div class="setting-row">
+                <div class="setting-label">当前别名</div>
+                <div class="setting-value" id="alias-tags-display"></div>
+              </div>
+            </div>
+            <div id="alias-edit" style="display:none">
               <div class="config-section-title">服务别名</div>
               <div class="alert alert-warning" style="margin-bottom:12px">
                 ⚠️ 添加服务别名后，需要在自己的 DNS 里配置 CNAME 记录，将别名指向此服务的代理地址（<span id="alias-proxy-hint" style="font-family:monospace;font-size:12px"></span>），否则别名无法正常解析。
@@ -870,35 +887,23 @@
 
         <!-- Tab: 通信配置 -->
         <div id="tab-comm" style="display:none">
-          <div style="display:flex;justify-content:flex-end;margin-bottom:16px">
-            <button id="edit-btn-comm" class="btn btn-primary" onclick="enterEditMode('comm')">编辑配置</button>
-            <div id="comm-edit-actions" style="display:none;gap:8px;align-items:center">
-              <button class="btn btn-default" onclick="cancelEditMode('comm')">取消</button>
-              <button class="btn btn-primary" onclick="saveCommConfig()">保存</button>
+          <!-- 协议支持 -->
+          <div class="config-section">
+            <div style="display:flex;justify-content:flex-end;margin-bottom:16px">
+              <button id="edit-btn-comm-protocol" class="btn btn-primary" onclick="enterEditMode('comm-protocol')">编辑协议支持</button>
+              <div id="comm-protocol-edit-actions" style="display:none;gap:8px;align-items:center">
+                <button class="btn btn-default" onclick="cancelEditMode('comm-protocol')">取消</button>
+                <button class="btn btn-primary" onclick="saveCommProtocolConfig()">保存</button>
+              </div>
             </div>
-          </div>
-          <div id="comm-display" class="cfg-display">
-            <div class="config-section">
+            <div id="comm-protocol-display">
               <div class="config-section-title">协议支持</div>
               <div class="setting-row">
                 <div class="setting-label">WebSocket 支持</div>
                 <div class="setting-value" id="comm-ws-display"></div>
               </div>
             </div>
-            <div class="config-section">
-              <div class="config-section-title">代理设置</div>
-              <div class="setting-row">
-                <div class="setting-label">Host 重写</div>
-                <div class="setting-value" id="comm-host-rewrite-display"></div>
-              </div>
-              <div class="setting-row">
-                <div class="setting-label">网关 Token</div>
-                <div class="setting-value" id="comm-gw-token-display"></div>
-              </div>
-            </div>
-          </div>
-          <div id="comm-edit" class="cfg-edit" style="display:none">
-            <div class="config-section">
+            <div id="comm-protocol-edit" style="display:none">
               <div class="config-section-title">协议支持</div>
               <div class="setting-row">
                 <div class="setting-label">WebSocket 支持</div>
@@ -911,7 +916,28 @@
                 </div>
               </div>
             </div>
-            <div class="config-section">
+          </div>
+          <!-- 代理设置 -->
+          <div class="config-section">
+            <div style="display:flex;justify-content:flex-end;margin-bottom:16px">
+              <button id="edit-btn-comm-proxy" class="btn btn-primary" onclick="enterEditMode('comm-proxy')">编辑代理设置</button>
+              <div id="comm-proxy-edit-actions" style="display:none;gap:8px;align-items:center">
+                <button class="btn btn-default" onclick="cancelEditMode('comm-proxy')">取消</button>
+                <button class="btn btn-primary" onclick="saveCommProxyConfig()">保存</button>
+              </div>
+            </div>
+            <div id="comm-proxy-display">
+              <div class="config-section-title">代理设置</div>
+              <div class="setting-row">
+                <div class="setting-label">Host 重写</div>
+                <div class="setting-value" id="comm-host-rewrite-display"></div>
+              </div>
+              <div class="setting-row">
+                <div class="setting-label">网关 Token</div>
+                <div class="setting-value" id="comm-gw-token-display"></div>
+              </div>
+            </div>
+            <div id="comm-proxy-edit" style="display:none">
               <div class="config-section-title">代理设置</div>
               <div class="setting-row">
                 <div class="setting-label">Host 重写</div>
@@ -1273,15 +1299,16 @@
 
         <!-- Tab: 日志收集 -->
         <div id="tab-log" style="display:none">
-          <div style="display:flex;justify-content:flex-end;margin-bottom:16px">
-            <button id="edit-btn-log" class="btn btn-primary" onclick="enterEditMode('log')">编辑配置</button>
-            <div id="log-edit-actions" style="display:none;gap:8px;align-items:center">
-              <button class="btn btn-default" onclick="cancelEditMode('log')">取消</button>
-              <button class="btn btn-primary" onclick="saveLogConfig()">保存</button>
+          <!-- Kafka 日志收集 -->
+          <div class="config-section">
+            <div style="display:flex;justify-content:flex-end;margin-bottom:16px">
+              <button id="edit-btn-log-kafka" class="btn btn-primary" onclick="enterEditMode('log-kafka')">编辑Kafka配置</button>
+              <div id="log-kafka-edit-actions" style="display:none;gap:8px;align-items:center">
+                <button class="btn btn-default" onclick="cancelEditMode('log-kafka')">取消</button>
+                <button class="btn btn-primary" onclick="saveLogKafkaConfig()">保存</button>
+              </div>
             </div>
-          </div>
-          <div id="log-display" class="cfg-display">
-            <div class="config-section">
+            <div id="log-kafka-display">
               <div class="config-section-title">Kafka 日志收集</div>
               <div class="setting-row">
                 <div class="setting-label">启用</div>
@@ -1298,26 +1325,7 @@
                 </div>
               </div>
             </div>
-            <div class="config-section">
-              <div class="config-section-title">Loki 日志收集</div>
-              <div class="setting-row">
-                <div class="setting-label">启用</div>
-                <div class="setting-value" id="log-loki-enable-display"></div>
-              </div>
-              <div id="loki-display" style="display:none">
-                <div class="setting-row">
-                  <div class="setting-label">Loki 推送地址</div>
-                  <div class="setting-value" id="loki-url-display"></div>
-                </div>
-                <div class="setting-row">
-                  <div class="setting-label">租户 ID</div>
-                  <div class="setting-value" id="loki-tenant-id-display"></div>
-                </div>
-              </div>
-            </div>
-          </div>
-          <div id="log-edit" class="cfg-edit" style="display:none">
-            <div class="config-section">
+            <div id="log-kafka-edit" style="display:none">
               <div class="config-section-title">Kafka 日志收集</div>
               <div class="setting-row">
                 <div class="setting-label">启用</div>
@@ -1343,7 +1351,34 @@
                 </div>
               </div>
             </div>
-            <div class="config-section">
+          </div>
+          <!-- Loki 日志收集 -->
+          <div class="config-section">
+            <div style="display:flex;justify-content:flex-end;margin-bottom:16px">
+              <button id="edit-btn-log-loki" class="btn btn-primary" onclick="enterEditMode('log-loki')">编辑Loki配置</button>
+              <div id="log-loki-edit-actions" style="display:none;gap:8px;align-items:center">
+                <button class="btn btn-default" onclick="cancelEditMode('log-loki')">取消</button>
+                <button class="btn btn-primary" onclick="saveLogLokiConfig()">保存</button>
+              </div>
+            </div>
+            <div id="log-loki-display">
+              <div class="config-section-title">Loki 日志收集</div>
+              <div class="setting-row">
+                <div class="setting-label">启用</div>
+                <div class="setting-value" id="log-loki-enable-display"></div>
+              </div>
+              <div id="loki-display" style="display:none">
+                <div class="setting-row">
+                  <div class="setting-label">Loki 推送地址</div>
+                  <div class="setting-value" id="loki-url-display"></div>
+                </div>
+                <div class="setting-row">
+                  <div class="setting-label">租户 ID</div>
+                  <div class="setting-value" id="loki-tenant-id-display"></div>
+                </div>
+              </div>
+            </div>
+            <div id="log-loki-edit" style="display:none">
               <div class="config-section-title">Loki 日志收集</div>
               <div class="setting-row">
                 <div class="setting-label">启用</div>
@@ -2253,69 +2288,108 @@ function renderSecurityDisplay() {
 }
 
 function enterEditMode(tab) {
-  if (tab === 'security') {
-    document.getElementById('edit-btn-security').style.display = 'none';
-    document.getElementById('security-edit-actions').style.display = 'flex';
-    document.getElementById('security-display').style.display = 'none';
-    document.getElementById('security-edit').style.display = '';
+  if (tab === 'auth') {
+    document.getElementById('edit-btn-auth').style.display = 'none';
+    document.getElementById('auth-edit-actions').style.display = 'flex';
+    document.getElementById('auth-display').style.display = 'none';
+    document.getElementById('auth-edit').style.display = '';
+  } else if (tab === 'protection') {
+    document.getElementById('edit-btn-protection').style.display = 'none';
+    document.getElementById('protection-edit-actions').style.display = 'flex';
+    document.getElementById('protection-display').style.display = 'none';
+    document.getElementById('protection-edit').style.display = '';
+  } else if (tab === 'alias') {
+    document.getElementById('edit-btn-alias').style.display = 'none';
+    document.getElementById('alias-edit-actions').style.display = 'flex';
+    document.getElementById('alias-display').style.display = 'none';
+    document.getElementById('alias-edit').style.display = '';
   } else if (tab === 'traffic') {
     document.getElementById('edit-btn-traffic').style.display = 'none';
     document.getElementById('traffic-edit-actions').style.display = 'flex';
     document.getElementById('traffic-display').style.display = 'none';
     document.getElementById('traffic-edit').style.display = '';
-  } else if (tab === 'comm') {
-    document.getElementById('edit-btn-comm').style.display = 'none';
-    document.getElementById('comm-edit-actions').style.display = 'flex';
-    document.getElementById('comm-display').style.display = 'none';
-    document.getElementById('comm-edit').style.display = '';
+  } else if (tab === 'comm-protocol') {
+    document.getElementById('edit-btn-comm-protocol').style.display = 'none';
+    document.getElementById('comm-protocol-edit-actions').style.display = 'flex';
+    document.getElementById('comm-protocol-display').style.display = 'none';
+    document.getElementById('comm-protocol-edit').style.display = '';
+  } else if (tab === 'comm-proxy') {
+    document.getElementById('edit-btn-comm-proxy').style.display = 'none';
+    document.getElementById('comm-proxy-edit-actions').style.display = 'flex';
+    document.getElementById('comm-proxy-display').style.display = 'none';
+    document.getElementById('comm-proxy-edit').style.display = '';
   } else if (tab === 'health') {
     document.getElementById('edit-btn-health').style.display = 'none';
     document.getElementById('health-edit-actions').style.display = 'flex';
     document.getElementById('health-display').style.display = 'none';
     document.getElementById('health-edit').style.display = '';
-  } else if (tab === 'log') {
-    document.getElementById('edit-btn-log').style.display = 'none';
-    document.getElementById('log-edit-actions').style.display = 'flex';
-    document.getElementById('log-display').style.display = 'none';
-    document.getElementById('log-edit').style.display = '';
+  } else if (tab === 'log-kafka') {
+    document.getElementById('edit-btn-log-kafka').style.display = 'none';
+    document.getElementById('log-kafka-edit-actions').style.display = 'flex';
+    document.getElementById('log-kafka-display').style.display = 'none';
+    document.getElementById('log-kafka-edit').style.display = '';
+  } else if (tab === 'log-loki') {
+    document.getElementById('edit-btn-log-loki').style.display = 'none';
+    document.getElementById('log-loki-edit-actions').style.display = 'flex';
+    document.getElementById('log-loki-display').style.display = 'none';
+    document.getElementById('log-loki-edit').style.display = '';
   }
 }
 
 function cancelEditMode(tab) {
-  if (tab === 'security') {
-    document.getElementById('edit-btn-security').style.display = '';
-    document.getElementById('security-edit-actions').style.display = 'none';
-    document.getElementById('security-edit').style.display = 'none';
-    document.getElementById('security-display').style.display = '';
-    // 重新初始化数据
+  if (tab === 'auth') {
+    document.getElementById('edit-btn-auth').style.display = '';
+    document.getElementById('auth-edit-actions').style.display = 'none';
+    document.getElementById('auth-edit').style.display = 'none';
+    document.getElementById('auth-display').style.display = '';
+    initSecurityTab();
+  } else if (tab === 'protection') {
+    document.getElementById('edit-btn-protection').style.display = '';
+    document.getElementById('protection-edit-actions').style.display = 'none';
+    document.getElementById('protection-edit').style.display = 'none';
+    document.getElementById('protection-display').style.display = '';
+    initSecurityTab();
+  } else if (tab === 'alias') {
+    document.getElementById('edit-btn-alias').style.display = '';
+    document.getElementById('alias-edit-actions').style.display = 'none';
+    document.getElementById('alias-edit').style.display = 'none';
+    document.getElementById('alias-display').style.display = '';
     initSecurityTab();
   } else if (tab === 'traffic') {
     document.getElementById('edit-btn-traffic').style.display = '';
     document.getElementById('traffic-edit-actions').style.display = 'none';
     document.getElementById('traffic-edit').style.display = 'none';
     document.getElementById('traffic-display').style.display = '';
-    // 重新初始化数据
     initTrafficTab();
-  } else if (tab === 'comm') {
-    document.getElementById('edit-btn-comm').style.display = '';
-    document.getElementById('comm-edit-actions').style.display = 'none';
-    document.getElementById('comm-edit').style.display = 'none';
-    document.getElementById('comm-display').style.display = '';
-    // 重新初始化数据
+  } else if (tab === 'comm-protocol') {
+    document.getElementById('edit-btn-comm-protocol').style.display = '';
+    document.getElementById('comm-protocol-edit-actions').style.display = 'none';
+    document.getElementById('comm-protocol-edit').style.display = 'none';
+    document.getElementById('comm-protocol-display').style.display = '';
+    initCommTab();
+  } else if (tab === 'comm-proxy') {
+    document.getElementById('edit-btn-comm-proxy').style.display = '';
+    document.getElementById('comm-proxy-edit-actions').style.display = 'none';
+    document.getElementById('comm-proxy-edit').style.display = 'none';
+    document.getElementById('comm-proxy-display').style.display = '';
     initCommTab();
   } else if (tab === 'health') {
     document.getElementById('edit-btn-health').style.display = '';
     document.getElementById('health-edit-actions').style.display = 'none';
     document.getElementById('health-edit').style.display = 'none';
     document.getElementById('health-display').style.display = '';
-    // 重新初始化数据
     initHealthTab();
-  } else if (tab === 'log') {
-    document.getElementById('edit-btn-log').style.display = '';
-    document.getElementById('log-edit-actions').style.display = 'none';
-    document.getElementById('log-edit').style.display = 'none';
-    document.getElementById('log-display').style.display = '';
-    // 重新初始化数据
+  } else if (tab === 'log-kafka') {
+    document.getElementById('edit-btn-log-kafka').style.display = '';
+    document.getElementById('log-kafka-edit-actions').style.display = 'none';
+    document.getElementById('log-kafka-edit').style.display = 'none';
+    document.getElementById('log-kafka-display').style.display = '';
+    initLogTab();
+  } else if (tab === 'log-loki') {
+    document.getElementById('edit-btn-log-loki').style.display = '';
+    document.getElementById('log-loki-edit-actions').style.display = 'none';
+    document.getElementById('log-loki-edit').style.display = 'none';
+    document.getElementById('log-loki-display').style.display = '';
     initLogTab();
   }
 }
@@ -2409,7 +2483,7 @@ function renderSecAliasTags() {
     ? '<span style="color:rgba(0,0,0,0.25);font-size:13px">暂未配置别名</span>'
     : secAliases.map((a,i) => `<span class="alias-tag">${escHtml(a)}<span class="del" onclick="removeSecAlias(${i})">×</span></span>`).join('');
 }
-function saveSecurityConfig() {
+function saveAuthConfig() {
   const enabled = document.getElementById('sec-auth-enable').checked;
   const type    = document.querySelector('input[name="sec-auth-type"]:checked')?.value || 'basic';
   svc.auth = enabled ? type : 'disabled';
@@ -2426,6 +2500,15 @@ function saveSecurityConfig() {
   } else {
     svc.authConfig = null;
   }
+  allSvcs = allSvcs.map(s => s.id === svc.id ? svc : s);
+  saveSvcs(allSvcs);
+  cancelEditMode('auth');
+  renderInfo();
+  renderTabs();
+  showToast('鉴权配置已保存');
+}
+
+function saveProtectionConfig() {
   svc.ipControl = {
     enabled:      document.getElementById('sec-ip-ctrl-enable').checked,
     whitelist:    document.getElementById('sec-ip-whitelist').value.split('\n').map(s => s.trim()).filter(Boolean),
@@ -2467,13 +2550,22 @@ function saveSecurityConfig() {
     rejectedMsg:     document.getElementById('sec-uri-rejected-msg').value.trim(),
     caseInsensitive: document.getElementById('sec-uri-case-insensitive').checked,
   };
+  allSvcs = allSvcs.map(s => s.id === svc.id ? svc : s);
+  saveSvcs(allSvcs);
+  cancelEditMode('protection');
+  renderInfo();
+  renderTabs();
+  showToast('服务保护规则已保存');
+}
+
+function saveAliasConfig() {
   svc.aliases = [...secAliases];
   allSvcs = allSvcs.map(s => s.id === svc.id ? svc : s);
   saveSvcs(allSvcs);
-  cancelEditMode('security');
+  cancelEditMode('alias');
   renderInfo();
   renderTabs();
-  showToast('安全配置已保存');
+  showToast('服务别名已保存');
 }
 
 /* ── 流量调度 ── */
@@ -2574,16 +2666,23 @@ function handleWsToggle() {
   document.getElementById('comm-ws-label').textContent = enabled ? '已开启' : '已关闭';
   document.getElementById('comm-ws-label').style.color = enabled ? '#1890ff' : 'rgba(0,0,0,0.45)';
 }
-function saveCommConfig() {
-  svc.wsEnabled   = document.getElementById('comm-ws-enable').checked;
-  svc.hostRewrite = document.getElementById('comm-host-rewrite').value;
-  svc.gwToken     = document.getElementById('comm-gw-token').value;
+function saveCommProtocolConfig() {
+  svc.wsEnabled = document.getElementById('comm-ws-enable').checked;
   allSvcs = allSvcs.map(s => s.id === svc.id ? svc : s);
   saveSvcs(allSvcs);
   renderCommDisplay();
-  // 切换回终态展示
-  cancelEditMode('comm');
-  showToast('通信配置已保存');
+  cancelEditMode('comm-protocol');
+  showToast('协议支持配置已保存');
+}
+
+function saveCommProxyConfig() {
+  svc.hostRewrite = document.getElementById('comm-host-rewrite').value;
+  svc.gwToken = document.getElementById('comm-gw-token').value;
+  allSvcs = allSvcs.map(s => s.id === svc.id ? svc : s);
+  saveSvcs(allSvcs);
+  renderCommDisplay();
+  cancelEditMode('comm-proxy');
+  showToast('代理设置已保存');
 }
 
 /* ── 健康检查 ── */
@@ -2806,12 +2905,20 @@ function handleLokiToggle() {
   document.getElementById('log-loki-label').style.color = enabled ? '#1890ff' : 'rgba(0,0,0,0.45)';
   document.getElementById('loki-config').style.display = enabled ? '' : 'none';
 }
-function saveLogConfig() {
+function saveLogKafkaConfig() {
   svc.kafkaLog = {
     enabled: document.getElementById('log-kafka-enable').checked,
     brokers:  document.getElementById('kafka-brokers').value,
     topic:    document.getElementById('kafka-topic').value,
   };
+  allSvcs = allSvcs.map(s => s.id === svc.id ? svc : s);
+  saveSvcs(allSvcs);
+  renderLogDisplay();
+  cancelEditMode('log-kafka');
+  showToast('Kafka日志配置已保存');
+}
+
+function saveLogLokiConfig() {
   svc.lokiLog = {
     enabled:  document.getElementById('log-loki-enable').checked,
     url:      document.getElementById('loki-url').value,
@@ -2820,9 +2927,8 @@ function saveLogConfig() {
   allSvcs = allSvcs.map(s => s.id === svc.id ? svc : s);
   saveSvcs(allSvcs);
   renderLogDisplay();
-  // 切换回终态展示
-  cancelEditMode('log');
-  showToast('日志配置已保存');
+  cancelEditMode('log-loki');
+  showToast('Loki日志配置已保存');
 }
 
 /* ── 操作记录 ── */
