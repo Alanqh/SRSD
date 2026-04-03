@@ -119,7 +119,7 @@
           </div>
         </div>
         <div class="form-item">
-          <label class="form-label required">实例地址形式</label>
+          <label class="form-label required">实例地址样式</label>
           <div class="form-control">
             <select id="form-addrtype" class="ant-select">
               <option value="">请选择</option>
@@ -298,6 +298,7 @@ function openCreateModal() {
   document.getElementById('form-svcname').value = '';
   document.getElementById('form-svcname').disabled = false;
   document.getElementById('form-ns').value = '';
+  document.getElementById('form-ns').disabled = false;
   document.getElementById('form-addrtype').value = '';
   document.getElementById('form-protocol').value = '';
   document.getElementById('form-desc').value = '';
@@ -313,6 +314,7 @@ function openEditModal(id) {
   document.getElementById('form-svcname').value = row.name;
   document.getElementById('form-svcname').disabled = true;
   document.getElementById('form-ns').value = row.ns;
+  document.getElementById('form-ns').disabled = true;
   document.getElementById('form-addrtype').value = row.addrType;
   document.getElementById('form-protocol').value = row.protocol;
   document.getElementById('form-desc').value = row.desc || '';
@@ -338,7 +340,7 @@ function submitSvcModal() {
     else if (!/^[a-z][a-z0-9-]*[a-z0-9]$/.test(svcname) && !/^[a-z]$/.test(svcname)) { setFieldError('svcname', '以小写字母开头，可包含小写字母、数字和连字符，不能以连字符结尾'); valid = false; }
     else { setFieldError('svcname', ''); }
   }
-  if (!addrtype) { setFieldError('addrtype', '请选择实例地址形式'); valid = false; } else { setFieldError('addrtype', ''); }
+  if (!addrtype) { setFieldError('addrtype', '请选择实例地址样式'); valid = false; } else { setFieldError('addrtype', ''); }
   if (!protocol) { setFieldError('protocol', '请选择协议类型'); valid = false; } else { setFieldError('protocol', ''); }
   if (!valid) return;
 
@@ -378,22 +380,26 @@ function buildProxyPanel(proto, domain, aliases) {
       <div style="font-size:12px;color:rgba(0,0,0,0.45);margin-bottom:6px">默认代理地址</div>
       <div style="display:flex;align-items:center;gap:8px;background:#fafafa;border:1px solid #f0f0f0;padding:8px 12px">
         <span style="font-family:monospace;font-size:13px;flex:1;word-break:break-all">${escHtml(defaultAddr)}</span>
+        <button class="btn btn-default btn-sm" onclick="window.open('${escHtml(defaultAddr)}', '_blank')">访问</button>
         <button class="btn btn-default btn-sm" onclick="copyProxyAddr('${escHtml(defaultAddr)}')">复制</button>
       </div>
     </div>`;
-  if (proto === 'http' && aliases.length > 0) {
-    html += `<div>
-      <div style="font-size:12px;color:rgba(0,0,0,0.45);margin-bottom:6px">别名代理地址</div>`;
-    aliases.forEach(alias => {
-      const aliasUrl = `${proto}://${alias}`;
-      html += `<div style="display:flex;align-items:center;gap:8px;background:#fafafa;border:1px solid #f0f0f0;padding:8px 12px;margin-bottom:4px">
-        <span style="font-family:monospace;font-size:13px;flex:1;word-break:break-all">${escHtml(aliasUrl)}</span>
-        <button class="btn btn-default btn-sm" onclick="copyProxyAddr('${escHtml(aliasUrl)}')">复制</button>
-      </div>`;
-    });
-    html += `</div>`;
-  } else {
-    html += `<div style="color:rgba(0,0,0,0.25);font-size:13px">暂无别名代理地址</div>`;
+  if (proto === 'http') {
+    if (aliases.length > 0) {
+      html += `<div>
+        <div style="font-size:12px;color:rgba(0,0,0,0.45);margin-bottom:6px">别名代理地址</div>`;
+      aliases.forEach(alias => {
+        const aliasUrl = `${proto}://${alias}`;
+        html += `<div style="display:flex;align-items:center;gap:8px;background:#fafafa;border:1px solid #f0f0f0;padding:8px 12px;margin-bottom:4px">
+          <span style="font-family:monospace;font-size:13px;flex:1;word-break:break-all">${escHtml(aliasUrl)}</span>
+          <button class="btn btn-default btn-sm" onclick="window.open('${escHtml(aliasUrl)}', '_blank')">访问</button>
+          <button class="btn btn-default btn-sm" onclick="copyProxyAddr('${escHtml(aliasUrl)}')">复制</button>
+        </div>`;
+      });
+      html += `</div>`;
+    } else {
+      html += `<div style="color:rgba(0,0,0,0.25);font-size:13px">暂无别名代理地址</div>`;
+    }
   }
   return html;
 }

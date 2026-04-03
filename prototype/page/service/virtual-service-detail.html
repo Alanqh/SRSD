@@ -1098,21 +1098,25 @@ function buildProxyPanel(proto, domain, aliases) {
       <div style="font-size:12px;color:rgba(0,0,0,0.45);margin-bottom:6px">默认代理地址</div>
       <div style="display:flex;align-items:center;gap:8px;background:#fafafa;border:1px solid #f0f0f0;padding:8px 12px">
         <span style="font-family:monospace;font-size:13px;flex:1;word-break:break-all">${escHtml(defaultAddr)}</span>
+        <button class="btn btn-default btn-sm" onclick="window.open('${escHtml(defaultAddr)}', '_blank')">访问</button>
         <button class="btn btn-default btn-sm" onclick="copyProxyAddr('${escHtml(defaultAddr)}')">复制</button>
       </div>
     </div>`;
-  if (proto === 'http' && aliases.length > 0) {
-    html += `<div><div style="font-size:12px;color:rgba(0,0,0,0.45);margin-bottom:6px">别名代理地址</div>`;
-    aliases.forEach(alias => {
-      const aliasUrl = `${proto}://${alias}`;
-      html += `<div style="display:flex;align-items:center;gap:8px;background:#fafafa;border:1px solid #f0f0f0;padding:8px 12px;margin-bottom:4px">
-        <span style="font-family:monospace;font-size:13px;flex:1;word-break:break-all">${escHtml(aliasUrl)}</span>
-        <button class="btn btn-default btn-sm" onclick="copyProxyAddr('${escHtml(aliasUrl)}')">复制</button>
-      </div>`;
-    });
-    html += `</div>`;
-  } else {
-    html += `<div style="color:rgba(0,0,0,0.25);font-size:13px">暂无别名代理地址</div>`;
+  if (proto === 'http') {
+    if (aliases && aliases.length > 0) {
+      html += `<div><div style="font-size:12px;color:rgba(0,0,0,0.45);margin-bottom:6px">别名代理地址</div>`;
+      aliases.forEach(alias => {
+        const aliasUrl = `${proto}://${alias}`;
+        html += `<div style="display:flex;align-items:center;gap:8px;background:#fafafa;border:1px solid #f0f0f0;padding:8px 12px;margin-bottom:4px">
+          <span style="font-family:monospace;font-size:13px;flex:1;word-break:break-all">${escHtml(aliasUrl)}</span>
+          <button class="btn btn-default btn-sm" onclick="window.open('${escHtml(aliasUrl)}', '_blank')">访问</button>
+          <button class="btn btn-default btn-sm" onclick="copyProxyAddr('${escHtml(aliasUrl)}')">复制</button>
+        </div>`;
+      });
+      html += `</div>`;
+    } else {
+      html += `<div style="color:rgba(0,0,0,0.25);font-size:13px">暂无别名代理地址</div>`;
+    }
   }
   return html;
 }
