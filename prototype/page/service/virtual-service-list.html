@@ -20,6 +20,7 @@
     .upstream-row { display:flex; align-items:center; gap:8px; margin-bottom:6px; }
     .route-summary { font-size:12px; color:rgba(0,0,0,0.45); }
     .modal-body-scroll { max-height:calc(80vh - 120px); overflow-y:auto; }
+    .desc-cell { max-width:200px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; cursor:help; }
   </style>
 </head>
 <body>
@@ -81,6 +82,7 @@
             <th>命名空间</th>
             <th>代理地址</th>
             <th>鉴权</th>
+            <th>描述</th>
             <th>流量规则</th>
             <th>创建人</th>
             <th>创建时间</th>
@@ -241,7 +243,7 @@ function renderTable() {
   document.getElementById('page-total').textContent = `共 ${filtered.length} 条`;
   const tbody = document.getElementById('table-body');
   if (paged.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="8"><div class="empty-table">暂无虚拟服务</div></td></tr>';
+    tbody.innerHTML = '<tr><td colspan="9"><div class="empty-table">暂无虚拟服务</div></td></tr>';
     renderPagination(0); return;
   }
   tbody.innerHTML = paged.map(row => `<tr>
@@ -251,6 +253,7 @@ function renderTable() {
       <button class="btn btn-default btn-sm" onclick="openProxyModal('${escHtml(row.id)}')">查看</button>
     </td>
     <td><span class="tag ${AUTH_CLASS[row.auth]}">${AUTH_LABEL[row.auth]}</span></td>
+    <td class="desc-cell" title="${escHtml(row.desc || '')}">${escHtml(row.desc || '--')}</td>
     <td>
       <button class="btn btn-default btn-sm" onclick="openTrafficModal('${escHtml(row.id)}')">查看</button>
     </td>
