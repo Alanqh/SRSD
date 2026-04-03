@@ -119,7 +119,7 @@
           </div>
         </div>
         <div class="form-item">
-          <label class="form-label required">实例地址类型</label>
+          <label class="form-label required">实例地址形式</label>
           <div class="form-control">
             <select id="form-addrtype" class="ant-select">
               <option value="">请选择</option>
@@ -338,7 +338,7 @@ function submitSvcModal() {
     else if (!/^[a-z][a-z0-9-]*[a-z0-9]$/.test(svcname) && !/^[a-z]$/.test(svcname)) { setFieldError('svcname', '以小写字母开头，可包含小写字母、数字和连字符，不能以连字符结尾'); valid = false; }
     else { setFieldError('svcname', ''); }
   }
-  if (!addrtype) { setFieldError('addrtype', '请选择实例地址类型'); valid = false; } else { setFieldError('addrtype', ''); }
+  if (!addrtype) { setFieldError('addrtype', '请选择实例地址形式'); valid = false; } else { setFieldError('addrtype', ''); }
   if (!protocol) { setFieldError('protocol', '请选择协议类型'); valid = false; } else { setFieldError('protocol', ''); }
   if (!valid) return;
 
