@@ -354,7 +354,7 @@ function submitSvcModal() {
     showToast('编辑成功');
   } else {
     if (list.find(r => r.name === svcname && r.ns === ns)) { setFieldError('svcname', '该命名空间下服务名已存在'); return; }
-    list.unshift({ id: genId(), name: svcname, ns, bizline, proxy, auth: 'disabled', desc, protocol, addrType: addrtype, createdAt: now(), updatedAt: now() });
+    list.unshift({ id: genId(), name: svcname, ns, bizline, proxy, auth: 'disabled', desc, protocol, addrType: addrtype, createdBy: '吕青华', createdAt: now(), updatedAt: now() });
     save(list);
     currentPage = 1;
     showToast('创建成功');

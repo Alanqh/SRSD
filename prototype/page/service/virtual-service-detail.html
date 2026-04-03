@@ -178,26 +178,32 @@
               以下服务可直接访问。根据各服务的鉴权类型，提供相应凭证或配置信息。
             </p>
             <div style="display:flex;gap:8px;margin-bottom:12px">
-              <input id="access-search-kw" class="ant-input" style="width:320px" placeholder="输入服务名称或代理地址搜索" onkeyup="if(event.key==='Enter')renderAccessTable()" />
-              <button class="btn btn-default" onclick="renderAccessTable()">查询</button>
+              <input id="access-search-kw" class="ant-input" style="width:320px" placeholder="输入服务名称或代理地址搜索" onkeyup="if(event.key==='Enter'){vsAccessPage1=1;renderAccessTable()}" />
+              <button class="btn btn-default" onclick="vsAccessPage1=1;renderAccessTable()">查询</button>
             </div>
             <table class="ant-table" style="width:100%">
               <thead><tr><th>服务名称</th><th>命名空间</th><th>代理地址</th><th>鉴权类型</th><th>操作</th></tr></thead>
               <tbody id="access-accessible-body"></tbody>
             </table>
+            <div id="access-accessible-footer"></div>
           </div>
           <div class="config-section">
             <div class="config-section-title">其他私有空间服务（需申请审批）</div>
             <div class="alert alert-info" style="margin-bottom:12px">
               访问其他私有命名空间下的鉴权服务，需先提交访问申请，审批通过后方可使用专用凭证。未开启鉴权的服务无需申请。
             </div>
-            <div style="display:flex;justify-content:flex-end;margin-bottom:12px">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+              <div style="display:flex;gap:8px">
+                <input id="access-private-kw" class="ant-input" style="width:320px" placeholder="按服务名称搜索" onkeyup="if(event.key==='Enter'){vsAccessPage2=1;renderAccessPrivateList()}" />
+                <button class="btn btn-default" onclick="vsAccessPage2=1;renderAccessPrivateList()">查询</button>
+              </div>
               <a class="btn btn-primary" href="../apply/apply-list.html">+ 申请访问其他服务</a>
             </div>
             <table class="ant-table" style="width:100%">
               <thead><tr><th>服务名称</th><th>所属空间</th><th>代理地址</th><th>鉴权类型</th><th>申请状态</th><th>操作</th></tr></thead>
               <tbody id="access-private-body"></tbody>
             </table>
+            <div id="access-private-footer"></div>
           </div>
         </div>
 
@@ -988,6 +994,9 @@ const AUTH_CLASS_MAP = { none: 'tag-default', disabled: 'tag-default', basic: 't
 const COND_TYPE_LABEL  = { header: 'HTTP 请求头', cookie: 'Cookie', query: '查询参数', path: '路径前缀' };
 const MATCH_TYPE_LABEL = { exact: '精确', prefix: '前缀', regex: '正则' };
 const PUBLIC_NAMESPACES = new Set(['domeos-pub', 'sohu-cs-public']);
+const ACCESS_PAGE_SIZE = 5;
+let vsAccessPage1 = 1;
+let vsAccessPage2 = 1;
 
 /* ── 404 处理 ── */
 if (!vs) {
@@ -1051,15 +1060,17 @@ function switchTab(key) {
 function renderInfo() {
   const db = vs.defaultBackend || {};
   const routes = vs.routes || [];
+  const AUTH_LABEL_MAP = { none: '不支持', disabled: '已关闭', basic: 'Basic Auth', forward: 'Forward Auth' };
   const rows = [
     { label: '虚拟服务名称', value: vs.name },
     { label: '命名空间',     value: vs.ns },
     { label: '业务线',       value: vs.bizline || '--' },
+    { label: '协议类型',     value: (vs.protocol || 'http').toUpperCase() },
     { label: '默认后端',     value: db.serviceName || db.serviceId || '--' },
-    { label: '条件路由数',   value: String(routes.length) },
+    { label: '条件路由规则',   value: String(routes.length) },
+    { label: '鉴权',         value: AUTH_LABEL_MAP[vs.auth] || vs.auth },
     { label: '创建人',       value: vs.createdBy || '--' },
     { label: '创建时间',     value: formatTime(vs.createdAt) },
-    { label: '服务描述',     value: vs.desc || '--' },
   ];
   document.getElementById('vs-info-body').innerHTML = rows.map(r => `
     <div class="desc-item">
@@ -1070,6 +1081,10 @@ function renderInfo() {
     <div class="desc-item">
       <div class="desc-label">代理地址</div>
       <div class="desc-value"><button class="btn btn-default btn-sm" onclick="openProxyModal()">查看</button></div>
+    </div>
+    <div class="desc-item">
+      <div class="desc-label">服务描述</div>
+      <div class="desc-value">${escHtml(vs.desc || '--')}</div>
     </div>
   `;
 }
@@ -1406,51 +1421,85 @@ function renderAccessTable() {
     (PUBLIC_NAMESPACES.has(s.ns) || s.ns === vs.ns) &&
     (!kw || s.name.toLowerCase().includes(kw) || s.proxy.toLowerCase().includes(kw))
   );
+  const totalPages = Math.max(1, Math.ceil(accessible.length / ACCESS_PAGE_SIZE));
+  vsAccessPage1 = Math.min(vsAccessPage1, totalPages);
+  const start = (vsAccessPage1 - 1) * ACCESS_PAGE_SIZE;
+  const paged = accessible.slice(start, start + ACCESS_PAGE_SIZE);
   const tbody = document.getElementById('access-accessible-body');
-  if (accessible.length === 0) {
+  if (paged.length === 0) {
     tbody.innerHTML = '<tr><td colspan="5"><div class="empty-table">暂无可访问的服务</div></td></tr>';
-    return;
+  } else {
+    tbody.innerHTML = paged.map(s => {
+      const authLabel = { none: '无需鉴权', disabled: '无需鉴权', basic: 'Basic Auth', forward: 'Forward Auth' }[s.auth] || s.auth;
+      const authClass = AUTH_CLASS_MAP[s.auth] || 'tag-default';
+      let op = '<span style="color:rgba(0,0,0,0.25)">直接访问</span>';
+      if (s.auth === 'basic')   op = `<button class="btn btn-link" onclick="viewUniversalCred('${escHtml(s.id)}')">查看通用凭证</button>`;
+      if (s.auth === 'forward') op = `<button class="btn btn-link" onclick="viewFwdConfig('${escHtml(s.id)}')">查询鉴权配置</button>`;
+      return `<tr>
+        <td>${escHtml(s.name)}</td>
+        <td>${escHtml(s.ns)}</td>
+        <td><button class="btn btn-default btn-sm" onclick="openProxyModal(${JSON.stringify({name:s.name,proxy:s.proxy,protocol:s.protocol||'http',aliases:s.aliases||[]})})">查看</button></td>
+        <td><span class="tag ${authClass}">${escHtml(authLabel)}</span></td>
+        <td>${op}</td>
+      </tr>`;
+    }).join('');
   }
-  tbody.innerHTML = accessible.map(s => {
-    const authLabel = { none: '无需鉴权', disabled: '无需鉴权', basic: 'Basic Auth', forward: 'Forward Auth' }[s.auth] || s.auth;
-    const authClass = AUTH_CLASS_MAP[s.auth] || 'tag-default';
-    let op = '<span style="color:rgba(0,0,0,0.25)">直接访问</span>';
-    if (s.auth === 'basic')   op = `<button class="btn btn-link" onclick="viewUniversalCred('${escHtml(s.id)}')">查看通用凭证</button>`;
-    if (s.auth === 'forward') op = `<button class="btn btn-link" onclick="viewFwdConfig('${escHtml(s.id)}')">查询鉴权配置</button>`;
-    return `<tr>
-      <td>${escHtml(s.name)}</td>
-      <td>${escHtml(s.ns)}</td>
-      <td><button class="btn btn-default btn-sm" onclick="openProxyModal(${JSON.stringify({name:s.name,proxy:s.proxy,protocol:s.protocol||'http',aliases:s.aliases||[]})})">查看</button></td>
-      <td><span class="tag ${authClass}">${escHtml(authLabel)}</span></td>
-      <td>${op}</td>
-    </tr>`;
-  }).join('');
+  document.getElementById('access-accessible-footer').innerHTML = renderPaginationHtml(vsAccessPage1, totalPages, accessible.length, 'goVsAccessPage1');
+}
+
+function goVsAccessPage1(page) {
+  vsAccessPage1 = page;
+  renderAccessTable();
 }
 
 function renderAccessPrivateList() {
+  const kw = document.getElementById('access-private-kw')?.value.trim().toLowerCase() || '';
   const MOCK_APPROVED = [
     { id: 'cross-1', name: 'nightingale-prod', ns: 'cloud-native', proxy: 'nightingale-prod-cloud-native.domeos.sohucs.com', auth: 'forward', status: '已授权' },
   ].filter(r => r.ns !== vs.ns && !PUBLIC_NAMESPACES.has(r.ns));
+  const filtered = MOCK_APPROVED.filter(r => !kw || r.name.toLowerCase().includes(kw));
+  const totalPages = Math.max(1, Math.ceil(filtered.length / ACCESS_PAGE_SIZE));
+  vsAccessPage2 = Math.min(vsAccessPage2, totalPages);
+  const start = (vsAccessPage2 - 1) * ACCESS_PAGE_SIZE;
+  const paged = filtered.slice(start, start + ACCESS_PAGE_SIZE);
   const tbody = document.getElementById('access-private-body');
-  if (MOCK_APPROVED.length === 0) {
+  if (paged.length === 0) {
     tbody.innerHTML = '<tr><td colspan="6"><div class="empty-table">暂无已申请的跨空间服务</div></td></tr>';
-    return;
+  } else {
+    tbody.innerHTML = paged.map(r => {
+      const authLabel = { basic: 'Basic Auth', forward: 'Forward Auth' }[r.auth] || r.auth;
+      const authClass = { basic: 'tag-processing', forward: 'tag-success' }[r.auth] || 'tag-default';
+      let op = '';
+      if (r.auth === 'basic')   op = `<button class="btn btn-link" onclick="viewPrivateCred('${escHtml(r.id)}')">查看专用凭证</button>`;
+      if (r.auth === 'forward') op = `<button class="btn btn-link" onclick="viewFwdConfig('${escHtml(r.id)}')">查看鉴权配置</button>`;
+      return `<tr>
+        <td>${escHtml(r.name)}</td>
+        <td>${escHtml(r.ns)}</td>
+        <td><button class="btn btn-default btn-sm" onclick="openProxyModal(${JSON.stringify({name:r.name,proxy:r.proxy,protocol:'http',aliases:[]})})">查看</button></td>
+        <td><span class="tag ${authClass}">${escHtml(authLabel)}</span></td>
+        <td><span class="tag tag-success">${escHtml(r.status)}</span></td>
+        <td>${op}</td>
+      </tr>`;
+    }).join('');
   }
-  tbody.innerHTML = MOCK_APPROVED.map(r => {
-    const authLabel = { basic: 'Basic Auth', forward: 'Forward Auth' }[r.auth] || r.auth;
-    const authClass = { basic: 'tag-processing', forward: 'tag-success' }[r.auth] || 'tag-default';
-    let op = '';
-    if (r.auth === 'basic')   op = `<button class="btn btn-link" onclick="viewPrivateCred('${escHtml(r.id)}')">查看专用凭证</button>`;
-    if (r.auth === 'forward') op = `<button class="btn btn-link" onclick="viewFwdConfig('${escHtml(r.id)}')">查看鉴权配置</button>`;
-    return `<tr>
-      <td>${escHtml(r.name)}</td>
-      <td>${escHtml(r.ns)}</td>
-      <td><button class="btn btn-default btn-sm" onclick="openProxyModal(${JSON.stringify({name:r.name,proxy:r.proxy,protocol:'http',aliases:[]})})">查看</button></td>
-      <td><span class="tag ${authClass}">${escHtml(authLabel)}</span></td>
-      <td><span class="tag tag-success">${escHtml(r.status)}</span></td>
-      <td>${op}</td>
-    </tr>`;
-  }).join('');
+  document.getElementById('access-private-footer').innerHTML = renderPaginationHtml(vsAccessPage2, totalPages, filtered.length, 'goVsAccessPage2');
+}
+
+function goVsAccessPage2(page) {
+  vsAccessPage2 = page;
+  renderAccessPrivateList();
+}
+
+function renderPaginationHtml(currentPage, totalPages, total, handlerName) {
+  if (totalPages <= 1) {
+    return `<div class="table-footer"><span class="pagination-total">共 ${total} 条</span></div>`;
+  }
+  let html = `<button class="page-btn" ${currentPage === 1 ? 'disabled' : ''} onclick="${handlerName}(${currentPage - 1})">‹</button>`;
+  for (let p = 1; p <= totalPages; p++) {
+    html += `<button class="page-btn ${p === currentPage ? 'active' : ''}" onclick="${handlerName}(${p})">${p}</button>`;
+  }
+  html += `<button class="page-btn" ${currentPage >= totalPages ? 'disabled' : ''} onclick="${handlerName}(${currentPage + 1})">›</button>`;
+  return `<div class="table-footer"><span class="pagination-total">共 ${total} 条</span><div class="ant-pagination">${html}</div></div>`;
 }
 
 let credPwdVisible = false;
@@ -1514,8 +1563,7 @@ function viewFwdConfig(id) {
     <div class="cred-row" style="flex-direction:column;align-items:flex-start;gap:4px">
       <div class="cred-label" style="width:auto;font-weight:500">响应头回写</div>
       <div style="padding-left:4px;width:100%">${fmtHdrs(resHdrs)}</div>
-    </div>
-    <div class="cred-row"><div class="cred-label">说明</div><div class="cred-val" style="color:rgba(0,0,0,0.65)">请求时须在指定 Header 中携带有效凭证，代理网关自动转发至鉴权服务验证</div></div>`;
+    </div>`;
   openModal(document.getElementById('cred-modal'));
 }
 

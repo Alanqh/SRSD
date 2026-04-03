@@ -76,13 +76,14 @@
                 <div class="config-section-title">公共空间 &amp; 同命名空间服务</div>
                 <p style="color:rgba(0,0,0,0.45);font-size:13px;margin-bottom:12px">以下服务可直接访问。根据各服务的鉴权类型，提供相应凭证或配置信息。</p>
                 <div style="display:flex;gap:8px;margin-bottom:12px">
-                  <input id="profile-access-kw" class="ant-input" style="width:320px" placeholder="输入服务名称或代理地址搜索" onkeyup="if(event.key==='Enter')renderProfileAccessTable()" />
-                  <button class="btn btn-default" onclick="renderProfileAccessTable()">查询</button>
+                  <input id="profile-access-kw" class="ant-input" style="width:320px" placeholder="输入服务名称或代理地址搜索" onkeyup="if(event.key==='Enter'){profileAccessPage=1;renderProfileAccessTable()}" />
+                  <button class="btn btn-default" onclick="profileAccessPage=1;renderProfileAccessTable()">查询</button>
                 </div>
                 <table class="ant-table" style="width:100%">
                   <thead><tr><th>服务名称</th><th>命名空间</th><th>代理地址</th><th>鉴权类型</th><th>操作</th></tr></thead>
                   <tbody id="profile-access-tbody"></tbody>
                 </table>
+                <div id="profile-access-footer"></div>
               </div>
 
               <div class="config-section">
@@ -91,12 +92,17 @@
                   ℹ️ 访问其他私有命名空间下开启了鉴权的服务，需先提交访问申请，审批通过后方可使用专用凭证。未开启鉴权的服务无需申请。
                 </div>
                 <div style="display:flex;justify-content:flex-end;margin-bottom:12px">
+                  <div style="display:flex;gap:8px;margin-right:auto">
+                    <input id="profile-private-kw" class="ant-input" style="width:320px" placeholder="按服务名称搜索" onkeyup="if(event.key==='Enter'){profilePrivatePage=1;renderProfilePrivateTable()}" />
+                    <button class="btn btn-default" onclick="profilePrivatePage=1;renderProfilePrivateTable()">查询</button>
+                  </div>
                   <a class="btn btn-primary" href="../apply/apply-list.html">+ 申请访问其他服务</a>
                 </div>
                 <table class="ant-table" style="width:100%">
                   <thead><tr><th>服务名称</th><th>所属空间</th><th>代理地址</th><th>鉴权类型</th><th>申请状态</th><th>操作</th></tr></thead>
                   <tbody id="profile-private-tbody"></tbody>
                 </table>
+                <div id="profile-private-footer"></div>
               </div>
 
             </div>
@@ -142,6 +148,9 @@ const PRIVATE_APPROVED = [
 
 const AUTH_LABEL = { none:'无需鉴权', disabled:'无需鉴权', basic:'Basic Auth', forward:'Forward Auth' };
 const AUTH_CLASS  = { none:'tag-default', disabled:'tag-default', basic:'tag-processing', forward:'tag-success' };
+const ACCESS_PAGE_SIZE = 5;
+let profileAccessPage = 1;
+let profilePrivatePage = 1;
 
 const tabKeys = ['info', 'credentials'];
 let activeTab = 'info';
@@ -162,48 +171,82 @@ document.getElementById('tabs-nav').addEventListener('click', e => {
 function renderProfileAccessTable() {
   const kw = document.getElementById('profile-access-kw').value.trim().toLowerCase();
   const rows = PUBLIC_ACCESS.filter(s => !kw || s.name.toLowerCase().includes(kw) || s.proxy.toLowerCase().includes(kw));
+  const totalPages = Math.max(1, Math.ceil(rows.length / ACCESS_PAGE_SIZE));
+  profileAccessPage = Math.min(profileAccessPage, totalPages);
+  const start = (profileAccessPage - 1) * ACCESS_PAGE_SIZE;
+  const paged = rows.slice(start, start + ACCESS_PAGE_SIZE);
   const tbody = document.getElementById('profile-access-tbody');
-  if (rows.length === 0) {
+  if (paged.length === 0) {
     tbody.innerHTML = '<tr><td colspan="5"><div class="empty-table">暂无可访问的服务</div></td></tr>';
-    return;
+  } else {
+    tbody.innerHTML = paged.map(s => {
+      const authLabel = AUTH_LABEL[s.auth] || s.auth;
+      const authClass = AUTH_CLASS[s.auth]  || 'tag-default';
+      let op = '<span style="color:rgba(0,0,0,0.25)">直接访问</span>';
+      if (s.auth === 'basic')   op = `<button class="btn btn-link" onclick="viewPublicCred()">查看通用凭证</button>`;
+      if (s.auth === 'forward') op = `<button class="btn btn-link" onclick="viewFwdConfig('${escHtml(s.name)}','${escHtml(s.forwardUrl||'')}')">查询鉴权配置</button>`;
+      return `<tr>
+        <td>${escHtml(s.name)}</td>
+        <td>${escHtml(s.ns)}</td>
+        <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${escHtml(s.proxy)}">${escHtml(s.proxy)}</td>
+        <td><span class="tag ${authClass}">${escHtml(authLabel)}</span></td>
+        <td>${op}</td>
+      </tr>`;
+    }).join('');
   }
-  tbody.innerHTML = rows.map(s => {
-    const authLabel = AUTH_LABEL[s.auth] || s.auth;
-    const authClass = AUTH_CLASS[s.auth]  || 'tag-default';
-    let op = '<span style="color:rgba(0,0,0,0.25)">直接访问</span>';
-    if (s.auth === 'basic')   op = `<button class="btn btn-link" onclick="viewPublicCred()">查看通用凭证</button>`;
-    if (s.auth === 'forward') op = `<button class="btn btn-link" onclick="viewFwdConfig('${escHtml(s.name)}','${escHtml(s.forwardUrl||'')}')">查询鉴权配置</button>`;
-    return `<tr>
-      <td>${escHtml(s.name)}</td>
-      <td>${escHtml(s.ns)}</td>
-      <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${escHtml(s.proxy)}">${escHtml(s.proxy)}</td>
-      <td><span class="tag ${authClass}">${escHtml(authLabel)}</span></td>
-      <td>${op}</td>
-    </tr>`;
-  }).join('');
+  document.getElementById('profile-access-footer').innerHTML = renderPaginationHtml(profileAccessPage, totalPages, rows.length, 'goProfileAccessPage');
+}
+
+function goProfileAccessPage(page) {
+  profileAccessPage = page;
+  renderProfileAccessTable();
 }
 
 function renderProfilePrivateTable() {
+  const kw = document.getElementById('profile-private-kw')?.value.trim().toLowerCase() || '';
+  const rows = PRIVATE_APPROVED.filter(r => !kw || r.name.toLowerCase().includes(kw));
+  const totalPages = Math.max(1, Math.ceil(rows.length / ACCESS_PAGE_SIZE));
+  profilePrivatePage = Math.min(profilePrivatePage, totalPages);
+  const start = (profilePrivatePage - 1) * ACCESS_PAGE_SIZE;
+  const paged = rows.slice(start, start + ACCESS_PAGE_SIZE);
   const tbody = document.getElementById('profile-private-tbody');
-  if (PRIVATE_APPROVED.length === 0) {
+  if (paged.length === 0) {
     tbody.innerHTML = '<tr><td colspan="6"><div class="empty-table">暂无已申请的跨空间服务</div></td></tr>';
-    return;
+  } else {
+    tbody.innerHTML = paged.map(r => {
+      const authLabel = AUTH_LABEL[r.auth] || r.auth;
+      const authClass = AUTH_CLASS[r.auth]  || 'tag-default';
+      let op = '';
+      if (r.auth === 'basic')   op = `<button class="btn btn-link" onclick="viewPrivateCred('${escHtml(r.name)}','${escHtml(r.privatePwd||'')}')">查看专用凭证</button>`;
+      if (r.auth === 'forward') op = `<button class="btn btn-link" onclick="viewFwdConfig('${escHtml(r.name)}','${escHtml(r.forwardUrl||'')}')">查看鉴权配置</button>`;
+      return `<tr>
+        <td>${escHtml(r.name)}</td>
+        <td>${escHtml(r.ns)}</td>
+        <td style="max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escHtml(r.proxy)}</td>
+        <td><span class="tag ${authClass}">${escHtml(authLabel)}</span></td>
+        <td><span class="tag tag-success">${escHtml(r.status)}</span></td>
+        <td>${op}</td>
+      </tr>`;
+    }).join('');
   }
-  tbody.innerHTML = PRIVATE_APPROVED.map(r => {
-    const authLabel = AUTH_LABEL[r.auth] || r.auth;
-    const authClass = AUTH_CLASS[r.auth]  || 'tag-default';
-    let op = '';
-    if (r.auth === 'basic')   op = `<button class="btn btn-link" onclick="viewPrivateCred('${escHtml(r.name)}','${escHtml(r.privatePwd||'')}')">查看专用凭证</button>`;
-    if (r.auth === 'forward') op = `<button class="btn btn-link" onclick="viewFwdConfig('${escHtml(r.name)}','${escHtml(r.forwardUrl||'')}')">查看鉴权配置</button>`;
-    return `<tr>
-      <td>${escHtml(r.name)}</td>
-      <td>${escHtml(r.ns)}</td>
-      <td style="max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escHtml(r.proxy)}</td>
-      <td><span class="tag ${authClass}">${escHtml(authLabel)}</span></td>
-      <td><span class="tag tag-success">${escHtml(r.status)}</span></td>
-      <td>${op}</td>
-    </tr>`;
-  }).join('');
+  document.getElementById('profile-private-footer').innerHTML = renderPaginationHtml(profilePrivatePage, totalPages, rows.length, 'goProfilePrivatePage');
+}
+
+function goProfilePrivatePage(page) {
+  profilePrivatePage = page;
+  renderProfilePrivateTable();
+}
+
+function renderPaginationHtml(currentPage, totalPages, total, handlerName) {
+  if (totalPages <= 1) {
+    return `<div class="table-footer"><span class="pagination-total">共 ${total} 条</span></div>`;
+  }
+  let html = `<button class="page-btn" ${currentPage === 1 ? 'disabled' : ''} onclick="${handlerName}(${currentPage - 1})">‹</button>`;
+  for (let p = 1; p <= totalPages; p++) {
+    html += `<button class="page-btn ${p === currentPage ? 'active' : ''}" onclick="${handlerName}(${p})">${p}</button>`;
+  }
+  html += `<button class="page-btn" ${currentPage >= totalPages ? 'disabled' : ''} onclick="${handlerName}(${currentPage + 1})">›</button>`;
+  return `<div class="table-footer"><span class="pagination-total">共 ${total} 条</span><div class="ant-pagination">${html}</div></div>`;
 }
 
 let credPwdVisible = false;
@@ -257,8 +300,7 @@ function viewFwdConfig(name, forwardUrl) {
     <div class="cred-row" style="flex-direction:column;align-items:flex-start;gap:4px">
       <div class="cred-label" style="width:auto;font-weight:500">响应头回写</div>
       <div style="padding-left:4px;width:100%;color:rgba(0,0,0,0.25);font-size:13px">未配置</div>
-    </div>
-    <div class="cred-row"><div class="cred-label">说明</div><div class="cred-val" style="color:rgba(0,0,0,0.65)">请求时须在 Header 中携带有效凭证，代理网关自动转发至鉴权服务验证</div></div>`;
+    </div>`;
   openModal(document.getElementById('cred-modal'));
 }
 
